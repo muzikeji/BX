@@ -612,3 +612,12 @@ NOTE: If you experiencing any issue or shortcuts not showing correctly, please r
 "ACTION_SORT" = "Reorder Actions";
 "ACTION_SEARCH_RESULTS" = "Search / Filter Results";
 "ACTION_ORGANIZE_HINT" = "Tap an action to edit it. Tap a group to expand or collapse it. Select actions to organize them together.";
+
+// Floating app shelf
+"FLOATING_SHELF_GROUP" = "Background App Shelf";
+"FLOATING_SHELF_SWITCH" = "Show Floating Apps in Bottom Toolbar";
+"FLOATING_SHELF_FOOTER" = "Replaces bottom action buttons and their gestures with floating apps while the keyboard is visible. Four apps per page, up to eight; swipe horizontally between pages. The most recently minimized app comes first. Adding a ninth removes the oldest recovery entry without closing its app. Turning this off restores your action toolbar without closing apps. The shelf clears when SpringBoard restarts.";
+"FLOATING_SHELF_ACTIVE" = "Currently Floating";
+"FLOATING_SHELF_RESTORE_FAILED" = "Unable to restore. Tap again to retry.";
+"FLOATING_SHELF_PREVIEW" = "App shelf enabled: four per page, up to eight. Action settings are preserved.";
+"FLOATING_SHELF_FOREGROUND" = "Currently in Foreground";

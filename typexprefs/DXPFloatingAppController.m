@@ -37,7 +37,12 @@ static NSString *DXFloatingLocalized(NSString *key) {
     [position setProperty:DXPPanelSegmentCell.class forKey:@"cellClass"];
     [position setProperty:@[DXFloatingLocalized(@"FLOATING_APP_POSITION_LEFT"), DXFloatingLocalized(@"FLOATING_APP_POSITION_CENTER"),
         DXFloatingLocalized(@"FLOATING_APP_POSITION_RIGHT")] forKey:@"titles"];
-    _specifiers = [@[group, scale, positionGroup, position] mutableCopy];
+    PSSpecifier *shelfGroup = [PSSpecifier groupSpecifierWithName:DXFloatingLocalized(@"FLOATING_SHELF_GROUP")];
+    [shelfGroup setProperty:DXFloatingLocalized(@"FLOATING_SHELF_FOOTER") forKey:@"footerText"];
+    PSSpecifier *shelf = [PSSpecifier preferenceSpecifierNamed:DXFloatingLocalized(@"FLOATING_SHELF_SWITCH") target:self
+        set:@selector(setPreferenceValue:specifier:) get:@selector(readPreferenceValue:) detail:nil cell:PSSwitchCell edit:nil];
+    [shelf setProperty:kFloatingShelfEnabledKey forKey:@"key"]; [shelf setProperty:@NO forKey:@"default"];
+    _specifiers = [@[shelfGroup, shelf, group, scale, positionGroup, position] mutableCopy];
     return _specifiers;
 }
 - (id)readPreferenceValue:(PSSpecifier *)specifier {
@@ -54,6 +59,9 @@ static NSString *DXFloatingLocalized(NSString *key) {
 - (void)setPreferenceValue:(id)value specifier:(PSSpecifier *)specifier {
     if (![value isKindOfClass:NSNumber.class]) return;
     NSString *key = [specifier propertyForKey:@"key"];
+    if ([key isEqual:kFloatingShelfEnabledKey]) {
+        [DXPrefsManager.sharedInstance setValue:@([value boolValue]) forKey:key]; return;
+    }
     NSInteger stored;
     if ([key isEqual:kFloatingCardPositionKey]) {
         stored = MIN(2, MAX(0, lround([value doubleValue])));

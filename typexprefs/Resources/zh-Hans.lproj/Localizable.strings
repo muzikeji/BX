@@ -611,3 +611,12 @@
 "ACTION_SORT" = "调整动作顺序";
 "ACTION_SEARCH_RESULTS" = "搜索／筛选结果";
 "ACTION_ORGANIZE_HINT" = "点击动作编辑；点击分组标题展开或折叠；选择多个动作后可批量归类。";
+
+// Floating app shelf
+"FLOATING_SHELF_GROUP" = "后台 App 停靠栏";
+"FLOATING_SHELF_SWITCH" = "底部工具栏显示悬浮 App";
+"FLOATING_SHELF_FOOTER" = "开启后，键盘底部显示悬浮 App，替代原动作按钮及其滑动手势；一行 4 个，最多 8 个，左右滑动翻页。最近缩小的 App 排在第一位；超过 8 个时最老的图标退出列表，App 仍由系统管理。关闭后恢复原工具栏配置，App 不会被关闭。停靠列表在 SpringBoard 重启后清空。";
+"FLOATING_SHELF_ACTIVE" = "正在悬浮使用";
+"FLOATING_SHELF_RESTORE_FAILED" = "暂时无法恢复，请再次点击。";
+"FLOATING_SHELF_PREVIEW" = "App 停靠栏已开启：每页 4 个，最多 8 个。原动作配置保留。";
+"FLOATING_SHELF_FOREGROUND" = "正在前台使用";

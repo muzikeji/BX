@@ -6,3 +6,5 @@ FOUNDATION_EXPORT void DXStartFloatingAppHost(void);
 FOUNDATION_EXPORT void DXPresentFloatingApplication(NSString *bundleIdentifier, NSURL *url,
                                                    NSDate *deadline, DXSystemOpenReply reply);
 FOUNDATION_EXPORT NSString *DXFloatingBundleIdentifierForURL(NSURL *url);
+
+FOUNDATION_EXPORT void DXRestoreFloatingAppFromShelf(NSString *identifier, uint64_t revision, NSDate *deadline, DXSystemOpenReply reply);

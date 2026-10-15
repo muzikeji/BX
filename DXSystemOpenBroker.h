@@ -11,3 +11,5 @@ FOUNDATION_EXPORT void DXRunSystemAction(NSString *identifier, DXSystemOpenReply
 FOUNDATION_EXPORT void DXRequestStatusBarGesture(NSString *slot, NSString *expectedSelector, BOOL landscape, DXSystemOpenReply reply);
 typedef void (^DXPanelSystemControlReply)(DXSystemOpenResult result, NSDictionary *state);
 FOUNDATION_EXPORT NSProgress *DXRequestPanelSystemControl(NSString *action, NSNumber *value, NSString *source, DXPanelSystemControlReply reply);
+
+FOUNDATION_EXPORT void DXRestoreFloatingApplication(NSString *identifier, uint64_t revision, DXSystemOpenReply reply);

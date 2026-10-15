@@ -139,8 +139,10 @@ static void DXAppendUniqueShortcuts(NSArray *shortcuts,
     if (section == 0)
         return self.topConfiguration ? LOCALIZED(@"FOOTER_TOP_TOOLBAR_BUTTONS")
                                      : LOCALIZED(@"FOOTER_TOOLBAR_BUTTONS");
-    if (section == 1)
-        return LOCALIZED(self.topConfiguration ? @"FOOTER_BUTTON_SETTINGS_TOP" : @"FOOTER_BUTTON_SETTINGS");
+    if (section == 1) {
+        if (!self.topConfiguration) return [NSString stringWithFormat:@"%@\n%@", LOCALIZED(@"FOOTER_BUTTON_SETTINGS"), LOCALIZED(@"FLOATING_SHELF_FOOTER")];
+        return LOCALIZED(@"FOOTER_BUTTON_SETTINGS_TOP");
+    }
     if (section == 2) return LOCALIZED(@"FOOTER_PANEL_SETTINGS");
     if (section == 3 && self.topConfiguration) return LOCALIZED(@"FOOTER_MULTILINE");
     return nil;
@@ -388,8 +390,10 @@ static void DXAppendUniqueShortcuts(NSArray *shortcuts,
         CGFloat height = [value respondsToSelector:@selector(floatValue)] ? [value floatValue] : heightOffsetDefault;
         self.toolbarPreviewDockHeight = isfinite(height) ? MIN(80.0, MAX(50.0, height)) : heightOffsetDefault;
     }
-    BOOL hasButtons = [self.toolbarPreview.shortcuts[kselectors] count] > 0;
-    self.toolbarPreviewStatus.text = LOCALIZED(self.toolbarPreview ? @"TOOLBAR_PREVIEW_EMPTY" : @"TOOLBAR_PREVIEW_UNAVAILABLE");
+    BOOL shelfMode = !self.topConfiguration && [preferences[kFloatingShelfEnabledKey] isKindOfClass:NSNumber.class] && [preferences[kFloatingShelfEnabledKey] boolValue];
+    BOOL hasButtons = !shelfMode && [self.toolbarPreview.shortcuts[kselectors] count] > 0;
+    self.toolbarPreviewStatus.text = LOCALIZED(shelfMode ? @"FLOATING_SHELF_PREVIEW" :
+        (self.toolbarPreview ? @"TOOLBAR_PREVIEW_EMPTY" : @"TOOLBAR_PREVIEW_UNAVAILABLE"));
     self.toolbarPreviewStatus.hidden = hasButtons;
     self.toolbarPreview.hidden = !hasButtons;
     [self layoutToolbarPreviewHeader];
@@ -607,6 +611,8 @@ static void DXAppendUniqueShortcuts(NSArray *shortcuts,
                                   label:LOCALIZED(@"SPACING") minValue:0 maxValue:20 step:0.5
                             defaultValue:spacingBetweenCellsDefault],
     ] mutableCopy];
+    if (!self.topConfiguration) [appearanceRows insertObject:
+        [DXSettingsRow switchRowWithKey:kFloatingShelfEnabledKey label:LOCALIZED(@"FLOATING_SHELF_SWITCH") defaultValue:NO] atIndex:0];
     if (self.topConfiguration) {
         [appearanceRows addObject:
             [DXSettingsRow sliderRowWithKey:[self scopedAppearanceKey:kBottomSpacingKey]

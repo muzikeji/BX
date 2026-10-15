@@ -69,6 +69,15 @@ static void DXPerformSystemOpen(NSDictionary *request, DXSystemOpenReply reply) 
         reply(DXSystemOpenInvalid);
         return;
     }
+    if ([kind isEqual:@"floating-shelf-restore"]) {
+        NSData *data = [payload dataUsingEncoding:NSUTF8StringEncoding];
+        id control = data.length <= 1024 ? [NSJSONSerialization JSONObjectWithData:data options:0 error:nil] : nil;
+        if (![control isKindOfClass:NSDictionary.class] || !DXIsValidBundleIdentifier(control[@"bundleID"]) ||
+            ![control[@"revision"] isKindOfClass:NSNumber.class]) { reply(DXSystemOpenInvalid); return; }
+        NSDate *deadline = [NSDate dateWithTimeIntervalSince1970:[request[@"created"] doubleValue] + DXSystemOpenRequestTTL];
+        DXRestoreFloatingAppFromShelf(control[@"bundleID"], [control[@"revision"] unsignedLongLongValue], deadline, reply);
+        return;
+    }
     if ([kind isEqual:@"floating-application"] || [kind isEqual:@"floating-url"]) {
         BOOL isURL = [kind isEqual:@"floating-url"];
         NSURL *url = isURL && DXIsOpenableSchemeURLString(payload) ? [NSURL URLWithString:payload] : nil;
@@ -246,6 +255,10 @@ void DXOpenSystemApplication(NSString *bundleIdentifier, DXSystemOpenReply reply
     DXSubmitSystemOpen(@"application", bundleIdentifier, reply);
 }
 
+void DXRestoreFloatingApplication(NSString *identifier, uint64_t revision, DXSystemOpenReply reply) {
+    NSData *data = [NSJSONSerialization dataWithJSONObject:@{@"bundleID": identifier ?: @"", @"revision": @(revision)} options:0 error:nil];
+    DXSubmitSystemOpen(@"floating-shelf-restore", [[NSString alloc] initWithData:data encoding:NSUTF8StringEncoding], reply);
+}
 void DXOpenFloatingApplication(NSString *bundleIdentifier, DXSystemOpenReply reply) {
     DXSubmitSystemOpen(@"floating-application", bundleIdentifier, reply);
 }

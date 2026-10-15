@@ -97,6 +97,8 @@
 #define kFloatingCardMaxScaleKey @"floatingcardmaxscale"
 // 悬浮打开应用小窗的默认水平停靠位置（0=居左 1=居中 2=居右，缺省居中）。
 #define kFloatingCardPositionKey @"floatingcardposition"
+// One mode switch: shelf replaces only the keyboard bottom action toolbar.
+#define kFloatingShelfEnabledKey @"floatingappshelfBOOL"
 // 顶部工具栏固定按"每行个数"换行，第一行紧贴键盘、第二行向上堆叠。
 // 行距只作用于两行之间；旧的多行开关不再参与布局或容量计算。
 #define kButtonsPerRowKey @"buttonsperrow"

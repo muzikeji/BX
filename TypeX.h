@@ -1,4 +1,5 @@
 #import "DXCollectionView.h"
+#import "DXFloatingAppShelfView.h"
 #import "TextOperation.h"
 #import <objc/message.h>
 
@@ -82,6 +83,7 @@ static inline UIResponder *DXKeyboardInputDelegate(UIKeyboardImpl *keyboard) {
 //@property (retain, nonatomic) UIKeyboardDockItemButton *leftDockButton;
 //@property (retain, nonatomic) UIKeyboardDockItemButton *rightDockButton;
 @property (nonatomic, retain) DXCollectionView *typex;
+@property (nonatomic, retain) DXFloatingAppShelfView *appShelf;
 
 -(void)shouldUpdateLayoutWithDelay:(float)delay;
 - (id)_keyboardLayoutView;
