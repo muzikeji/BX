@@ -246,9 +246,9 @@ static NSString *const kDXClipboardFavoritesKey = @"favorites";
     if (!historyKey.length) historyKey = kDXClipboardHistoryKey;
 
     NSMutableString *sql = [NSMutableString stringWithString:
-        "SELECT id, history_key, bundle_identifier, content, image_name, "
-        " image_width, image_height, has_link, created_at "
-        "FROM history_items WHERE history_key = ?"];
+        @"SELECT id, history_key, bundle_identifier, content, image_name, "
+        @" image_width, image_height, has_link, created_at "
+        @"FROM history_items WHERE history_key = ?"];
     NSMutableArray *bindings = [NSMutableArray arrayWithObject:historyKey];
     if (searchText.length) {
         [sql appendString:@" AND content LIKE ? COLLATE NOCASE"];
