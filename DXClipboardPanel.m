@@ -451,7 +451,7 @@
         [input paste:nil];
     } else if ([input respondsToSelector:@selector(insertText:)]) {
         NSString *text = [UIPasteboard generalPasteboard].string;
-        if (text.length > 0) [input insertText:text];
+        if (text.length > 0) [(id)input insertText:text];
     }
 }
 
