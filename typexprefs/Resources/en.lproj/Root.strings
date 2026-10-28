@@ -58,3 +58,12 @@
 "STATUS_BAR_CLEAR" = "Clear Action";
 "STATUS_BAR_PANELS" = "Open Panel";
 "STATUS_BAR_PICKER_FOOTER" = "Choose or add a system action, app, App Quick Action, or link. Text, JavaScript, and actions requiring the current input are unavailable here.";
+// TypeX built-in clipboard (replaces Kayoko clipboard)
+"CLIPBOARD_SECTION" = "Clipboard History";
+"CLIPBOARD_FOOTER" = "Automatically records copied text and images. Review, search and paste them from the Keyboard Toolbar's Clipboard button. Kayoko history is imported automatically on first launch.";
+"CLIPBOARD_ENABLED" = "Enable Clipboard History";
+"CLIPBOARD_SAVE_TEXT" = "Save Text";
+"CLIPBOARD_SAVE_IMAGES" = "Save Images";
+"CLIPBOARD_MAX_COUNT" = "History Limit";
+"CLIPBOARD_BLACKLIST" = "Ignore Apps";
+"CLIPBOARD_MIGRATE" = "Import History from Kayoko";

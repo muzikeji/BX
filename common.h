@@ -118,6 +118,30 @@
 // or an entry without the host bundle ID means off: the per-app switches in
 // Settings all default to off.
 #define kPasteImageChipAppsKey @"pasteimagechipapps"
+
+// ---- TypeX-built-in clipboard history (取代 Kayoko 剪贴板) ----
+// 总开关与容量：与 Kayoko 对齐，上限默认 200（50..5000 步进可选）。
+#define kClipboardEnabledKey @"clipboardBOOL"
+#define kClipboardMaxCountKey @"clipboardmaxcount"
+#define kClipboardMaxCountDefault 200
+// 保存类别：文本 / 图片。
+#define kClipboardSaveTextKey @"clipboardsavetextBOOL"
+#define kClipboardSaveImagesKey @"clipboardsaveimageBOOL"
+// 忽略来源 App 黑名单（AltList 多选，存 bundleID 数组）。
+#define kClipboardBlacklistKey @"clipboardblacklist"
+// Kayoko 历史已迁移标记（一次性）。
+#define kClipboardMigratedKey @"clipboardmigratedBOOL"
+// 剪贴板快照与命令通道（复用 TypeXQuickActionDomain 隔离域）。
+#define kClipboardSnapshotKey @"clipboard-v1"
+#define kClipboardCommandKey @"clipboard-cmd"
+#define kClipboardChangedIdentifier @"com.lindo.typex/clipboardchanged"
+#define kClipboardCommandIdentifier @"com.lindo.typex/clipboardcmd"
+// 权威存储：SpringBoard 写，schema 与 Kayoko history-v4 完全一致便于迁移。
+#define kClipboardDatabasePath DX_ROOT_PATH_NS(@"/var/mobile/Library/com.lindo.typex/clipboard.sqlite")
+#define kClipboardImagesPath DX_ROOT_PATH_NS(@"/var/mobile/Library/com.lindo.typex/images")
+// 图片镜像：jbroot 前缀下 app 沙盒可读，供面板显示缩略图（best-effort）。
+#define kClipboardImagesMirrorPath DX_ROOT_PATH_NS(@"/Library/TypeX/clipboard-images")
+
 #define kbuttonsImages12 0
 #define kbuttonsImages13 1
 #define kselectors 2

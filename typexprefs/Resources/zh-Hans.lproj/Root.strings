@@ -58,3 +58,12 @@
 "STATUS_BAR_CLEAR" = "清除动作";
 "STATUS_BAR_PANELS" = "打开面板";
 "STATUS_BAR_PICKER_FOOTER" = "选择或添加系统动作、打开应用、App 快捷项或链接。文字、JavaScript 和需要当前输入内容的动作不适用于状态栏。";
+// TypeX 内置剪贴板（取代 Kayoko 剪贴板）
+"CLIPBOARD_SECTION" = "剪贴板历史";
+"CLIPBOARD_FOOTER" = "自动记录复制的文本与图片，可在键盘工具栏「剪贴板」按钮查看、搜索、粘贴。首次启动会自动导入 Kayoko 的历史记录。";
+"CLIPBOARD_ENABLED" = "启用剪贴板历史";
+"CLIPBOARD_SAVE_TEXT" = "保存文本";
+"CLIPBOARD_SAVE_IMAGES" = "保存图片";
+"CLIPBOARD_MAX_COUNT" = "历史上限";
+"CLIPBOARD_BLACKLIST" = "忽略这些应用";
+"CLIPBOARD_MIGRATE" = "从 Kayoko 导入历史";

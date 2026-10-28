@@ -16,7 +16,7 @@ TWEAK_NAME = TypeX
 
 TypeX_FILES = $(wildcard *.x) $(wildcard *.m) $(wildcard *.mm) $(wildcard *.xm)
 TypeX_CFLAGS = -fobjc-arc
-TypeX_LIBRARIES =
+TypeX_LIBRARIES = sqlite3
 TypeX_FRAMEWORKS = UIKit CoreGraphics QuartzCore ImageIO SafariServices PhotosUI UniformTypeIdentifiers JavaScriptCore
 TypeX_PRIVATE_FRAMEWORKS = AppSupport Preferences FrontBoardServices SpringBoardServices
 

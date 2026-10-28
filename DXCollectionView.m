@@ -3,6 +3,7 @@
 #import "DXCollectionView.h"
 #import "DXHelper.h"
 #import "DXAIPanel.h"
+#import "DXClipboardPanel.h"
 #import "DXKeyboardPanel.h"
 #import "DXKeyboardPanelPreferences.h"
 #import "DXPanelRegistry.h"
@@ -1199,11 +1200,20 @@ static BOOL DXIsHiddenShortcutSelector(NSString *selector) {
     DXPostPixPinSystemAction(@"pixpin-area", DX_ROOT_PATH_NS(DXPixPinDylibPath));
 }
 
-// 剪贴板按钮：Kayoko/KayokoX 只在自己注入的进程里挂 Darwin 观察者，键盘进程内
-// 没有可调用的类，dev.traurige.kayoko.core.show 就是它官方的唤起入口（同 ShellX
-// 截图按钮的跨进程套路）。未安装时通知无人接收，无害。
+// 剪贴板按钮：TypeX 已内置剪贴板历史（DXClipboardPanel，SpringBoard 监听 +
+// cfprefsd 快照 + 面板进程内浮层），不再依赖 Kayoko。总开关 clipboardBOOL
+// 关闭时回退到旧的 Kayoko 唤起通知（dev.traurige.kayoko.core.show），保证
+// 装了 Kayoko 的老配置行为不变。
 -(void)clipboardAction:(UIButton*)sender{
     [self triggerImpactAndAnimationWithButton:sender];
+
+    BOOL clipEnabled = preferencesBool(kClipboardEnabledKey, YES);
+    if (clipEnabled) {
+        // 进程内浮层面板：任何注入进程（宿主 app / SpringBoard）都直接弹。
+        [DXClipboardPanel present];
+        return;
+    }
+    // 回退：Kayoko / KayokoX 官方唤起入口（未安装时通知无人接收，无害）。
     notify_post("dev.traurige.kayoko.core.show");
 }
 
@@ -2610,7 +2620,8 @@ static UIWindow *DXSubActionPanelCreateHostWindow(UIWindow *sourceWindow) {
     if (DXIsLinkActionSelector(selector)) return preferencesLinkActionForSelector(selector) != nil;
     if (![DXShortcutsGenerator isVisibleShortcutSelector:selector] || ![self respondsToSelector:NSSelectorFromString(selector)]) return NO;
     if ([selector isEqualToString:@"shellxScreenshotAction:"]) return [DXShortcutsGenerator isShellXScreenshotAvailable];
-    if ([selector isEqualToString:@"clipboardAction:"]) return [DXShortcutsGenerator isKayokoInstalled];
+    // TypeX 已内置剪贴板历史，按钮永远可用；Kayoko 只作为总开关关闭时的回退。
+    if ([selector isEqualToString:@"clipboardAction:"]) return YES;
     if ([selector isEqualToString:@"pulloverWakeAction:"]) return [DXShortcutsGenerator isPullOverXInstalled];
     return YES;
 }

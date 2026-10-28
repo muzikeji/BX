@@ -621,3 +621,17 @@ NOTE: If you experiencing any issue or shortcuts not showing correctly, please r
 "FLOATING_SHELF_RESTORE_FAILED" = "Unable to restore. Tap again to retry.";
 "FLOATING_SHELF_PREVIEW" = "App shelf enabled: four per page, up to eight. Action settings are preserved.";
 "FLOATING_SHELF_FOREGROUND" = "Currently in Foreground";
+// TypeX clipboard panel (DXClipboardPanel)
+"剪贴板" = "Clipboard";
+"剪贴板历史" = "History";
+"收藏" = "Favorites";
+"搜索剪贴板" = "Search clipboard";
+"暂无剪贴板记录" = "No clipboard items yet";
+"清空剪贴板历史" = "Clear clipboard history";
+"取消" = "Cancel";
+"清空" = "Clear";
+"复制" = "Copy";
+"收藏条目" = "Favorite";
+"取消收藏" = "Unfavorite";
+"删除" = "Delete";
+"（图片）" = "[Image]";"CLIPBOARD_MIGRATE_TRIGGERED" = "Kayoko history import started. Open the clipboard panel shortly to view it.";

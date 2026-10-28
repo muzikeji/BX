@@ -60,6 +60,46 @@ static NSBundle *tweakBundle;
     }
 }
 
+#pragma mark - 剪贴板忽略应用（AltList 多选页 get/set）
+
+// 剪贴板黑名单存 bundleID 数组（与 pasteimagechipapps 同款新格式），
+// 直接透传，tweak 侧（DXClipboardService）按数组判黑。
+- (id)dxp_clipboardAppsRead:(PSSpecifier *)specifier {
+    id value = [self readPreferenceValue:specifier];
+    if ([value isKindOfClass:[NSArray class]]) return value;
+    if ([value isKindOfClass:[NSDictionary class]]) {
+        NSMutableArray<NSString *> *enabled = [NSMutableArray array];
+        for (NSString *bundleID in value) {
+            NSNumber *flag = value[bundleID];
+            if ([bundleID isKindOfClass:[NSString class]] &&
+                [flag isKindOfClass:[NSNumber class]] && flag.boolValue) {
+                [enabled addObject:bundleID];
+            }
+        }
+        return enabled;
+    }
+    return @[];
+}
+
+- (void)dxp_clipboardAppsWrite:(id)value specifier:(PSSpecifier *)specifier {
+    [self setPreferenceValue:value specifier:specifier];
+
+    CFStringRef notificationName = (__bridge CFStringRef)kPrefsChangedIdentifier;
+    if (notificationName) {
+        CFNotificationCenterPostNotification(CFNotificationCenterGetDarwinNotifyCenter(), notificationName, NULL, NULL, YES);
+    }
+}
+
+// 手动触发「从 Kayoko 导入历史」：写命令到 cfprefsd 隔离域并广播 Darwin
+// 通知，SpringBoard 进程的 DXClipboardService 收到后执行导入并刷新快照。
+- (void)clipboardMigrateAction:(PSSpecifier *)specifier {
+    (void)specifier;
+    DXSetQuickActionSharedValue(@{ @"action": @"import" }, kClipboardCommandKey);
+    CFNotificationCenterPostNotification(CFNotificationCenterGetDarwinNotifyCenter(),
+                                         (CFStringRef)kClipboardCommandIdentifier, NULL, NULL, YES);
+    [self showSimpleAlert:LOCALIZED(@"CLIPBOARD_MIGRATE_TRIGGERED")];
+}
+
 -(void)viewDidLoad  {
     tweakBundle = [NSBundle bundleWithPath:bundlePath];
     [tweakBundle load];

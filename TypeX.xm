@@ -5,6 +5,7 @@
 #import "DXQuickActionProvider.h"
 #import "DXPasteChip.h"
 #import "DXAIPanel.h"
+#import "DXClipboardService.h"
 #import "DXKeyboardPanel.h"
 #import "DXGlobalPanel.h"
 #import "DXStatusBarGestures.h"
@@ -1196,6 +1197,8 @@ static void shortcutRefreshRequestCallback(CFNotificationCenterRef center,
                         DXStartSystemOpenBroker();
                         DXStartGlobalPanel();
                         DXStartFloatingAppHost();
+                        // TypeX 内置剪贴板服务（监听 + 存储 + Kayoko 历史迁移）。
+                        [[DXClipboardService sharedService] start];
                     }
                 }
             }
