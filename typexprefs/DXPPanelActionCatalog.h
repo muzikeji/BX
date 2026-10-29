@@ -12,7 +12,7 @@ static inline NSArray<NSDictionary *> *DXPPanelBuiltInActions(void) {
         NSString *selector = selectors[i];
         if (![DXShortcutsGenerator isVisibleShortcutSelector:selector]) continue;
         if ([selector isEqual:@"shellxScreenshotAction:"] && ![DXShortcutsGenerator isShellXScreenshotAvailable]) continue;
-        if ([selector isEqual:@"clipboardAction:"] && ![DXShortcutsGenerator isKayokoInstalled]) continue;
+        // TypeX 已内置剪贴板历史（DXClipboardPanel），剪贴板按钮始终可用。
         if ([selector isEqual:@"pulloverWakeAction:"] && ![DXShortcutsGenerator isPullOverXInstalled]) continue;
         NSString *name = [DXHelper localizedStringForActionNamed:selector shortName:NO bundle:[NSBundle bundleWithPath:bundlePath]];
         NSString *icon = i < icons.count ? icons[i] : @"square.grid.2x2";

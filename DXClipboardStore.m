@@ -1,4 +1,5 @@
 #import "DXClipboardStore.h"
+#import "DXPrefsManager.h"
 #import "common.h"
 #import <sqlite3.h>
 #import <ImageIO/ImageIO.h>
@@ -205,7 +206,7 @@ static NSString *const kDXClipboardFavoritesKey = @"favorites";
 
 - (void)trimHistoryKey:(NSString *)historyKey {
     NSUInteger limit = kClipboardMaxCountDefault;
-    id stored = [[NSUserDefaults standardUserDefaults] objectForKey:kClipboardMaxCountKey];
+    id stored = [DXPrefsManager.sharedInstance getValueForKey:kClipboardMaxCountKey];
     if ([stored respondsToSelector:@selector(unsignedIntegerValue)]) {
         limit = [stored unsignedIntegerValue];
     }
@@ -423,13 +424,18 @@ static NSString *const kDXClipboardFavoritesKey = @"favorites";
 #pragma mark - Kayoko import
 
 - (NSUInteger)importKayokoHistory {
+    return [self importKayokoHistoryForced:NO];
+}
+
+- (NSUInteger)importKayokoHistoryForced:(BOOL)forced {
     if (![self prepareDatabase]) return 0;
 
-    // 幂等标记：成功迁移一次后不再重复。
-    NSUserDefaults *defaults = [NSUserDefaults standardUserDefaults];
-    if ([defaults boolForKey:kClipboardMigratedKey]) return 0;
+    // 幂等标记：成功迁移一次后不再重复；设置页手动迁移可强制重跑。
+    DXPrefsManager *manager = DXPrefsManager.sharedInstance;
+    if (!forced && [[manager getValueForKey:kClipboardMigratedKey] boolValue]) return 0;
 
-    NSString *kayokoDatabasePath = DX_ROOT_PATH_NS(@"/var/mobile/Library/com.muzi.kayoko/history-v4.sqlite");
+    // Kayoko 历史库位于系统真实 /var/mobile 下，不能加 jbroot 前缀。
+    NSString *kayokoDatabasePath = @"/var/mobile/Library/com.muzi.kayoko/history-v4.sqlite";
     if (![self.fileManager fileExistsAtPath:kayokoDatabasePath]) return 0;
 
     sqlite3 *kayoko = NULL;
@@ -480,7 +486,7 @@ static NSString *const kDXClipboardFavoritesKey = @"favorites";
 
             // 复制 Kayoko 图片文件到权威目录 + 镜像目录。
             if (imageString.length) {
-                NSString *kayokoImage = DX_ROOT_PATH_NS(@"/var/mobile/Library/com.muzi.kayoko/images");
+                NSString *kayokoImage = @"/var/mobile/Library/com.muzi.kayoko/images";
                 NSString *source = [kayokoImage stringByAppendingPathComponent:imageString];
                 if ([self.fileManager fileExistsAtPath:source]) {
                     NSString *primaryPath = [self.imagesDirectoryPath stringByAppendingPathComponent:imageString];
@@ -510,10 +516,7 @@ static NSString *const kDXClipboardFavoritesKey = @"favorites";
     sqlite3_finalize(statement);
     sqlite3_close(kayoko);
 
-    if (imported > 0) {
-        [defaults setBool:YES forKey:kClipboardMigratedKey];
-        [defaults synchronize];
-    }
+    [manager setValue:@YES forKey:kClipboardMigratedKey];
     NSLog(@"[TypeX][Clipboard] Kayoko 历史导入完成：%lu 条", (unsigned long)imported);
     return imported;
 }

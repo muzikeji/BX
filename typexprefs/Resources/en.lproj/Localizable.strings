@@ -172,7 +172,7 @@ NOTE: If you experiencing any issue or shortcuts not showing correctly, please r
 "TYPE_FOOTER_URL_SCHEME" = "Floating is off by default, so the URL Scheme opens normally. Turn on Open in a floating window to host the handling app and deliver the original link. Keep floating off for system commands without a hostable app. @@@ passes the current input text.";
 "TYPE_FOOTER_TEXT" = "Manage literal text records. One record is inserted directly; multiple records open a floating list. Tap a record to insert it and close the panel. Text, spaces and line breaks are preserved. Use Edit to delete or reorder records.";
 "TYPE_FOOTER_URL" = "Opens the web URL, either inside this app or outside. Use @@@ to pass the current input field's text as a parameter. With Cut & Replace on, the field is cleared as its text is passed in; off keeps the field's content.";
-"TYPE_FOOTER_OPEN_APP" = "TypeX opens the selected app in an interactive floating window by default. Drag its title bar or tap close to end hosting. Turn this off for normal full-screen opening. PullOver-X is not required.";
+"TYPE_FOOTER_OPEN_APP" = "MUBX opens the selected app in an interactive floating window by default. Drag its title bar or tap close to end hosting. Turn this off for normal full-screen opening. PullOver-X is not required.";
 
 //=====================APP / SHORTCUT PICKERS=====================
 "OPEN_APP" = "Open App";
@@ -336,7 +336,7 @@ NOTE: If you experiencing any issue or shortcuts not showing correctly, please r
 "PASTE_CHIP" = "Paste Chip";
 "PASTE_CHIP_FOOTER" = "Shows a floating paste chip above the keyboard when the clipboard holds new content, and auto-answers the system paste-permission alert.";
 "PASTE_CHIP_APPS" = "Enabled Apps";
-"FOOTER_CREDITS" = "TypeX by lindo. Thanks for your support.";
+"FOOTER_CREDITS" = "MUBX by lindo. Thanks for your support.";
 
 // App quick actions
 "ACTION_TYPE_SHORTCUT" = "App Shortcut";

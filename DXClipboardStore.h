@@ -67,6 +67,9 @@ NS_ASSUME_NONNULL_BEGIN
 /// 经 UNIQUE 索引自然去重，重复执行不会产生重复条目。
 - (NSUInteger)importKayokoHistory;
 
+/// 强制重新导入 Kayoko 历史，供设置页手动迁移使用。
+- (NSUInteger)importKayokoHistoryForced:(BOOL)forced;
+
 @end
 
 NS_ASSUME_NONNULL_END

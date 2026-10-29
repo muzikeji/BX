@@ -163,7 +163,7 @@ static NSBundle *tweakBundle;
     if (!font) font = [UIFont systemFontOfSize:36 weight:UIFontWeightBold];
 
     UILabel *headerLabel = [[UILabel alloc] initWithFrame:labelFrame];
-    [headerLabel setText:@"TypeX"];
+    [headerLabel setText:@"MUBX"];
     [headerLabel setFont:font];
     if (@available(iOS 13.0, *)) {
         [headerLabel setTextColor:[UIColor colorWithDynamicProvider:^UIColor *(UITraitCollection *traitCollection) {
@@ -221,7 +221,7 @@ static NSBundle *tweakBundle;
 }
 
 - (void)respring {
-    UIAlertController *alert = [UIAlertController alertControllerWithTitle:@"TypeX" message:LOCALIZED(@"RESPRING_MESSAGE") preferredStyle:UIAlertControllerStyleAlert];
+    UIAlertController *alert = [UIAlertController alertControllerWithTitle:@"MUBX" message:LOCALIZED(@"RESPRING_MESSAGE") preferredStyle:UIAlertControllerStyleAlert];
     
     UIAlertAction *respringAction = [UIAlertAction actionWithTitle:LOCALIZED(@"ANSWER_YES") style:UIAlertActionStyleDefault handler:^(UIAlertAction *action) {
         
@@ -286,7 +286,7 @@ static NSString *const DXPBackupPayloadKey = @"preferences";
 static const NSInteger DXPBackupFormatVersion = 1;
 
 - (void)showSimpleAlert:(NSString *)message {
-    UIAlertController *alert = [UIAlertController alertControllerWithTitle:@"TypeX"
+    UIAlertController *alert = [UIAlertController alertControllerWithTitle:@"MUBX"
                                                                    message:message
                                                             preferredStyle:UIAlertControllerStyleAlert];
     [alert addAction:[UIAlertAction actionWithTitle:LOCALIZED(@"ANSWER_YES") style:UIAlertActionStyleCancel handler:nil]];
@@ -314,7 +314,7 @@ static const NSInteger DXPBackupFormatVersion = 1;
         DXPBackupPayloadKey: prefs,
     };
     NSURL *fileURL = [NSURL fileURLWithPath:[NSTemporaryDirectory() stringByAppendingPathComponent:
-        [NSString stringWithFormat:@"TypeX-Config-%@.plist", timestamp]]];
+        [NSString stringWithFormat:@"MUBX-Config-%@.plist", timestamp]]];
     if (![envelope writeToFile:fileURL.path atomically:YES]) {
         [self showSimpleAlert:LOCALIZED(@"BACKUP_FAILED")];
         return;
@@ -391,7 +391,7 @@ static const NSInteger DXPBackupFormatVersion = 1;
         [[DXPrefsManager sharedInstance] writePrefs:restored];
         [self reloadSpecifiers];
 
-        UIAlertController *done = [UIAlertController alertControllerWithTitle:@"TypeX"
+        UIAlertController *done = [UIAlertController alertControllerWithTitle:@"MUBX"
                                                                       message:LOCALIZED(@"RESTORE_DONE")
                                                                preferredStyle:UIAlertControllerStyleAlert];
         [done addAction:[UIAlertAction actionWithTitle:LOCALIZED(@"ANSWER_YES") style:UIAlertActionStyleCancel handler:nil]];

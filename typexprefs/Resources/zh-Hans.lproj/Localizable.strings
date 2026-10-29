@@ -125,7 +125,7 @@
 //=====================KEYBOARD INPUT BEHAVIOR=====================
 "DISABLED_INPUT_TYPE" = "已禁用的输入法";
 "ENABLED_INPUT_TYPE" = "已启用的输入法";
-"FOOTER_ENABLED" = "启用后，点击快捷方式即可循环切换输入法。如果“默认”与“原始”相同，将跳过“默认”。请至少选择两个项目，并包含“原始”。\n\n注意：某些输入法不支持切换输入类型，TypeX 会将当前图标显示为空心、灰色或带删除线，以表示该状态。";
+"FOOTER_ENABLED" = "启用后，点击快捷方式即可循环切换输入法。如果“默认”与“原始”相同，将跳过“默认”。请至少选择两个项目，并包含“原始”。\n\n注意：某些输入法不支持切换输入类型，MUBX 会将当前图标显示为空心、灰色或带删除线，以表示该状态。";
 "RESET_TO_DEFAULT_MESSAGE" = "恢复为默认设置？";
 
 //=====================GESTURES PAGE=====================
@@ -173,7 +173,7 @@
 "TYPE_FOOTER_URL_SCHEME" = "默认关闭悬浮，按 URL Scheme 正常跳转。开启“悬浮打开应用”后，将对应应用悬浮打开并投递原始链接。不对应应用的系统命令请保持悬浮关闭。支持 @@@ 传入输入框内容。";
 "TYPE_FOOTER_TEXT" = "管理多条纯文本记录。一条时直接插入，多条时打开悬浮列表，点选记录后插入并关闭。原样保留文本、空格和换行。点击“编辑”可删除记录或拖动排序。";
 "TYPE_FOOTER_URL" = "点击后打开该网址，可选择在 APP 内或 APP 外打开；url 支持入参替换，使用 @@@ 传入当前输入框的内容。开启「剪切替换」后，@@@ 传入内容的同时清空输入框；关闭则保留输入框内容。";
-"TYPE_FOOTER_OPEN_APP" = "默认以 TypeX 小窗悬浮打开所选应用，可直接操作、拖动标题栏，并点击关闭按钮结束悬浮。关闭此开关可正常全屏打开。无需安装 PullOver-X。";
+"TYPE_FOOTER_OPEN_APP" = "默认以 MUBX 小窗悬浮打开所选应用，可直接操作、拖动标题栏，并点击关闭按钮结束悬浮。关闭此开关可正常全屏打开。无需安装 PullOver-X。";
 
 //=====================APP / SHORTCUT PICKERS=====================
 "OPEN_APP" = "打开应用";
@@ -239,7 +239,7 @@
 "TEST_INPUT_FIELD_PLACEHOLDER" = "输入文本试试工具栏按钮…";
 "TOOLBAR_PREVIEW" = "工具栏预览";
 "TOOLBAR_PREVIEW_EMPTY" = "暂无已开启的按钮";
-"TOOLBAR_PREVIEW_UNAVAILABLE" = "预览暂不可用，请安装 TypeX 后重新打开设置。";
+"TOOLBAR_PREVIEW_UNAVAILABLE" = "预览暂不可用，请安装 MUBX 后重新打开设置。";
 
 "LONG_SHELLX_SCREENSHOT" = "ShellX 截图";
 "SHORT_SHELLX_SCREENSHOT" = "截图";
@@ -279,8 +279,8 @@
 "AI_CARD_CAMERA" = "相机";
 "AI_CARD_FILES" = "文件";
 "AI_CARD_IMAGE" = "图片";
-"AI_CARD_NO_KEY_ALERT" = "请先在 TypeX 设置 → AI问答 中配置 API Key";
-"AI_CARD_NO_MODEL_ALERT" = "请先在 TypeX 设置 → AI问答 中配置模型";
+"AI_CARD_NO_KEY_ALERT" = "请先在 MUBX 设置 → AI问答 中配置 API Key";
+"AI_CARD_NO_MODEL_ALERT" = "请先在 MUBX 设置 → AI问答 中配置模型";
 "AI_CARD_REQUEST_FAILED" = "请求失败";
 "AI_CARD_FILE_UNREADABLE" = "无法读取该文件内容";
 "AI_CARD_REPLY_COPIED" = "回复已复制，回到应用后粘贴";
@@ -335,7 +335,7 @@
 "PASTE_CHIP" = "粘贴悬浮窗";
 "PASTE_CHIP_FOOTER" = "剪贴板有新内容时在键盘上方弹出悬浮粘贴窗，并自动放行系统「允许粘贴」弹窗。";
 "PASTE_CHIP_APPS" = "生效应用";
-"FOOTER_CREDITS" = "TypeX 由 lindo 开发，感谢使用与支持";
+"FOOTER_CREDITS" = "MUBX 由 lindo 开发，感谢使用与支持";
 
 // App quick actions
 "ACTION_TYPE_SHORTCUT" = "快捷方式";
@@ -382,7 +382,7 @@
 "RESTORE_CONFIRM_MESSAGE" = "备份包含 %lu 项配置。\n恢复将覆盖当前全部配置且无法撤销，确定继续吗？";
 "RESTORE_DONE" = "配置已恢复";
 "RESTORE_FAILED_TITLE" = "恢复失败";
-"RESTORE_FAILED_MESSAGE" = "无法读取有效的 TypeX 备份文件";
+"RESTORE_FAILED_MESSAGE" = "无法读取有效的 MUBX 备份文件";
 
 // Keyboard-covering swipe panels
 "GESTURE_SETTINGS" = "手势设置";

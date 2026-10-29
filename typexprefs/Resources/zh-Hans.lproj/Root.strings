@@ -64,6 +64,7 @@
 "CLIPBOARD_ENABLED" = "启用剪贴板历史";
 "CLIPBOARD_SAVE_TEXT" = "保存文本";
 "CLIPBOARD_SAVE_IMAGES" = "保存图片";
+"CLIPBOARD_REPLACE_DICTATION" = "剪贴板取代听写键";
 "CLIPBOARD_MAX_COUNT" = "历史上限";
 "CLIPBOARD_BLACKLIST" = "忽略这些应用";
 "CLIPBOARD_MIGRATE" = "从 Kayoko 导入历史";

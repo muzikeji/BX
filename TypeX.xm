@@ -6,6 +6,7 @@
 #import "DXPasteChip.h"
 #import "DXAIPanel.h"
 #import "DXClipboardService.h"
+#import "DXClipboardPanel.h"
 #import "DXKeyboardPanel.h"
 #import "DXGlobalPanel.h"
 #import "DXStatusBarGestures.h"
@@ -31,6 +32,7 @@ UIKeyboardDockView *dockView;
 //BOOL isSandboxed = NO;
 BOOL singleTapDictationEnabled = NO;
 BOOL singleTapGlobeEnabled = NO;
+BOOL clipboardReplacesDictationEnabled = NO;
 BOOL isSpringBoard = YES;
 BOOL isApplication = NO;
 BOOL isSafari = NO;
@@ -748,7 +750,7 @@ static void reloadPrefs(void);
         if (!preferencesBool(kShortcutsTintEnabled,NO)){
             currentTintColor = dockItem.button.tintColor;
         }
-        if (preferencesInt(kDedicatedGestureButtonkey, 0) == 2 || preferencesInt(kDedicatedGestureButtonkey, 0) == 3){
+        if (!clipboardReplacesDictationEnabled && (preferencesInt(kDedicatedGestureButtonkey, 0) == 2 || preferencesInt(kDedicatedGestureButtonkey, 0) == 3)){
             %orig;
             if (preferencesInt(kGestureTypekey,0) == 1){
                 singleTapDictationEnabled = NO;
@@ -927,6 +929,9 @@ static void reloadPrefs(void);
         if ((preferencesInt(kDedicatedGestureButtonkey, 0) == 1 || preferencesInt(kDedicatedGestureButtonkey, 0) == 3) && [[self inputView].currentImage.description containsString:@"globe"]){
             return;
         }
+        if (clipboardReplacesDictationEnabled && [[self inputView].currentImage.description containsString:@"mic"]){
+            return;
+        }
         if ((preferencesInt(kDedicatedGestureButtonkey, 0) == 2 || preferencesInt(kDedicatedGestureButtonkey, 0) == 3) && [[self inputView].currentImage.description containsString:@"mic"]){
             return;
         }
@@ -940,6 +945,14 @@ static void reloadPrefs(void);
 
 
 %hook UISystemKeyboardDockController
+
+-(void)dictationItemButtonWasPressed:(id)arg1 withEvent:(id)arg2 {
+    if (clipboardReplacesDictationEnabled && preferencesBool(kClipboardEnabledKey, YES)) {
+        [DXClipboardPanel present];
+        return;
+    }
+    %orig;
+}
 
 -(void)updateDockItemsVisibility{
     %orig;
@@ -1044,8 +1057,9 @@ static void reloadPrefs(void) {
     }
     
     toggledOn = preferencesBool(kToggledOnkey,YES);
+    clipboardReplacesDictationEnabled = preferencesBool(kClipboardReplacesDictationKey, NO);
     singleTapGlobeEnabled = ((preferencesInt(kDedicatedGestureButtonkey,0) == 1 || preferencesInt(kDedicatedGestureButtonkey,0) == 3) && (preferencesInt(kGestureTypekey,0) == 0)) ? YES : NO;
-    singleTapDictationEnabled = ((preferencesInt(kDedicatedGestureButtonkey,0) == 2 || preferencesInt(kDedicatedGestureButtonkey,0) == 3) && (preferencesInt(kGestureTypekey,0) == 0)) ? YES : NO;
+    singleTapDictationEnabled = ((preferencesInt(kDedicatedGestureButtonkey,0) == 2 || preferencesInt(kDedicatedGestureButtonkey,0) == 3) && (preferencesInt(kGestureTypekey,0) == 0) && !clipboardReplacesDictationEnabled) ? YES : NO;
 
 
     heightOffset = preferencesFloat(kHeightOffsetkey, heightOffsetDefault);

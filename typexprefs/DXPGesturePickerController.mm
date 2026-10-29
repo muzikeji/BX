@@ -397,7 +397,7 @@ static NSBundle *tweakBundle;
     if (icon.length > 0
         && ![DXHelper customIconForShortcutItem:@{@"icon": icon}]
         && ![DXHelper appIconBundleIDForShortcutItem:@{@"icon": icon}]) {
-        UIAlertController *alert = [UIAlertController alertControllerWithTitle:@"TypeX"
+        UIAlertController *alert = [UIAlertController alertControllerWithTitle:@"MUBX"
                                                                        message:LOCALIZED(@"CUSTOM_ICON_INVALID")
                                                                 preferredStyle:UIAlertControllerStyleAlert];
         [alert addAction:[UIAlertAction actionWithTitle:LOCALIZED(@"ANSWER_YES")

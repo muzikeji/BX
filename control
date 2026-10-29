@@ -1,9 +1,9 @@
 Package: com.lindo.typex
-Name: TypeX
+Name: MUBX
 Depends: mobilesubstrate, preferenceloader, firmware(>=15.0)
 Version: 4.7.6
 Architecture: iphoneos-arm64
-Description: TypeX 是一款可自定义键盘快捷操作栏的ios插件.
+Description: MUBX 是一款可自定义键盘快捷操作栏的ios插件.
 Maintainer: lindo
 Author: lindo
 Section: Tweaks

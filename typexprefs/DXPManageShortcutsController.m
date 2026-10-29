@@ -226,7 +226,7 @@ static void DXAppendUniqueShortcuts(NSArray *shortcuts,
     if (sender.isOn && [self enabledButtonCount] >= capacity) {
         [sender setOn:NO animated:YES];
         NSString *message = [NSString stringWithFormat:LOCALIZED(@"KEYBOARD_TOOLBAR_CAPACITY"), (long)capacity];
-        UIAlertController *alert = [UIAlertController alertControllerWithTitle:@"TypeX" message:message preferredStyle:UIAlertControllerStyleAlert];
+        UIAlertController *alert = [UIAlertController alertControllerWithTitle:@"MUBX" message:message preferredStyle:UIAlertControllerStyleAlert];
         [alert addAction:[UIAlertAction actionWithTitle:LOCALIZED(@"ANSWER_OK") style:UIAlertActionStyleCancel handler:nil]];
         [self presentViewController:alert animated:YES completion:nil];
         return;
@@ -905,12 +905,7 @@ static NSString *DXFormatSettingsValue(float value, float step, NSString *suffix
             ![DXShortcutsGenerator isShellXScreenshotAvailable]) {
             continue;
         }
-        // 剪贴板按钮只在检测到 Kayoko/KayokoX 已安装时进入目录
-        if ([defaultOrderSelector[i] isEqualToString:@"clipboardAction:"] &&
-            ![DXShortcutsGenerator isKayokoInstalled]) {
-            continue;
-        }
-        // 小把手按钮只在检测到 PullOver X 已安装时进入目录
+        // TypeX 已内置剪贴板历史（DXClipboardPanel），剪贴板按钮始终可用。
         if ([defaultOrderSelector[i] isEqualToString:@"pulloverWakeAction:"] &&
             ![DXShortcutsGenerator isPullOverXInstalled]) {
             continue;

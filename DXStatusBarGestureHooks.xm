@@ -9,7 +9,7 @@
 #import <objc/runtime.h>
 #import <notify.h>
 
-static char DXStatusHandlerKey, DXStatusApertureHandlerKey, DXStatusKindKey, DXStatusSessionKey;
+static char DXStatusHandlerKey, DXStatusApertureHandlerKey, DXStatusKindKey, DXStatusSessionKey, DXStatusWindowScannedKey;
 static NSHashTable *DXStatusHandlers;
 static void DXTryStatusHooks(void);
 static void DXInstallStatusGestures(UIView *view);
@@ -406,6 +406,12 @@ static void DXScanStatusViews(UIView *view) {
     for (UIView *child in view.subviews) DXScanStatusViews(child);
 }
 
+static void DXScanStatusWindow(UIWindow *window) {
+    if (!window || objc_getAssociatedObject(window, &DXStatusWindowScannedKey)) return;
+    objc_setAssociatedObject(window, &DXStatusWindowScannedKey, @YES, OBJC_ASSOCIATION_RETAIN_NONATOMIC);
+    DXScanStatusViews(window);
+}
+
 static BOOL DXStatusConstructionSupported(Class cls) {
     if (![cls isSubclassOfClass:UIView.class]) return NO;
     Method method = class_getInstanceMethod(cls, @selector(initWithStyle:));
@@ -539,11 +545,11 @@ static void DXTryStatusHooks(void) {
     }
     #pragma clang diagnostic push
     #pragma clang diagnostic ignored "-Wdeprecated-declarations"
-    for (UIWindow *window in UIApplication.sharedApplication.windows) DXScanStatusViews(window);
+    for (UIWindow *window in UIApplication.sharedApplication.windows) DXScanStatusWindow(window);
     #pragma clang diagnostic pop
     for (UIScene *scene in UIApplication.sharedApplication.connectedScenes)
         if ([scene isKindOfClass:UIWindowScene.class])
-            for (UIWindow *window in ((UIWindowScene *)scene).windows) DXScanStatusViews(window);
+            for (UIWindow *window in ((UIWindowScene *)scene).windows) DXScanStatusWindow(window);
     for (DXStatusGestureHandler *handler in DXStatusHandlers.allObjects) [handler refresh];
     if (!wrapperInstalled && !coreInstalled && !modernInstalled && !systemWrapperInstalled && !systemCoreInstalled && !loggedUnavailable) {
         loggedUnavailable = YES;
@@ -563,7 +569,7 @@ void DXStartStatusBarGestures(void) {
                     // System bars may load late or re-parent between windows;
                     // scans recover instances the didMoveToWindow hooks missed.
                     DXTryStatusHooks();
-                    if ([note.object isKindOfClass:UIWindow.class]) DXScanStatusViews(note.object);
+                    if ([note.object isKindOfClass:UIWindow.class]) DXScanStatusWindow(note.object);
                 }];
             }
             for (NSString *name in @[UIApplicationDidFinishLaunchingNotification, UISceneWillConnectNotification, UISceneDidActivateNotification]) {

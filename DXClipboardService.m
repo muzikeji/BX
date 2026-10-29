@@ -56,9 +56,23 @@ typedef NS_ENUM(NSUInteger, DXClipboardCommandType) {
     if (self.started) return;
     self.started = YES;
 
-    // 首启：建库 + 一次性迁移 Kayoko 历史。
-    if ([self.store prepareDatabase]) {
-        [self.store importKayokoHistory];
+    // 首次启动迁移 Kayoko 历史可能涉及成百上千行 INSERT 与图片复制，
+    // 从 %ctor 主线程同步执行会拖慢 SpringBoard 冷启动（1-2 帧卡顿）。
+    // 等 SpringBoard 启动完成后再在 Utility 队列异步迁移，先发布空快照。
+    __weak DXClipboardService *weakSelf = self;
+    [self publishSnapshot];
+
+    if ([NSProcessInfo.processInfo.processName isEqualToString:@"SpringBoard"]) {
+        dispatch_async(dispatch_get_global_queue(QOS_CLASS_UTILITY, 0), ^{
+            DXClipboardStore *store = weakSelf.store;
+            if ([store prepareDatabase]) {
+                [store importKayokoHistory];
+            }
+        });
+    } else {
+        if ([self.store prepareDatabase]) {
+            [self.store importKayokoHistory];
+        }
     }
 
     _pasteboard = [UIPasteboard generalPasteboard];
@@ -77,7 +91,6 @@ typedef NS_ENUM(NSUInteger, DXClipboardCommandType) {
                                     NULL,
                                     CFNotificationSuspensionBehaviorDeliverImmediately);
 
-    [self publishSnapshot];
     NSLog(@"[TypeX][Clipboard] 剪贴板服务已启动");
 }
 
@@ -368,7 +381,8 @@ static void DXClipboardCommandCallback(CFNotificationCenterRef center, void *obs
             break;
         }
         case DXClipboardCommandImport: {
-            [self.store importKayokoHistory];
+            // 手动迁移：无视幂等标记强制重跑，保证设置页按钮始终有反馈。
+            [self.store importKayokoHistoryForced:YES];
             break;
         }
         default:

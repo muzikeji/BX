@@ -122,6 +122,7 @@
 // ---- TypeX-built-in clipboard history (取代 Kayoko 剪贴板) ----
 // 总开关与容量：与 Kayoko 对齐，上限默认 200（50..5000 步进可选）。
 #define kClipboardEnabledKey @"clipboardBOOL"
+#define kClipboardReplacesDictationKey @"clipboardreplacesdictationBOOL"
 #define kClipboardMaxCountKey @"clipboardmaxcount"
 #define kClipboardMaxCountDefault 200
 // 保存类别：文本 / 图片。
@@ -137,8 +138,8 @@
 #define kClipboardChangedIdentifier @"com.lindo.typex/clipboardchanged"
 #define kClipboardCommandIdentifier @"com.lindo.typex/clipboardcmd"
 // 权威存储：SpringBoard 写，schema 与 Kayoko history-v4 完全一致便于迁移。
-#define kClipboardDatabasePath DX_ROOT_PATH_NS(@"/var/mobile/Library/com.lindo.typex/clipboard.sqlite")
-#define kClipboardImagesPath DX_ROOT_PATH_NS(@"/var/mobile/Library/com.lindo.typex/images")
+#define kClipboardDatabasePath @"/var/mobile/Library/com.lindo.typex/clipboard.sqlite"
+#define kClipboardImagesPath @"/var/mobile/Library/com.lindo.typex/images"
 // 图片镜像：jbroot 前缀下 app 沙盒可读，供面板显示缩略图（best-effort）。
 #define kClipboardImagesMirrorPath DX_ROOT_PATH_NS(@"/Library/TypeX/clipboard-images")
 
