@@ -883,16 +883,6 @@ static NSString *DXClipboardDockImageName(NSString *imageName) {
     return @"doc.on.clipboard";
 }
 
-@interface UIKBTree : NSObject
-@property(nonatomic, copy) NSString *name;
-@property(nonatomic, strong) NSMutableDictionary<NSString *, id> *properties;
-@end
-
-@interface UIKeyboardDockItem : NSObject
-- (instancetype)initWithImageName:(id)imageName identifier:(id)identifier;
-- (void)setImageName:(NSString *)arg1;
-@end
-
 %hook UIKeyboardDockItem
 //iOS 13+
 -(void)setImageName:(NSString *)imageName{

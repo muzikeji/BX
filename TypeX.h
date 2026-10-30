@@ -135,6 +135,7 @@ static inline UIResponder *DXKeyboardInputDelegate(UIKeyboardImpl *keyboard) {
 
 @interface UIKBTree : NSObject
 -(NSString *)name;
+@property(nonatomic, strong) NSMutableDictionary<NSString *, id> *properties;
 @end
 
 @interface UIKeyboardMenuView : UIView
