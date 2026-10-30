@@ -12,6 +12,8 @@ NS_ASSUME_NONNULL_BEGIN
 @interface DXClipboardCapture : NSObject
 
 + (instancetype)sharedCapture;
+/// 进程启动入口：App 进程 %ctor 调用，记录 bundle id 并启用采集。
+- (void)start;
 /// 本进程 UIPasteboard 写入完成后调用：采样刚写入的文本并入队。
 /// 在 SpringBoard 进程内调用时直接忽略（SB 自身写入已由通知/轮询路径处理）。
 - (void)capturePasteboardAfterWrite;
