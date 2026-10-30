@@ -1,4 +1,4 @@
-name: Build TypeX RootHide
+name: Build TypeX (roothide + rootless)
 
 on:
   push:
@@ -19,8 +19,8 @@ permissions:
 
 jobs:
   build:
-    name: RootHide packages (iOS 16 and iOS 17)
-    runs-on: macos-14
+    name: TypeX packages (roothide + rootless)
+    runs-on: macos-15
 
     defaults:
       run:
