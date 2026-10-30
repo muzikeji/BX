@@ -30,7 +30,8 @@ typedef NS_ENUM(NSUInteger, DXClipboardCommandType) {
 @property(nonatomic, strong) DXClipboardStore *store;
 @property(nonatomic, strong) NSFileManager *fileManager;
 @property(nonatomic, assign) BOOL started;
-@property(nonatomic, assign) BOOL pendingWrite; // 面板粘贴写入时的自身写入抑制标记
+@property(nonatomic, assign) NSInteger lastQueueChangeCount; // 消费队列时记录 changeCount，轮询去重
+@property(nonatomic, strong) NSTimer *pollTimer; // 跨进程变更兜底轮询
 @end
 
 @implementation DXClipboardService
@@ -83,6 +84,12 @@ typedef NS_ENUM(NSUInteger, DXClipboardCommandType) {
                                                  name:UIPasteboardChangedNotification
                                                object:_pasteboard];
 
+    // UIPasteboardChangedNotification 只在本进程执行写入时广播。其它 App 的复制
+    // 事件不会送达 SpringBoard，因此必须用 changeCount 轮询跨进程兜底。
+    if ([NSProcessInfo.processInfo.processName isEqualToString:@"SpringBoard"]) {
+        [self startPollingForCrossProcessChanges];
+    }
+
     // app 进程命令入口（copy/delete/favorite/clear/import）。
     CFNotificationCenterAddObserver(CFNotificationCenterGetDarwinNotifyCenter(),
                                     (__bridge const void *)self,
@@ -90,6 +97,17 @@ typedef NS_ENUM(NSUInteger, DXClipboardCommandType) {
                                     (CFStringRef)kClipboardCommandIdentifier,
                                     NULL,
                                     CFNotificationSuspensionBehaviorDeliverImmediately);
+
+    // app 进程复制采集入口（跨进程内容入队 → SB 落库）。
+    CFNotificationCenterAddObserver(CFNotificationCenterGetDarwinNotifyCenter(),
+                                    (__bridge const void *)self,
+                                    &DXClipboardCaptureCallback,
+                                    (CFStringRef)kClipboardCaptureIdentifier,
+                                    NULL,
+                                    CFNotificationSuspensionBehaviorDeliverImmediately);
+
+    // 启动即消费一次，避免 App 采集后 SB 尚未注册时漏掉。
+    [self consumePendingCaptures];
 
     NSLog(@"[TypeX][Clipboard] 剪贴板服务已启动");
 }
@@ -108,22 +126,44 @@ static void DXClipboardCommandCallback(CFNotificationCenterRef center, void *obs
     });
 }
 
+static void DXClipboardCaptureCallback(CFNotificationCenterRef center, void *observer,
+                                       CFStringRef name, const void *object,
+                                       CFDictionaryRef userInfo) {
+    (void)center; (void)name; (void)object; (void)userInfo;
+    DXClipboardService *service = (__bridge DXClipboardService *)observer;
+    dispatch_async(dispatch_get_main_queue(), ^{
+        [service consumePendingCaptures];
+    });
+}
+
 #pragma mark - Pasteboard observation
 
-- (void)generalPasteboardDidChange:(NSNotification *)notification {
-    (void)notification;
-    NSInteger changeCount = _pasteboard.changeCount;
+- (void)startPollingForCrossProcessChanges {
+    [self.pollTimer invalidate];
+    __weak DXClipboardService *weakSelf = self;
+    self.pollTimer = [NSTimer scheduledTimerWithTimeInterval:0.5
+                                                     repeats:YES
+                                                       block:^(NSTimer *timer) {
+        (void)timer;
+        [weakSelf pollCrossProcessPasteboardChange];
+    }];
+}
+
+- (void)pollCrossProcessPasteboardChange {
+    // changeCount 是系统级计数，任何进程写入都会递增，跨进程可靠。
+    NSInteger changeCount = [UIPasteboard generalPasteboard].changeCount;
     if (changeCount == _lastChangeCount) return;
     _lastChangeCount = changeCount;
 
-    // 面板自己发起的粘贴写入：内容已存在于历史，无需重复入库（会在面板侧
-    // 触发一次 writePasteboardForItem，这里抑制避免自我复制）。
-    if (self.pendingWrite) {
-        self.pendingWrite = NO;
-        return;
-    }
+    // 该次变更已由 App 采集队列消费过，跳过避免重复入库。
+    if (changeCount == self.lastQueueChangeCount) return;
 
     [self captureCurrentPasteboard];
+}
+
+- (void)generalPasteboardDidChange:(NSNotification *)notification {
+    (void)notification;
+    [self pollCrossProcessPasteboardChange];
 }
 
 - (BOOL)shouldIgnoreCurrentPasteboardChangeFromSourceBundleIdentifier:(NSString *)sourceBundleIdentifier {
@@ -141,6 +181,87 @@ static void DXClipboardCommandCallback(CFNotificationCenterRef center, void *obs
         return YES;
     }
     return NO;
+}
+
+#pragma mark - App capture queue
+
+- (void)consumePendingCaptures {
+    id pending = DXQuickActionSharedValue(kClipboardCaptureKey);
+    if (!pending) return;
+    // 取走即清除，避免重复消费。
+    DXSetQuickActionSharedValue(nil, kClipboardCaptureKey);
+
+    NSArray *captures = nil;
+    if ([pending isKindOfClass:[NSArray class]]) {
+        captures = pending;
+    } else if ([pending isKindOfClass:[NSDictionary class]]) {
+        captures = @[ pending ];
+    } else {
+        return;
+    }
+
+    BOOL saved = NO;
+    for (NSDictionary *capture in captures) {
+        if (![capture isKindOfClass:[NSDictionary class]]) continue;
+        if ([self applyCapture:capture]) {
+            saved = YES;
+            // 队列中携带的 changeCount 是最新一次变更；后面到来的轮询
+            // 跳过一次，避免 App 采集与 SB 轮询重复入库。
+            NSInteger capturedChangeCount = [capture[@"changeCount"] integerValue];
+            if (capturedChangeCount > 0) self.lastQueueChangeCount = capturedChangeCount;
+        }
+    }
+    if (saved) {
+        [self publishSnapshot];
+        notify_post([kClipboardChangedIdentifier UTF8String]);
+    }
+}
+
+- (BOOL)applyCapture:(NSDictionary *)capture {
+    if (![self preferenceBoolForKey:kClipboardEnabledKey fallback:YES]) return NO;
+
+    NSString *bundle = capture[@"bundle"];
+    if (![bundle isKindOfClass:[NSString class]] || bundle.length == 0) bundle = @"unknown";
+
+    NSArray *blacklist = [self preferenceArrayForKey:kClipboardBlacklistKey];
+    if ([blacklist containsObject:bundle]) return NO;
+
+    double capturedAt = [capture[@"at"] doubleValue];
+    if (capturedAt <= 0) capturedAt = [[NSDate date] timeIntervalSince1970];
+
+    BOOL saved = NO;
+    id imageData = capture[@"image"];
+    if ([imageData isKindOfClass:[NSData class]] && [self preferenceBoolForKey:kClipboardSaveImagesKey fallback:YES]) {
+        NSString *extension = capture[@"imageExtension"] ?: @"png";
+        NSString *imageName = [self.store saveImageData:imageData extension:extension];
+        if (imageName) {
+            CGSize pixelSize = [self pixelSizeForEncodedImageData:imageData];
+            [self.store addItemWithHistoryKey:@"history"
+                           bundleIdentifier:bundle
+                                    content:imageName
+                                  imageName:imageName
+                                 imageWidth:(NSUInteger)llround(pixelSize.width)
+                                imageHeight:(NSUInteger)llround(pixelSize.height)
+                                    hasLink:NO
+                                 capturedAt:capturedAt];
+            saved = YES;
+        }
+    }
+
+    id text = capture[@"text"];
+    if (!saved && [text isKindOfClass:[NSString class]] && [text length] > 0 &&
+        [self preferenceBoolForKey:kClipboardSaveTextKey fallback:YES]) {
+        [self.store addItemWithHistoryKey:@"history"
+                       bundleIdentifier:bundle
+                                content:text
+                              imageName:nil
+                             imageWidth:0
+                            imageHeight:0
+                                hasLink:NO
+                             capturedAt:capturedAt];
+        saved = YES;
+    }
+    return saved;
 }
 
 - (NSString *)sourceApplicationBundleIdentifierForCurrentPasteboardChange {

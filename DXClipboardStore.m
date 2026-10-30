@@ -3,6 +3,7 @@
 #import "common.h"
 #import <sqlite3.h>
 #import <ImageIO/ImageIO.h>
+#import <CommonCrypto/CommonDigest.h>
 
 static NSString *const kDXClipboardHistoryKey = @"history";
 static NSString *const kDXClipboardFavoritesKey = @"favorites";
@@ -274,11 +275,15 @@ static NSString *const kDXClipboardFavoritesKey = @"favorites";
     NSMutableArray *items = [NSMutableArray array];
     while (sqlite3_step(statement) == SQLITE_ROW) {
         NSMutableDictionary *item = [NSMutableDictionary dictionary];
+        const unsigned char *historyKeyText = sqlite3_column_text(statement, 1);
+        const unsigned char *bundleText = sqlite3_column_text(statement, 2);
+        const unsigned char *contentText = sqlite3_column_text(statement, 3);
+        const unsigned char *imageNameText = sqlite3_column_text(statement, 4);
         item[@"id"] = @(sqlite3_column_int64(statement, 0));
-        item[@"history_key"] = @((const char *)sqlite3_column_text(statement, 1));
-        item[@"bundle_identifier"] = @((const char *)sqlite3_column_text(statement, 2));
-        item[@"content"] = @((const char *)sqlite3_column_text(statement, 3));
-        item[@"image_name"] = @((const char *)sqlite3_column_text(statement, 4));
+        item[@"history_key"] = historyKeyText ? @((const char *)historyKeyText) : @"history";
+        item[@"bundle_identifier"] = bundleText ? @((const char *)bundleText) : @"unknown";
+        item[@"content"] = contentText ? @((const char *)contentText) : @"";
+        item[@"image_name"] = imageNameText ? @((const char *)imageNameText) : @"";
         item[@"image_width"] = @(sqlite3_column_int64(statement, 5));
         item[@"image_height"] = @(sqlite3_column_int64(statement, 6));
         item[@"has_link"] = @(sqlite3_column_int64(statement, 7) != 0);
@@ -392,10 +397,15 @@ static NSString *const kDXClipboardFavoritesKey = @"favorites";
     if (!imageData.length) return nil;
     [self prepareDatabase];
 
-    NSString *characters = @"abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
-    NSMutableString *name = [NSMutableString stringWithCapacity:32];
-    for (int i = 0; i < 32; i++) {
-        [name appendFormat:@"%c", [characters characterAtIndex:arc4random_uniform((uint32_t)characters.length)]];
+    // 内容寻址命名（MD5）：相同图片数据得到相同文件名。App 采集队列和 SB
+    // 轮询可能对同一次复制各入库一次，UNIQUE(history_key, content) 以
+    // content=imageName 去重，因此文件名必须由内容决定，否则同一张图会
+    // 生成两个随机名、产生两条重复记录。
+    unsigned char digest[CC_MD5_DIGEST_LENGTH];
+    CC_MD5(imageData.bytes, (CC_LONG)imageData.length, digest);
+    NSMutableString *name = [NSMutableString stringWithCapacity:CC_MD5_DIGEST_LENGTH * 2 + 4];
+    for (NSUInteger i = 0; i < CC_MD5_DIGEST_LENGTH; i++) {
+        [name appendFormat:@"%02x", digest[i]];
     }
     if (extension.length) [name appendFormat:@".%@", extension];
 

@@ -6,6 +6,7 @@
 #import "DXPasteChip.h"
 #import "DXAIPanel.h"
 #import "DXClipboardService.h"
+#import "DXClipboardCapture.h"
 #import "DXClipboardPanel.h"
 #import "DXKeyboardPanel.h"
 #import "DXGlobalPanel.h"
@@ -887,11 +888,19 @@ static void reloadPrefs(void);
 
 %hook UIDictationController
 -(void)switchToDictationInputMode{
+    if (clipboardReplacesDictationEnabled && preferencesBool(kClipboardEnabledKey, YES)) {
+        [DXClipboardPanel present];
+        return;
+    }
     %orig;
     isDictating = YES;
 }
 
 -(void)switchToDictationInputModeWithTouch:(id)arg1{
+    if (clipboardReplacesDictationEnabled && preferencesBool(kClipboardEnabledKey, YES)) {
+        [DXClipboardPanel present];
+        return;
+    }
     %orig;
     isDictating = YES;
     
@@ -959,6 +968,50 @@ static void reloadPrefs(void);
     DXApplyBottomToolbarVisibility(self.dockView);
 }
 
+
+%end
+
+// 剪贴板跨进程采集（文本冗余通道）：UIPasteboardChangedNotification 只在写入
+// 进程内广播，SpringBoard 收不到别的 App 的复制事件。这里在 App 进程内 hook
+// 写入方法，写入完成后在同一个进程读取刚写入的文本并入队，由 SpringBoard 侧
+// DXClipboardService 消费落库；App 侧读自己刚写入的内容没有粘贴权限弹窗。
+%hook UIPasteboard
+
+- (void)setString:(NSString *)string {
+    (void)string;
+    %orig;
+    [[DXClipboardCapture sharedCapture] capturePasteboardAfterWrite];
+}
+
+- (void)setItems:(NSArray *)items {
+    (void)items;
+    %orig;
+    [[DXClipboardCapture sharedCapture] capturePasteboardAfterWrite];
+}
+
+- (void)setItems:(NSArray *)items options:(NSDictionary *)options {
+    (void)items; (void)options;
+    %orig;
+    [[DXClipboardCapture sharedCapture] capturePasteboardAfterWrite];
+}
+
+- (void)setData:(NSData *)data forPasteboardType:(NSString *)pasteboardType {
+    (void)data; (void)pasteboardType;
+    %orig;
+    [[DXClipboardCapture sharedCapture] capturePasteboardAfterWrite];
+}
+
+- (void)setValue:(id)value forPasteboardType:(NSString *)pasteboardType {
+    (void)value; (void)pasteboardType;
+    %orig;
+    [[DXClipboardCapture sharedCapture] capturePasteboardAfterWrite];
+}
+
+- (void)setImage:(UIImage *)image {
+    (void)image;
+    %orig;
+    [[DXClipboardCapture sharedCapture] capturePasteboardAfterWrite];
+}
 
 %end
 
@@ -1205,6 +1258,7 @@ static void shortcutRefreshRequestCallback(CFNotificationCenterRef center,
                     CFNotificationCenterAddObserver(CFNotificationCenterGetDarwinNotifyCenter(), NULL, reloadPrefsNotificationCallback, (CFStringRef)kPrefsChangedIdentifier, NULL, CFNotificationSuspensionBehaviorDeliverImmediately);
                     DXStartStatusBarGestures();
                     if (!isSpringBoard) DXStartFloatingAppInputClient();
+                    if (!isSpringBoard) [[DXClipboardCapture sharedCapture] start];
                     if (isSpringBoard) {
                         CFNotificationCenterAddObserver(CFNotificationCenterGetDarwinNotifyCenter(), NULL, shortcutRefreshRequestCallback, (CFStringRef)kShortcutRefreshRequestIdentifier, NULL, CFNotificationSuspensionBehaviorDeliverImmediately);
                         CFNotificationCenterAddObserver(CFNotificationCenterGetDarwinNotifyCenter(), NULL, aiChatRequestCallback, (CFStringRef)kAIChatRequestIdentifier, NULL, CFNotificationSuspensionBehaviorDeliverImmediately);
