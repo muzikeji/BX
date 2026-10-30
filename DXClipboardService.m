@@ -30,8 +30,7 @@ typedef NS_ENUM(NSUInteger, DXClipboardCommandType) {
 @property(nonatomic, strong) DXClipboardStore *store;
 @property(nonatomic, strong) NSFileManager *fileManager;
 @property(nonatomic, assign) BOOL started;
-@property(nonatomic, assign) NSInteger lastQueueChangeCount; // 消费队列时记录 changeCount，轮询去重
-@property(nonatomic, strong) NSTimer *pollTimer; // 跨进程变更兜底轮询
+@property(nonatomic, strong) dispatch_queue_t pasteboardQueue; // 粘贴板读取串行队列（Kayoko 同款，避免主线程 I/O）
 @end
 
 @implementation DXClipboardService
@@ -78,17 +77,19 @@ typedef NS_ENUM(NSUInteger, DXClipboardCommandType) {
 
     _pasteboard = [UIPasteboard generalPasteboard];
     _lastChangeCount = _pasteboard.changeCount;
+    _pasteboardQueue = dispatch_queue_create("com.lindo.typex.pasteboard",
+                                             dispatch_queue_attr_make_with_qos_class(DISPATCH_QUEUE_SERIAL,
+                                                                                    QOS_CLASS_UTILITY, 0));
 
-    [[NSNotificationCenter defaultCenter] addObserver:self
-                                             selector:@selector(generalPasteboardDidChange:)
-                                                 name:UIPasteboardChangedNotification
-                                               object:_pasteboard];
-
-    // UIPasteboardChangedNotification 只在本进程执行写入时广播。其它 App 的复制
-    // 事件不会送达 SpringBoard，因此必须用 changeCount 轮询跨进程兜底。
-    if ([NSProcessInfo.processInfo.processName isEqualToString:@"SpringBoard"]) {
-        [self startPollingForCrossProcessChanges];
-    }
+    // Kayoko 同款跨进程采集：粘贴板守护进程在任何 App 写入时都跨进程广播
+    // com.apple.pasteboard.notify.changed，SpringBoard 侧延迟 0.1s 后在后台
+    // 队列读取内容落库。无 hook、无 cfprefsd 中转、无主线程 I/O。
+    CFNotificationCenterAddObserver(CFNotificationCenterGetDarwinNotifyCenter(),
+                                    (__bridge const void *)self,
+                                    &DXClipboardPasteboardChangedCallback,
+                                    (CFStringRef)kClipboardPasteboardChangedName,
+                                    NULL,
+                                    CFNotificationSuspensionBehaviorDeliverImmediately);
 
     // app 进程命令入口（copy/delete/favorite/clear/import）。
     CFNotificationCenterAddObserver(CFNotificationCenterGetDarwinNotifyCenter(),
@@ -98,18 +99,38 @@ typedef NS_ENUM(NSUInteger, DXClipboardCommandType) {
                                     NULL,
                                     CFNotificationSuspensionBehaviorDeliverImmediately);
 
-    // app 进程复制采集入口（跨进程内容入队 → SB 落库）。
-    CFNotificationCenterAddObserver(CFNotificationCenterGetDarwinNotifyCenter(),
-                                    (__bridge const void *)self,
-                                    &DXClipboardCaptureCallback,
-                                    (CFStringRef)kClipboardCaptureIdentifier,
-                                    NULL,
-                                    CFNotificationSuspensionBehaviorDeliverImmediately);
-
-    // 启动即消费一次，避免 App 采集后 SB 尚未注册时漏掉。
-    [self consumePendingCaptures];
-
     NSLog(@"[TypeX][Clipboard] 剪贴板服务已启动");
+}
+
+static void DXClipboardPasteboardChangedCallback(CFNotificationCenterRef center, void *observer,
+                                                 CFStringRef name, const void *object,
+                                                 CFDictionaryRef userInfo) {
+    (void)center; (void)name; (void)object; (void)userInfo;
+    DXClipboardService *service = (__bridge DXClipboardService *)observer;
+    dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(0.1 * NSEC_PER_SEC)),
+                   dispatch_get_main_queue(), ^{
+        [service capturePasteboardChangeNow];
+    });
+}
+
+- (void)capturePasteboardChangeNow {
+    if ([self preferenceBoolForKey:kClipboardEnabledKey fallback:YES] == NO) return;
+
+    NSString *sourceBundleIdentifier = [self sourceApplicationBundleIdentifierForCurrentPasteboardChange];
+    __weak DXClipboardService *weakSelf = self;
+    dispatch_async(self.pasteboardQueue, ^{
+        [weakSelf pullPasteboardChangesWithSourceBundleIdentifier:sourceBundleIdentifier];
+    });
+}
+
+- (void)pullPasteboardChangesWithSourceBundleIdentifier:(NSString *)sourceBundleIdentifier {
+    NSInteger changeCount = _pasteboard.changeCount;
+    if (changeCount == _lastChangeCount) return;
+    _lastChangeCount = changeCount;
+
+    if ([self shouldIgnoreCurrentPasteboardChangeFromSourceBundleIdentifier:sourceBundleIdentifier]) return;
+
+    [self captureCurrentPasteboardWithSourceBundleIdentifier:sourceBundleIdentifier];
 }
 
 static void DXClipboardCommandCallback(CFNotificationCenterRef center, void *observer,
@@ -126,45 +147,7 @@ static void DXClipboardCommandCallback(CFNotificationCenterRef center, void *obs
     });
 }
 
-static void DXClipboardCaptureCallback(CFNotificationCenterRef center, void *observer,
-                                       CFStringRef name, const void *object,
-                                       CFDictionaryRef userInfo) {
-    (void)center; (void)name; (void)object; (void)userInfo;
-    DXClipboardService *service = (__bridge DXClipboardService *)observer;
-    dispatch_async(dispatch_get_main_queue(), ^{
-        [service consumePendingCaptures];
-    });
-}
-
 #pragma mark - Pasteboard observation
-
-- (void)startPollingForCrossProcessChanges {
-    [self.pollTimer invalidate];
-    __weak DXClipboardService *weakSelf = self;
-    self.pollTimer = [NSTimer scheduledTimerWithTimeInterval:0.5
-                                                     repeats:YES
-                                                       block:^(NSTimer *timer) {
-        (void)timer;
-        [weakSelf pollCrossProcessPasteboardChange];
-    }];
-}
-
-- (void)pollCrossProcessPasteboardChange {
-    // changeCount 是系统级计数，任何进程写入都会递增，跨进程可靠。
-    NSInteger changeCount = [UIPasteboard generalPasteboard].changeCount;
-    if (changeCount == _lastChangeCount) return;
-    _lastChangeCount = changeCount;
-
-    // 该次变更已由 App 采集队列消费过，跳过避免重复入库。
-    if (changeCount == self.lastQueueChangeCount) return;
-
-    [self captureCurrentPasteboard];
-}
-
-- (void)generalPasteboardDidChange:(NSNotification *)notification {
-    (void)notification;
-    [self pollCrossProcessPasteboardChange];
-}
 
 - (BOOL)shouldIgnoreCurrentPasteboardChangeFromSourceBundleIdentifier:(NSString *)sourceBundleIdentifier {
     // 远程复制（iPhone/Mac 互通）：默认忽略，与 Kayoko 语义一致。
@@ -183,86 +166,7 @@ static void DXClipboardCaptureCallback(CFNotificationCenterRef center, void *obs
     return NO;
 }
 
-#pragma mark - App capture queue
-
-- (void)consumePendingCaptures {
-    id pending = DXQuickActionSharedValue(kClipboardCaptureKey);
-    if (!pending) return;
-    // 取走即清除，避免重复消费。
-    DXSetQuickActionSharedValue(nil, kClipboardCaptureKey);
-
-    NSArray *captures = nil;
-    if ([pending isKindOfClass:[NSArray class]]) {
-        captures = pending;
-    } else if ([pending isKindOfClass:[NSDictionary class]]) {
-        captures = @[ pending ];
-    } else {
-        return;
-    }
-
-    BOOL saved = NO;
-    for (NSDictionary *capture in captures) {
-        if (![capture isKindOfClass:[NSDictionary class]]) continue;
-        if ([self applyCapture:capture]) {
-            saved = YES;
-            // 队列中携带的 changeCount 是最新一次变更；后面到来的轮询
-            // 跳过一次，避免 App 采集与 SB 轮询重复入库。
-            NSInteger capturedChangeCount = [capture[@"changeCount"] integerValue];
-            if (capturedChangeCount > 0) self.lastQueueChangeCount = capturedChangeCount;
-        }
-    }
-    if (saved) {
-        [self publishSnapshot];
-        notify_post([kClipboardChangedIdentifier UTF8String]);
-    }
-}
-
-- (BOOL)applyCapture:(NSDictionary *)capture {
-    if (![self preferenceBoolForKey:kClipboardEnabledKey fallback:YES]) return NO;
-
-    NSString *bundle = capture[@"bundle"];
-    if (![bundle isKindOfClass:[NSString class]] || bundle.length == 0) bundle = @"unknown";
-
-    NSArray *blacklist = [self preferenceArrayForKey:kClipboardBlacklistKey];
-    if ([blacklist containsObject:bundle]) return NO;
-
-    double capturedAt = [capture[@"at"] doubleValue];
-    if (capturedAt <= 0) capturedAt = [[NSDate date] timeIntervalSince1970];
-
-    BOOL saved = NO;
-    id imageData = capture[@"image"];
-    if ([imageData isKindOfClass:[NSData class]] && [self preferenceBoolForKey:kClipboardSaveImagesKey fallback:YES]) {
-        NSString *extension = capture[@"imageExtension"] ?: @"png";
-        NSString *imageName = [self.store saveImageData:imageData extension:extension];
-        if (imageName) {
-            CGSize pixelSize = [self pixelSizeForEncodedImageData:imageData];
-            [self.store addItemWithHistoryKey:@"history"
-                           bundleIdentifier:bundle
-                                    content:imageName
-                                  imageName:imageName
-                                 imageWidth:(NSUInteger)llround(pixelSize.width)
-                                imageHeight:(NSUInteger)llround(pixelSize.height)
-                                    hasLink:NO
-                                 capturedAt:capturedAt];
-            saved = YES;
-        }
-    }
-
-    id text = capture[@"text"];
-    if (!saved && [text isKindOfClass:[NSString class]] && [text length] > 0 &&
-        [self preferenceBoolForKey:kClipboardSaveTextKey fallback:YES]) {
-        [self.store addItemWithHistoryKey:@"history"
-                       bundleIdentifier:bundle
-                                content:text
-                              imageName:nil
-                             imageWidth:0
-                            imageHeight:0
-                                hasLink:NO
-                             capturedAt:capturedAt];
-        saved = YES;
-    }
-    return saved;
-}
+#pragma mark - Capture
 
 - (NSString *)sourceApplicationBundleIdentifierForCurrentPasteboardChange {
     UIApplication *application = [UIApplication sharedApplication];
@@ -275,14 +179,7 @@ static void DXClipboardCaptureCallback(CFNotificationCenterRef center, void *obs
     return bundleIdentifier;
 }
 
-#pragma mark - Capture
-
-- (void)captureCurrentPasteboard {
-    if (![self preferenceBoolForKey:kClipboardEnabledKey fallback:YES]) return;
-
-    NSString *sourceBundleIdentifier = [self sourceApplicationBundleIdentifierForCurrentPasteboardChange];
-    if ([self shouldIgnoreCurrentPasteboardChangeFromSourceBundleIdentifier:sourceBundleIdentifier]) return;
-
+- (void)captureCurrentPasteboardWithSourceBundleIdentifier:(NSString *)sourceBundleIdentifier {
     BOOL saveText = [self preferenceBoolForKey:kClipboardSaveTextKey fallback:YES];
     BOOL saveImages = [self preferenceBoolForKey:kClipboardSaveImagesKey fallback:YES];
 

@@ -135,13 +135,11 @@
 // 剪贴板快照与命令通道（复用 TypeXQuickActionDomain 隔离域）。
 #define kClipboardSnapshotKey @"clipboard-v1"
 #define kClipboardCommandKey @"clipboard-cmd"
-// 跨进程采集队列：执行复制的前台 App 采集内容后入队，SpringBoard 侧进程
-// 收到 Darwin 通知后消费落库。UIPasteboardChangedNotification 只在写入进
-// 程内广播，不能跨进程依赖。
-#define kClipboardCaptureKey @"clipboard-captures"
 #define kClipboardChangedIdentifier @"com.lindo.typex/clipboardchanged"
 #define kClipboardCommandIdentifier @"com.lindo.typex/clipboardcmd"
-#define kClipboardCaptureIdentifier @"com.lindo.typex/clipboardcapture"
+// Kayoko 同款跨进程采集：粘贴板守护进程在任何 App 写入时都跨进程广播该 Darwin
+// 通知，SpringBoard 侧监听后读取内容落库，无需 hook 或轮询。
+#define kClipboardPasteboardChangedName @"com.apple.pasteboard.notify.changed"
 // 权威存储：SpringBoard 写，schema 与 Kayoko history-v4 完全一致便于迁移。
 #define kClipboardDatabasePath @"/var/mobile/Library/com.lindo.typex/clipboard.sqlite"
 #define kClipboardImagesPath @"/var/mobile/Library/com.lindo.typex/images"

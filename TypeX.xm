@@ -6,7 +6,6 @@
 #import "DXPasteChip.h"
 #import "DXAIPanel.h"
 #import "DXClipboardService.h"
-#import "DXClipboardCapture.h"
 #import "DXClipboardPanel.h"
 #import "DXKeyboardPanel.h"
 #import "DXGlobalPanel.h"
@@ -544,6 +543,15 @@ static void reloadPrefs(void);
     DXRefreshActiveTopToolbarWithConfiguration(NO);
 }
 
+// Kayoko 式：取代听写按钮开启时强制显示 dock 剪贴板按钮（系统可能因语言/设置
+// 隐藏听写键，不 hook 则图标替换按钮根本不会出现）。
+- (BOOL)shouldShowDictationKey {
+    if (clipboardReplacesDictationEnabled && preferencesBool(kClipboardEnabledKey, YES)) {
+        return YES;
+    }
+    return %orig;
+}
+
 %end
 
 %hook UITextField
@@ -862,9 +870,38 @@ static void reloadPrefs(void);
 
 %end
 
+// Kayoko 式「取代听写按钮」：把 dock 上的 mic 图标换成剪贴板图标（SF Symbol
+// list.clipboard iOS16+ / doc.on.clipboard 更早），点击仍走 dictation 按钮路径，
+// 由下方 UISystemKeyboardDockController 两个变体拦截后打开剪贴板面板。
+static NSString *DXClipboardDockImageName(NSString *imageName) {
+    if (![imageName isEqualToString:@"mic"]) {
+        return nil;
+    }
+    if (@available(iOS 16, *)) {
+        return @"list.clipboard";
+    }
+    return @"doc.on.clipboard";
+}
+
+@interface UIKBTree : NSObject
+@property(nonatomic, copy) NSString *name;
+@property(nonatomic, strong) NSMutableDictionary<NSString *, id> *properties;
+@end
+
+@interface UIKeyboardDockItem : NSObject
+- (instancetype)initWithImageName:(id)imageName identifier:(id)identifier;
+- (void)setImageName:(NSString *)arg1;
+@end
+
 %hook UIKeyboardDockItem
 //iOS 13+
 -(void)setImageName:(NSString *)imageName{
+    NSString *clipboardIcon = (clipboardReplacesDictationEnabled && preferencesBool(kClipboardEnabledKey, YES))
+        ? DXClipboardDockImageName(imageName) : nil;
+    if (clipboardIcon) {
+        %orig(clipboardIcon);
+        return;
+    }
     if (([imageName isEqualToString:@"mic"] && singleTapDictationEnabled) || ([imageName isEqualToString:@"globe"] && singleTapGlobeEnabled)){
         %orig(@"circle");
         return;
@@ -875,6 +912,11 @@ static void reloadPrefs(void);
 //iOS 12
 -(id)initWithImageName:(id)imageName identifier:(id)identifier{
     if (@available(iOS 13.0, *)){
+        NSString *clipboardIcon = (clipboardReplacesDictationEnabled && preferencesBool(kClipboardEnabledKey, YES))
+            ? DXClipboardDockImageName(imageName) : nil;
+        if (clipboardIcon) {
+            return %orig(clipboardIcon, identifier);
+        }
     }else{
         if ([identifier isEqualToString:@"dictation"] && singleTapDictationEnabled){
             return %orig(@"UIDownloadProgressBorderThick", identifier);
@@ -888,19 +930,11 @@ static void reloadPrefs(void);
 
 %hook UIDictationController
 -(void)switchToDictationInputMode{
-    if (clipboardReplacesDictationEnabled && preferencesBool(kClipboardEnabledKey, YES)) {
-        [DXClipboardPanel present];
-        return;
-    }
     %orig;
     isDictating = YES;
 }
 
 -(void)switchToDictationInputModeWithTouch:(id)arg1{
-    if (clipboardReplacesDictationEnabled && preferencesBool(kClipboardEnabledKey, YES)) {
-        [DXClipboardPanel present];
-        return;
-    }
     %orig;
     isDictating = YES;
     
@@ -963,6 +997,16 @@ static void reloadPrefs(void);
     %orig;
 }
 
+// iOS 17+：dictation 按钮新增 isRunningButton: 三参变体，两个签名都拦。
+-(void)dictationItemButtonWasPressed:(id)arg1 withEvent:(id)arg2 isRunningButton:(BOOL)arg3 {
+    (void)arg3;
+    if (clipboardReplacesDictationEnabled && preferencesBool(kClipboardEnabledKey, YES)) {
+        [DXClipboardPanel present];
+        return;
+    }
+    %orig;
+}
+
 -(void)updateDockItemsVisibility{
     %orig;
     DXApplyBottomToolbarVisibility(self.dockView);
@@ -971,48 +1015,17 @@ static void reloadPrefs(void);
 
 %end
 
-// 剪贴板跨进程采集（文本冗余通道）：UIPasteboardChangedNotification 只在写入
-// 进程内广播，SpringBoard 收不到别的 App 的复制事件。这里在 App 进程内 hook
-// 写入方法，写入完成后在同一个进程读取刚写入的文本并入队，由 SpringBoard 侧
-// DXClipboardService 消费落库；App 侧读自己刚写入的内容没有粘贴权限弹窗。
-%hook UIPasteboard
-
-- (void)setString:(NSString *)string {
-    (void)string;
-    %orig;
-    [[DXClipboardCapture sharedCapture] capturePasteboardAfterWrite];
+// Kayoko 式：键盘主布局里的实体/软键盘 Dictation-Key 触点也拦。
+%hook UIKeyboardLayoutStar
+- (UIKBTree *)keyHitTest:(CGPoint)point {
+    UIKBTree *result = %orig;
+    if (result && clipboardReplacesDictationEnabled && preferencesBool(kClipboardEnabledKey, YES)
+        && [[result name] isEqualToString:@"Dictation-Key"]) {
+        [[result properties] setValue:@(0) forKey:@"KBinteractionType"];
+        [DXClipboardPanel present];
+    }
+    return result;
 }
-
-- (void)setItems:(NSArray *)items {
-    (void)items;
-    %orig;
-    [[DXClipboardCapture sharedCapture] capturePasteboardAfterWrite];
-}
-
-- (void)setItems:(NSArray *)items options:(NSDictionary *)options {
-    (void)items; (void)options;
-    %orig;
-    [[DXClipboardCapture sharedCapture] capturePasteboardAfterWrite];
-}
-
-- (void)setData:(NSData *)data forPasteboardType:(NSString *)pasteboardType {
-    (void)data; (void)pasteboardType;
-    %orig;
-    [[DXClipboardCapture sharedCapture] capturePasteboardAfterWrite];
-}
-
-- (void)setValue:(id)value forPasteboardType:(NSString *)pasteboardType {
-    (void)value; (void)pasteboardType;
-    %orig;
-    [[DXClipboardCapture sharedCapture] capturePasteboardAfterWrite];
-}
-
-- (void)setImage:(UIImage *)image {
-    (void)image;
-    %orig;
-    [[DXClipboardCapture sharedCapture] capturePasteboardAfterWrite];
-}
-
 %end
 
 // Clipboard image chip companion: auto-answer the paste-permission alert so
@@ -1258,7 +1271,6 @@ static void shortcutRefreshRequestCallback(CFNotificationCenterRef center,
                     CFNotificationCenterAddObserver(CFNotificationCenterGetDarwinNotifyCenter(), NULL, reloadPrefsNotificationCallback, (CFStringRef)kPrefsChangedIdentifier, NULL, CFNotificationSuspensionBehaviorDeliverImmediately);
                     DXStartStatusBarGestures();
                     if (!isSpringBoard) DXStartFloatingAppInputClient();
-                    if (!isSpringBoard) [[DXClipboardCapture sharedCapture] start];
                     if (isSpringBoard) {
                         CFNotificationCenterAddObserver(CFNotificationCenterGetDarwinNotifyCenter(), NULL, shortcutRefreshRequestCallback, (CFStringRef)kShortcutRefreshRequestIdentifier, NULL, CFNotificationSuspensionBehaviorDeliverImmediately);
                         CFNotificationCenterAddObserver(CFNotificationCenterGetDarwinNotifyCenter(), NULL, aiChatRequestCallback, (CFStringRef)kAIChatRequestIdentifier, NULL, CFNotificationSuspensionBehaviorDeliverImmediately);
