@@ -397,14 +397,14 @@ static NSString *const kDXClipboardFavoritesKey = @"favorites";
     if (!imageData.length) return nil;
     [self prepareDatabase];
 
-    // 内容寻址命名（MD5）：相同图片数据得到相同文件名。App 采集队列和 SB
-    // 轮询可能对同一次复制各入库一次，UNIQUE(history_key, content) 以
-    // content=imageName 去重，因此文件名必须由内容决定，否则同一张图会
-    // 生成两个随机名、产生两条重复记录。
-    unsigned char digest[CC_MD5_DIGEST_LENGTH];
-    CC_MD5(imageData.bytes, (CC_LONG)imageData.length, digest);
-    NSMutableString *name = [NSMutableString stringWithCapacity:CC_MD5_DIGEST_LENGTH * 2 + 4];
-    for (NSUInteger i = 0; i < CC_MD5_DIGEST_LENGTH; i++) {
+    // 内容寻址命名（SHA-256 前 16 字节）：相同图片数据得到相同文件名。
+    // App 采集队列和 SB 轮询可能对同一次复制各入库一次，
+    // UNIQUE(history_key, content) 以 content=imageName 去重，因此文件名
+    // 必须由内容决定，否则同一张图会生成两个随机名、产生两条重复记录。
+    unsigned char digest[CC_SHA256_DIGEST_LENGTH];
+    CC_SHA256(imageData.bytes, (CC_LONG)imageData.length, digest);
+    NSMutableString *name = [NSMutableString stringWithCapacity:32 + 4];
+    for (NSUInteger i = 0; i < 16; i++) {
         [name appendFormat:@"%02x", digest[i]];
     }
     if (extension.length) [name appendFormat:@".%@", extension];
