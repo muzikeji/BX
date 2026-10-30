@@ -109,6 +109,11 @@
 @property(nonatomic, assign) BOOL isFavoritesTab;
 @end
 
+@interface DXClipboardPanelController ()
+- (void)sendCommand:(NSDictionary *)command;
+- (void)sendFavoriteCommand:(BOOL)favorite historyKey:(NSString *)historyKey content:(NSString *)content;
+@end
+
 @implementation DXClipboardPanelController
 
 - (void)viewDidLoad {
@@ -244,7 +249,12 @@
 #pragma mark - Data
 
 - (void)reloadSnapshot {
-    NSDictionary *snapshot = DXQuickActionSharedValue(kClipboardSnapshotKey);
+    // 沙盒 App 进程读不到 cfprefsd 隔离域（设置 App 等未沙盒进程可以），
+    // 普通 App 面板一律优先读 jbroot 共享快照文件（SpringBoard 双写）。
+    NSDictionary *snapshot = DXReadSharedPlistFile(TypeXClipboardSnapshotPath);
+    if (![snapshot isKindOfClass:[NSDictionary class]]) {
+        snapshot = DXQuickActionSharedValue(kClipboardSnapshotKey);
+    }
     if (![snapshot isKindOfClass:[NSDictionary class]]) {
         snapshot = @{};
     }
@@ -304,11 +314,10 @@
     [alert addAction:[UIAlertAction actionWithTitle:[self localized:@"清空"] ?: @"清空"
                                              style:UIAlertActionStyleDestructive handler:^(UIAlertAction *action) {
         (void)action;
-        DXSetQuickActionSharedValue(@{
+        [self sendCommand:@{
             @"action": @"clear",
             @"historyKey": self.isFavoritesTab ? @"favorites" : @"history",
-        }, kClipboardCommandKey);
-        notify_post([kClipboardCommandIdentifier UTF8String]);
+        }];
     }]];
     [self presentViewController:alert animated:YES completion:nil];
 }
@@ -352,8 +361,7 @@
         (void)action;
         NSNumber *itemID = item[@"id"];
         if ([itemID isKindOfClass:[NSNumber class]]) {
-            DXSetQuickActionSharedValue(@{ @"action": @"delete", @"id": itemID }, kClipboardCommandKey);
-            notify_post([kClipboardCommandIdentifier UTF8String]);
+            [self sendCommand:@{ @"action": @"delete", @"id": itemID }];
         }
     }]];
     [menu addAction:[UIAlertAction actionWithTitle:[self localized:@"取消"] ?: @"取消"
@@ -362,12 +370,20 @@
 }
 
 - (void)sendFavoriteCommand:(BOOL)favorite historyKey:(NSString *)historyKey content:(NSString *)content {
-    DXSetQuickActionSharedValue(@{
+    [self sendCommand:@{
         @"action": @"favorite",
         @"favorite": @(favorite),
         @"historyKey": historyKey ?: @"history",
         @"content": content ?: @"",
-    }, kClipboardCommandKey);
+    }];
+}
+
+// 命令通道：沙盒 App 进程写 jbroot 共享命令文件（SpringBoard 读后即删），
+// 同时广播 Darwin 通知唤醒 SpringBoard；未沙盒进程直接走 cfprefsd 域。
+- (void)sendCommand:(NSDictionary *)command {
+    if (![command isKindOfClass:[NSDictionary class]]) return;
+    DXWriteSharedPlistFile(command, TypeXClipboardCommandPath);
+    DXSetQuickActionSharedValue(command, kClipboardCommandKey);
     notify_post([kClipboardCommandIdentifier UTF8String]);
 }
 
@@ -439,6 +455,8 @@
     [self copyItem:item];
     // 2) 触发粘贴到当前输入框。
     [self pasteToCurrentInput];
+    // 3) 填入后自动关闭面板。
+    [DXClipboardPanel dismiss];
 }
 
 - (void)pasteToCurrentInput {
@@ -461,6 +479,9 @@
 
 static DXClipboardHostWindow *g_clipboardPanelWindow;
 static DXClipboardPanelController *g_clipboardPanelController;
+// 面板弹出时主动收起键盘，会触发一次 UIKeyboardWillHideNotification；置位使
+// keyboardHidden: 跳过这次 dismiss，避免面板弹起即关闭。
+static BOOL s_suppressDismissOnKeyboardHide;
 
 @implementation DXClipboardPanel
 
@@ -529,6 +550,19 @@ static BOOL DXClipboardProbeKeyboardFrame(CGRect *outFrame) {
 
     window.hidden = NO;
 
+    // 自动收起键盘：面板弹出后键盘不再有编辑意图（点击面板项才会回写并粘贴），
+    // 收起键盘避免遮挡列表并让面板锚定在键盘原位。keyboardHidden: 会跟随触发
+    // dismiss，先打标让面板保持显示。
+    UIKeyboardImpl *activeKeyboard = [objc_getClass("UIKeyboardImpl") activeInstance];
+    if (activeKeyboard && [activeKeyboard respondsToSelector:@selector(dismissKeyboard)]) {
+        s_suppressDismissOnKeyboardHide = YES;
+        [activeKeyboard dismissKeyboard];
+        dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(1.5 * NSEC_PER_SEC)),
+                       dispatch_get_main_queue(), ^{
+            s_suppressDismissOnKeyboardHide = NO;
+        });
+    }
+
     // 键盘位置跟踪：面板随键盘移动/隐藏。
     [NSNotificationCenter.defaultCenter addObserver:self
                                            selector:@selector(keyboardFrameChanged:)
@@ -561,6 +595,11 @@ static BOOL DXClipboardProbeKeyboardFrame(CGRect *outFrame) {
 
 + (void)keyboardHidden:(NSNotification *)note {
     (void)note;
+    // 面板弹出时主动收起键盘引发的 hide 通知不关闭面板；超时或下次交互后恢复。
+    if (s_suppressDismissOnKeyboardHide) {
+        s_suppressDismissOnKeyboardHide = NO;
+        return;
+    }
     [self dismiss];
 }
 
@@ -581,6 +620,7 @@ static void DXClipboardSnapshotCallback(CFNotificationCenterRef center, void *ob
         return;
     }
     if (!g_clipboardPanelWindow) return;
+    s_suppressDismissOnKeyboardHide = NO;
 
     [NSNotificationCenter.defaultCenter removeObserver:self
                                                   name:UIKeyboardWillChangeFrameNotification

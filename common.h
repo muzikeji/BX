@@ -130,9 +130,7 @@
 #define kClipboardSaveImagesKey @"clipboardsaveimageBOOL"
 // 忽略来源 App 黑名单（AltList 多选，存 bundleID 数组）。
 #define kClipboardBlacklistKey @"clipboardblacklist"
-// Kayoko 历史已迁移标记（一次性）。
-#define kClipboardMigratedKey @"clipboardmigratedBOOL"
-// 剪贴板快照与命令通道（复用 TypeXQuickActionDomain 隔离域）。
+// 剪贴板快照与命令通道（cfprefsd 隔离域 + jbroot 共享文件双写）。
 #define kClipboardSnapshotKey @"clipboard-v1"
 #define kClipboardCommandKey @"clipboard-cmd"
 #define kClipboardChangedIdentifier @"com.lindo.typex/clipboardchanged"
@@ -140,11 +138,39 @@
 // Kayoko 同款跨进程采集：粘贴板守护进程在任何 App 写入时都跨进程广播该 Darwin
 // 通知，SpringBoard 侧监听后读取内容落库，无需 hook 或轮询。
 #define kClipboardPasteboardChangedName @"com.apple.pasteboard.notify.changed"
-// 权威存储：SpringBoard 写，schema 与 Kayoko history-v4 完全一致便于迁移。
+// 权威存储：SpringBoard 写，schema 与 Kayoko history-v4 一致。
 #define kClipboardDatabasePath @"/var/mobile/Library/com.lindo.typex/clipboard.sqlite"
 #define kClipboardImagesPath @"/var/mobile/Library/com.lindo.typex/images"
 // 图片镜像：jbroot 前缀下 app 沙盒可读，供面板显示缩略图（best-effort）。
 #define kClipboardImagesMirrorPath DX_ROOT_PATH_NS(@"/Library/TypeX/clipboard-images")
+// 剪贴板跨进程共享快照/命令文件：位于 jbroot 下 app 沙盒可读的目录
+// （与 TypeXSharedPrefsPath 同策略），SpringBoard 写快照、面板（任意进程）读；
+// 命令由面板写、SpringBoard 读后即删。cfprefsd 域仅未沙盒进程（SpringBoard/
+// 设置 App）可达，沙盒 App 一律经共享文件交换。
+#define TypeXClipboardSnapshotPath DX_ROOT_PATH_NS(@"/Library/TypeX/clipboard-snapshot.plist")
+#define TypeXClipboardCommandPath DX_ROOT_PATH_NS(@"/Library/TypeX/clipboard-command.plist")
+
+static inline void DXWriteSharedPlistFile(NSDictionary *dictionary, NSString *path) {
+    if (![dictionary isKindOfClass:[NSDictionary class]]) return;
+    NSFileManager *fm = [NSFileManager defaultManager];
+    NSString *dir = [path stringByDeletingLastPathComponent];
+    if (![fm fileExistsAtPath:dir]) {
+        // World-writable and NOT sticky: mobile writers atomically replace the
+        // root-owned seed file staged by the package (same as shared.plist).
+        [fm createDirectoryAtPath:dir withIntermediateDirectories:YES
+                        attributes:@{NSFilePosixPermissions: @0777} error:nil];
+    }
+    if (![dictionary writeToFile:path atomically:YES]) return;
+    [fm setAttributes:@{
+        NSFilePosixPermissions: @0644,
+        NSFileProtectionKey: NSFileProtectionNone
+    } ofItemAtPath:path error:nil];
+}
+
+static inline NSDictionary *DXReadSharedPlistFile(NSString *path) {
+    NSDictionary *dictionary = [NSDictionary dictionaryWithContentsOfFile:path];
+    return [dictionary isKindOfClass:[NSDictionary class]] ? dictionary : nil;
+}
 
 #define kbuttonsImages12 0
 #define kbuttonsImages13 1

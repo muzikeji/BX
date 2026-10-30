@@ -90,16 +90,6 @@ static NSBundle *tweakBundle;
     }
 }
 
-// 手动触发「从 Kayoko 导入历史」：写命令到 cfprefsd 隔离域并广播 Darwin
-// 通知，SpringBoard 进程的 DXClipboardService 收到后执行导入并刷新快照。
-- (void)clipboardMigrateAction:(PSSpecifier *)specifier {
-    (void)specifier;
-    DXSetQuickActionSharedValue(@{ @"action": @"import" }, kClipboardCommandKey);
-    CFNotificationCenterPostNotification(CFNotificationCenterGetDarwinNotifyCenter(),
-                                         (CFStringRef)kClipboardCommandIdentifier, NULL, NULL, YES);
-    [self showSimpleAlert:LOCALIZED(@"CLIPBOARD_MIGRATE_TRIGGERED")];
-}
-
 -(void)viewDidLoad  {
     tweakBundle = [NSBundle bundleWithPath:bundlePath];
     [tweakBundle load];

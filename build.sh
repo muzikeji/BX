@@ -93,18 +93,19 @@ trap finalize EXIT
 
 build_one() {
     local label="$1"
-    local sdk_version="$2"
-    local deployment_version="$3"
+    local scheme="$2"
+    local sdk_version="$3"
+    local deployment_version="$4"
     local sdk_path="$THEOS/sdks/iPhoneOS${sdk_version}.sdk"
-    local output_dir="$ROOT_DIR/packages/$label"
-    local output_path="$output_dir/${PACKAGE_ID}_${NEXT_VERSION}_${label}_iphoneos-arm64e.deb"
+    local output_dir="$ROOT_DIR/packages/$scheme/$label"
+    local output_path="$output_dir/${PACKAGE_ID}_${NEXT_VERSION}_${label}_${scheme}_iphoneos-arm64e.deb"
 
     if [[ ! -d "$sdk_path" ]]; then
         echo "error: required SDK not found: $sdk_path" >&2
         exit 1
     fi
 
-    echo "==> Building $label with iPhoneOS${sdk_version}.sdk"
+    echo "==> Building $label ($scheme) with iPhoneOS${sdk_version}.sdk"
 
     # Keep the package root clean so the result can be identified unambiguously.
     find "$ROOT_DIR/packages" -maxdepth 1 -type f -name '*.deb' -delete 2>/dev/null || true
@@ -112,7 +113,7 @@ build_one() {
 
     (
         cd "$ROOT_DIR"
-        THEOS_PACKAGE_SCHEME=roothide \
+        THEOS_PACKAGE_SCHEME="$scheme" \
             TARGET="iphone:clang:${sdk_version}:${deployment_version}" \
             "$MAKE_BIN" package FINALPACKAGE=1 PACKAGE_VERSION="$NEXT_VERSION"
     )
@@ -123,7 +124,7 @@ build_one() {
     local package_path
     package_path="$(find "$ROOT_DIR/packages" -maxdepth 1 -type f -name "${PACKAGE_ID}_${NEXT_VERSION}_*.deb" -print -quit)"
     if [[ -z "$package_path" ]]; then
-        echo "error: package was not produced for $label" >&2
+        echo "error: package was not produced for $label ($scheme)" >&2
         exit 1
     fi
 
@@ -133,10 +134,13 @@ build_one() {
 
 BUILD_STARTED=true
 
-build_one ios16 16.5 16.0
-# Keep the iOS 17 build compatible with the reference package:
-# build against the iOS 16 SDK while retaining iOS 15+ ABI support.
-build_one ios17 16.5 15.0
+# 同时产出 roothide 与 rootless 两个 scheme 的包，各自覆盖 iOS 16 / iOS 17。
+for scheme in roothide rootless; do
+    build_one ios16 "$scheme" 16.5 16.0
+    # Keep the iOS 17 build compatible with the reference package:
+    # build against the iOS 16 SDK while retaining iOS 15+ ABI support.
+    build_one ios17 "$scheme" 16.5 15.0
+done
 
 # Persist the version only after both platform builds have completed.
 # CONTROL_TMP 的清理由 finalize（EXIT trap）负责。

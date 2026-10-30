@@ -68,34 +68,58 @@ jobs:
             VERSION="latest"
           fi
           
-          for ios in ios16 ios17; do
-            packages=(packages/$ios/*.deb)
-            if (( ${#packages[@]} != 1 )); then
-              echo "Expected exactly one $ios package, found ${#packages[@]}." >&2
-              exit 1
+          for scheme in roothide rootless; do
+            # Scheme 标签首字母大写（bash 3.2 兼容，不能用 ${var^}）
+            if [ "$scheme" = "roothide" ]; then
+              scheme_label="RootHide"
+            else
+              scheme_label="Rootless"
             fi
-            package="${packages[0]}"
-            test -s "$package"
-            
-            # 重命名为更清晰的格式
-            new_name="TypeX-RootHide-${ios}-${VERSION}.deb"
-            mv "$package" "packages/$ios/$new_name"
-            echo "Package: packages/$ios/$new_name"
+            for ios in ios16 ios17; do
+              packages=(packages/$scheme/$ios/*.deb)
+              if (( ${#packages[@]} != 1 )); then
+                echo "Expected exactly one $scheme/$ios package, found ${#packages[@]}." >&2
+                exit 1
+              fi
+              package="${packages[0]}"
+              test -s "$package"
+              
+              # 重命名为更清晰的格式
+              new_name="TypeX-${scheme_label}-${ios}-${VERSION}.deb"
+              mv "$package" "packages/$scheme/$ios/$new_name"
+              echo "Package: packages/$scheme/$ios/$new_name"
+            done
           done
 
-      - name: Upload iOS 16 Debian package
+      - name: Upload roothide iOS 16 Debian package
         uses: actions/upload-artifact@v4
         with:
           name: typex-roothide-ios16
-          path: packages/ios16/*.deb
+          path: packages/roothide/ios16/*.deb
           if-no-files-found: error
           retention-days: 14
 
-      - name: Upload iOS 17 Debian package
+      - name: Upload roothide iOS 17 Debian package
         uses: actions/upload-artifact@v4
         with:
           name: typex-roothide-ios17
-          path: packages/ios17/*.deb
+          path: packages/roothide/ios17/*.deb
+          if-no-files-found: error
+          retention-days: 14
+
+      - name: Upload rootless iOS 16 Debian package
+        uses: actions/upload-artifact@v4
+        with:
+          name: typex-rootless-ios16
+          path: packages/rootless/ios16/*.deb
+          if-no-files-found: error
+          retention-days: 14
+
+      - name: Upload rootless iOS 17 Debian package
+        uses: actions/upload-artifact@v4
+        with:
+          name: typex-rootless-ios17
+          path: packages/rootless/ios17/*.deb
           if-no-files-found: error
           retention-days: 14
 
@@ -122,8 +146,8 @@ jobs:
           # 查找所有 .deb 文件
           deb_files=(release-assets/*/*.deb)
           
-          if (( ${#deb_files[@]} < 2 )); then
-            echo "Expected at least two Debian packages, found ${#deb_files[@]}." >&2
+          if (( ${#deb_files[@]} < 4 )); then
+            echo "Expected at least four Debian packages, found ${#deb_files[@]}." >&2
             exit 1
           fi
           
@@ -136,9 +160,10 @@ jobs:
             if [[ ! "$base_name" =~ \.v?[0-9]+\.[0-9]+\.[0-9]+\.deb$ ]]; then
               version="${GITHUB_REF_NAME#v}"
               # 构建新文件名，保持原文件名的可读性
-              if [[ "$base_name" =~ TypeX-RootHide-(ios[0-9]+)-.*\.deb$ ]]; then
-                ios="${BASH_REMATCH[1]}"
-                new_name="TypeX-RootHide-${ios}-${version}.deb"
+              if [[ "$base_name" =~ TypeX-(RootHide|Rootless)-(ios[0-9]+)-.*\.deb$ ]]; then
+                scheme_label="${BASH_REMATCH[1]}"
+                ios="${BASH_REMATCH[2]}"
+                new_name="TypeX-${scheme_label}-${ios}-${version}.deb"
               else
                 # 如果原文件名不符合预期，使用目录名
                 new_name="${dir_name}-${base_name}"

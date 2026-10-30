@@ -20,7 +20,6 @@ typedef NS_ENUM(NSUInteger, DXClipboardCommandType) {
     DXClipboardCommandFavorite,
     DXClipboardCommandDelete,
     DXClipboardCommandClear,
-    DXClipboardCommandImport,
 };
 
 @interface DXClipboardService () {
@@ -56,24 +55,7 @@ typedef NS_ENUM(NSUInteger, DXClipboardCommandType) {
     if (self.started) return;
     self.started = YES;
 
-    // 首次启动迁移 Kayoko 历史可能涉及成百上千行 INSERT 与图片复制，
-    // 从 %ctor 主线程同步执行会拖慢 SpringBoard 冷启动（1-2 帧卡顿）。
-    // 等 SpringBoard 启动完成后再在 Utility 队列异步迁移，先发布空快照。
-    __weak DXClipboardService *weakSelf = self;
     [self publishSnapshot];
-
-    if ([NSProcessInfo.processInfo.processName isEqualToString:@"SpringBoard"]) {
-        dispatch_async(dispatch_get_global_queue(QOS_CLASS_UTILITY, 0), ^{
-            DXClipboardStore *store = weakSelf.store;
-            if ([store prepareDatabase]) {
-                [store importKayokoHistory];
-            }
-        });
-    } else {
-        if ([self.store prepareDatabase]) {
-            [self.store importKayokoHistory];
-        }
-    }
 
     _pasteboard = [UIPasteboard generalPasteboard];
     _lastChangeCount = _pasteboard.changeCount;
@@ -91,7 +73,7 @@ typedef NS_ENUM(NSUInteger, DXClipboardCommandType) {
                                     NULL,
                                     CFNotificationSuspensionBehaviorDeliverImmediately);
 
-    // app 进程命令入口（copy/delete/favorite/clear/import）。
+    // app 进程命令入口（copy/delete/favorite/clear）。
     CFNotificationCenterAddObserver(CFNotificationCenterGetDarwinNotifyCenter(),
                                     (__bridge const void *)self,
                                     &DXClipboardCommandCallback,
@@ -138,9 +120,15 @@ static void DXClipboardCommandCallback(CFNotificationCenterRef center, void *obs
                                        CFDictionaryRef userInfo) {
     (void)center; (void)name; (void)object; (void)userInfo;
     DXClipboardService *service = (__bridge DXClipboardService *)observer;
-    NSDictionary *command = DXQuickActionSharedValue(kClipboardCommandKey);
+    // 命令通道：共享命令文件（沙盒 App 面板写入）优先，cfprefsd 域兜底
+    // （未沙盒进程，如设置页，直接写域）。
+    NSDictionary *command = DXReadSharedPlistFile(TypeXClipboardCommandPath);
+    if (![command isKindOfClass:[NSDictionary class]]) {
+        command = DXQuickActionSharedValue(kClipboardCommandKey);
+    }
     if (![command isKindOfClass:[NSDictionary class]]) return;
-    // 命令是一次性的：取走后即清除，避免迟到通知被重复消费。
+    // 命令是一次性的：取走即删（文件与域同时清），避免迟到通知被重复消费。
+    [[NSFileManager defaultManager] removeItemAtPath:TypeXClipboardCommandPath error:nil];
     DXSetQuickActionSharedValue(nil, kClipboardCommandKey);
     dispatch_async(dispatch_get_main_queue(), ^{
         [service handleCommand:command];
@@ -347,6 +335,9 @@ static void DXClipboardCommandCallback(CFNotificationCenterRef center, void *obs
         @"mirrorPath": kClipboardImagesMirrorPath,
     };
     DXSetQuickActionSharedValue(snapshot, kClipboardSnapshotKey);
+    // 共享快照文件：位于 jbroot 下 app 沙盒可读目录，普通 App 面板经此读取
+    // （沙盒进程读不到 cfprefsd 隔离域，只能经文件交换，机制同 shared.plist）。
+    DXWriteSharedPlistFile(snapshot, TypeXClipboardSnapshotPath);
 }
 
 #pragma mark - Preferences helpers
@@ -376,7 +367,6 @@ static void DXClipboardCommandCallback(CFNotificationCenterRef center, void *obs
     if ([action isEqualToString:@"favorite"]) type = DXClipboardCommandFavorite;
     else if ([action isEqualToString:@"delete"]) type = DXClipboardCommandDelete;
     else if ([action isEqualToString:@"clear"]) type = DXClipboardCommandClear;
-    else if ([action isEqualToString:@"import"]) type = DXClipboardCommandImport;
 
     switch (type) {
         case DXClipboardCommandFavorite: {
@@ -396,11 +386,6 @@ static void DXClipboardCommandCallback(CFNotificationCenterRef center, void *obs
         case DXClipboardCommandClear: {
             NSString *historyKey = command[@"historyKey"];
             [self.store clearHistoryKey:historyKey ?: @"history"];
-            break;
-        }
-        case DXClipboardCommandImport: {
-            // 手动迁移：无视幂等标记强制重跑，保证设置页按钮始终有反馈。
-            [self.store importKayokoHistoryForced:YES];
             break;
         }
         default:

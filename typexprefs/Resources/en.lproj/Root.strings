@@ -67,4 +67,3 @@
 "CLIPBOARD_REPLACE_DICTATION" = "Clipboard Instead of Dictation";
 "CLIPBOARD_MAX_COUNT" = "History Limit";
 "CLIPBOARD_BLACKLIST" = "Ignore Apps";
-"CLIPBOARD_MIGRATE" = "Import History from Kayoko";

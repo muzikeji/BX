@@ -634,4 +634,4 @@ NOTE: If you experiencing any issue or shortcuts not showing correctly, please r
 "收藏条目" = "Favorite";
 "取消收藏" = "Unfavorite";
 "删除" = "Delete";
-"（图片）" = "[Image]";"CLIPBOARD_MIGRATE_TRIGGERED" = "Kayoko history import started. Open the clipboard panel shortly to view it.";
+"（图片）" = "[Image]";
