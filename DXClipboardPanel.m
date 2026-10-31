@@ -10,8 +10,9 @@
 
 // ---------------------------------------------------------------------------
 // 剪贴板面板（TypeX 内置，取代 Kayoko 剪贴板 UI）
-// 承载：独立 UIWindow（windowLevel = CGFLOAT_MAX，盖住键盘；从屏幕底部弹出，
-//  但不抢焦点、不收宿主键盘，输入光标保留；搜索框聚焦时上移露出键盘）
+// 承载：独立 UIWindow（windowLevel = 1000000.0，锚定键盘上方弹出，
+// 不抢焦点、不收宿主键盘，输入光标保留；搜索框聚焦时面板跟随键盘上移，
+// 键盘保持自然显示）
 // 数据：SpringBoard 发布的 cfprefsd 快照 kClipboardSnapshotKey
 // 命令：写 kClipboardCommandKey + 广播 kClipboardCommandIdentifier（SB 执行）
 // ---------------------------------------------------------------------------
@@ -19,16 +20,9 @@
 @interface DXClipboardHostWindow : UIWindow
 @end
 
-// 搜索聚焦/结束由 Controller 在实现之前调用，提前声明类方法。
-@interface DXClipboardPanel ()
-+ (void)searchBegan;
-+ (void)searchEnded;
-@end
-
 @implementation DXClipboardHostWindow
-// 只响应卡片区域（tag=100），卡片以外的触摸穿透回下层窗口（键盘/宿主）。
-// 面板覆盖键盘但接收每个 cell 点击用于粘贴；搜索框聚焦升起的键盘在卡片
-// 下方露出，仍可正常点击。
+// 只响应卡片区域（tag=100），卡片以外的触摸穿透回下层窗口（宿主内容）。
+// 面板锚定在键盘上方，不与键盘重叠；搜索框聚焦升起的键盘自然露出。
 - (UIView *)hitTest:(CGPoint)point withEvent:(UIEvent *)event {
     UIViewController *root = self.rootViewController;
     if (!root || self.hidden) return nil;
@@ -234,29 +228,49 @@
     [self layoutPanel];
 }
 
+// 真实键盘 frame（屏幕坐标）。优先用系统通知缓存的 frame；首帧尚未到达时
+// 从活跃键盘实例经视图链换算出本体 frame——UIKeyboardImpl 是全屏容器，
+// 直接取 .window.frame 会得到整屏，弹在屏幕底部就是那个 bug。
+- (CGRect)resolvedKeyboardFrame {
+    if (!CGRectIsEmpty(self.keyboardFrame) && CGRectGetMinY(self.keyboardFrame) > 0) {
+        return self.keyboardFrame;
+    }
+    UIKeyboardImpl *keyboard = [objc_getClass("UIKeyboardImpl") activeInstance];
+    if (!keyboard || !keyboard.window) return CGRectZero;
+    CGRect inWindow = [keyboard convertRect:keyboard.bounds toView:keyboard.window];
+    CGRect inScreen = [keyboard.window convertRect:inWindow toWindow:nil];
+    CGFloat screenHeight = CGRectGetHeight(keyboard.window.bounds);
+    if (CGRectIsNull(inScreen) || CGRectGetHeight(inScreen) <= 10.0) return CGRectZero;
+    if (CGRectGetMinY(inScreen) <= 0.0) return CGRectZero;
+    if (CGRectGetMinY(inScreen) >= screenHeight - 10.0) return CGRectZero;
+    return inScreen;
+}
+
 - (void)layoutPanel {
-    CGRect screen = [UIScreen mainScreen].bounds;
+    // 与 DXAIPanel 同款：卡片锚定"键盘上方"，绝不试图盖住键盘。
+    // iOS 17+ 键盘是系统远程托管窗口，宿主进程内任何 windowLevel 都压不过它，
+    // 且键盘 frame 必须经视图链换算（UIKeyboardImpl 本身是全屏容器）。
+    UIWindow *window = self.view.window;
+    CGRect screen = window ? window.bounds : [UIScreen mainScreen].bounds;
+    CGFloat screenHeight = CGRectGetHeight(screen);
     CGFloat width = MIN(CGRectGetWidth(screen) - 24, 420);
     CGFloat x = (CGRectGetWidth(screen) - width) / 2;
-    CGFloat screenHeight = CGRectGetHeight(screen);
-    CGFloat bottomInset = self.view.safeAreaInsets.bottom;
-    CGFloat maxHeight = screenHeight * 0.62;
-    CGFloat minHeight = 240;
 
-    // 默认从屏幕底部往上弹出（windowLevel 高于键盘，弹出时自然盖住键盘，
-    // 宿主输入会话保留、光标不消失）。仅搜索框聚焦时上移让出键盘区域，
-    // 键盘露出供输入搜索词。
-    CGFloat height = MIN(maxHeight, MAX(minHeight, screenHeight - bottomInset - 96));
-    CGFloat y = screenHeight - bottomInset - height;
-    if (self.searchBar.isFirstResponder) {
-        CGRect keyFrame = self.keyboardFrame;
-        if (!CGRectIsEmpty(keyFrame) && CGRectGetMinY(keyFrame) > 0) {
-            CGFloat keyboardTop = CGRectGetMinY(keyFrame);
-            height = MIN(height, MAX(minHeight, keyboardTop - bottomInset - 64));
-            y = keyboardTop - height - 8;
-            if (y < 0) y = 0;
-        }
-    }
+    CGFloat topInset = (window ? window.safeAreaInsets.top : 0) + 8.0;
+    CGFloat bottomInset = (window ? window.safeAreaInsets.bottom : 0) + 8.0;
+
+    CGRect keyFrame = [self resolvedKeyboardFrame];
+    BOOL keyboardVisible = CGRectGetMinY(keyFrame) > 0 &&
+                           CGRectGetMinY(keyFrame) < screenHeight - 10.0;
+    CGFloat keyboardTop = keyboardVisible ? CGRectGetMinY(keyFrame) : screenHeight;
+
+    CGFloat maxHeight = keyboardVisible ? (keyboardTop - topInset - 12.0)
+                                        : (screenHeight - topInset - bottomInset);
+    maxHeight = MAX(maxHeight, 240);
+    CGFloat height = MIN(maxHeight, MAX(280.0, screenHeight * 0.52));
+    CGFloat y = keyboardVisible ? (keyboardTop - 10.0 - height)
+                                : (screenHeight - bottomInset - height);
+    if (y < topInset) y = topInset;
 
     UIView *card = [self.view viewWithTag:100];
     card.frame = CGRectMake(x, y, width, height);
@@ -333,13 +347,14 @@
     [self refreshDisplayedItems];
 }
 - (BOOL)searchBarShouldBeginEditing:(UISearchBar *)searchBar {
-    // 搜索聚焦：恢复键盘窗口、面板层级降到键盘之下，让键盘浮出供输入搜索词。
-    [DXClipboardPanel searchBegan];
+    // 搜索聚焦：键盘自然弹出（面板不隐藏、不降级它），面板锚定键盘上方，
+    // 键盘 frame 通知驱动 viewWillLayoutSubviews 跟随重定位。
+    (void)searchBar;
     return YES;
 }
 - (void)searchBarTextDidEndEditing:(UISearchBar *)searchBar {
-    // 搜索结束：键盘收起，面板恢复覆盖态并再次隐藏键盘窗口。
-    [DXClipboardPanel searchEnded];
+    // 搜索结束：键盘收起，面板随 keyboardHidden 联动关闭；无特殊处理。
+    (void)searchBar;
 }
 - (void)searchBarSearchButtonClicked:(UISearchBar *)searchBar {
     [searchBar resignFirstResponder];
@@ -519,12 +534,6 @@
 
 static DXClipboardHostWindow *g_clipboardPanelWindow;
 static DXClipboardPanelController *g_clipboardPanelController;
-// 打开面板时被视觉收起的键盘窗口（weak，系统保留）。收起键盘只隐藏键盘
-// 窗口并保留输入会话，不 resign first responder —— 光标停留在输入框。
-static __weak UIWindow *g_hiddenKeyboardWindow;
-// 面板当前是否处于"覆盖键盘"态（CGFLOAT_MAX）。搜索聚焦时会临时降级让键盘
-// 浮出用于输入搜索词，此标志用于区分是否应恢复被隐藏的键盘窗口。
-static BOOL g_panelOverKeyboard;
 
 @implementation DXClipboardPanel
 
@@ -533,24 +542,24 @@ static BOOL g_panelOverKeyboard;
 }
 
 static BOOL DXClipboardProbeKeyboardFrame(CGRect *outFrame) {
-    // 优先取活跃键盘实例所在窗口 frame；失败回退屏幕底部默认带。
+    // 经视图链换算真实键盘本体 frame：UIKeyboardImpl 是全屏容器（部分 iOS
+    // 版本 frame 覆盖整个输入窗口且 hidden 不可信），直接取 .window.frame
+    // 会得到整屏，导致面板锚错位置。
     UIKeyboardImpl *keyboard = [objc_getClass("UIKeyboardImpl") activeInstance];
-    if (keyboard && keyboard.window && !keyboard.window.hidden) {
-        CGRect frame = keyboard.window.frame;
-        if (CGRectGetHeight(frame) > 0) {
-            *outFrame = frame;
-            return YES;
-        }
-    }
-    return NO;
+    if (!keyboard || !keyboard.window || keyboard.window.hidden) return NO;
+    CGRect inWindow = [keyboard convertRect:keyboard.bounds toView:keyboard.window];
+    CGRect inScreen = [keyboard.window convertRect:inWindow toWindow:nil];
+    CGFloat screenHeight = CGRectGetHeight(keyboard.window.bounds);
+    if (CGRectIsNull(inScreen) || CGRectGetHeight(inScreen) <= 10.0) return NO;
+    if (CGRectGetMinY(inScreen) <= 0.0) return NO;              // 全屏容器，非键盘本体
+    if (CGRectGetMinY(inScreen) >= screenHeight - 10.0) return NO; // 已滑出屏幕
+    *outFrame = inScreen;
+    return YES;
 }
 
-+ (CGFloat)aboveKeyboardWindowLevel {
-    // UIWindowLevel 没有公共上限声明，键盘窗口层级因 iOS 版本而异且宿主内
-    // 探测到的键盘窗口往往层级偏低（探测值 + 偏移仍盖不住）。源项目 Kayoko
-    // 的做法：用 CGFloat 最大有限值，保证任何键盘/宿主窗口之下（内）都能盖过。
-    return CGFLOAT_MAX;
-}
+// 面板锚定键盘上方，不需要盖过键盘——windowLevel 只需高于宿主内容即可。
+// 与 DXAIPanel 同值（1000000.0）。
+static const CGFloat kClipboardPanelWindowLevel = 1000000.0;
 
 + (void)present {
     if (![NSThread isMainThread]) {
@@ -565,31 +574,31 @@ static BOOL DXClipboardProbeKeyboardFrame(CGRect *outFrame) {
     DXClipboardPanelController *controller = [DXClipboardPanelController new];
     g_clipboardPanelController = controller;
 
-    DXClipboardHostWindow *window = nil;
+    // 窗口必须挂到前台 scene 才能可靠显示；iOS 17+ 用无 scene 的
+    // initWithFrame: 建窗会产生"挂在黑场里的空白窗口"（面板空白弹出）。
+    // 键盘工具栏按钮总在宿主 app 进程触发，keyboard window 一定在屏。
     UIWindowScene *scene = nil;
     UIKeyboardImpl *keyboard = [objc_getClass("UIKeyboardImpl") activeInstance];
     scene = keyboard.window.windowScene;
     if (!scene) scene = DXKeyWindow().windowScene;
     for (UIScene *connected in [UIApplication sharedApplication].connectedScenes) {
-        if (!scene && [connected isKindOfClass:[UIWindowScene class]]) {
+        if (!scene && [connected isKindOfClass:[UIWindowScene class]] &&
+            connected.activationState == UISceneActivationStateForegroundActive) {
             scene = (UIWindowScene *)connected;
             break;
         }
     }
+    if (!scene) return; // 无前台 scene：直接放弃弹出，避免空白窗口
 
-    if (scene) {
-        window = [[DXClipboardHostWindow alloc] initWithWindowScene:scene];
-        window.frame = scene.coordinateSpace.bounds;
-    } else {
-        window = [[DXClipboardHostWindow alloc] initWithFrame:[UIScreen mainScreen].bounds];
-    }
-    window.windowLevel = [self aboveKeyboardWindowLevel];
+    DXClipboardHostWindow *window = [[DXClipboardHostWindow alloc] initWithWindowScene:scene];
+    window.frame = scene.coordinateSpace.bounds;
+    window.windowLevel = kClipboardPanelWindowLevel;
     window.backgroundColor = UIColor.clearColor;
     window.hidden = YES;
     window.rootViewController = controller;
     g_clipboardPanelWindow = window;
 
-    // 键盘 frame 初值：活跃键盘实例 → 通知缓存 → 屏幕底部占位。
+    // 键盘 frame 初值：活跃键盘实例（视图链换算）→ 屏幕底部占位。
     CGRect keyboardFrame = CGRectZero;
     if (!DXClipboardProbeKeyboardFrame(&keyboardFrame)) {
         CGRect bounds = [UIScreen mainScreen].bounds;
@@ -598,21 +607,11 @@ static BOOL DXClipboardProbeKeyboardFrame(CGRect *outFrame) {
     controller.keyboardFrame = keyboardFrame;
     [controller reloadSnapshot];
 
-    // 视觉收起键盘：隐藏键盘所在窗口，保留输入框 first responder 和光标。
-    // （不调用 dismissKeyboard —— 那会结束输入会话导致光标消失、粘贴失去目标。）
-    UIKeyboardImpl *activeKeyboard = [objc_getClass("UIKeyboardImpl") activeInstance];
-    if (activeKeyboard && activeKeyboard.window && !activeKeyboard.window.hidden) {
-        g_hiddenKeyboardWindow = activeKeyboard.window;
-        g_hiddenKeyboardWindow.hidden = YES;
-    }
-
     window.hidden = NO;
-    g_panelOverKeyboard = YES;
 
     // 键盘会话保留：面板不抢焦点、不收宿主键盘（输入光标不消失），
-    // windowLevel 高于键盘窗口所以面板从底部弹出时自然盖住键盘；
-    // 用户点进搜索框时键盘按其自身行为在面板下方露出。
-    // 键盘位置跟踪：仅搜索聚焦时让面板让出键盘区域。
+    // 面板锚定键盘上方，键盘保持自然显示。
+    // 键盘位置跟踪：键盘移动（搜索聚焦/收起等）时面板跟随重定位。
     [NSNotificationCenter.defaultCenter addObserver:self
                                            selector:@selector(keyboardFrameChanged:)
                                                name:UIKeyboardWillChangeFrameNotification
@@ -634,36 +633,6 @@ static BOOL DXClipboardProbeKeyboardFrame(CGRect *outFrame) {
 + (void)refresh {
     [g_clipboardPanelController reloadSnapshot];
     [g_clipboardPanelController viewWillLayoutSubviews];
-}
-
-+ (void)searchBegan {
-    if (!g_clipboardPanelWindow) return;
-    // 搜索聚焦：恢复键盘窗口显示，供输入搜索词。
-    if (g_hiddenKeyboardWindow && g_hiddenKeyboardWindow.hidden) {
-        g_hiddenKeyboardWindow.hidden = NO;
-        g_hiddenKeyboardWindow = nil;
-    }
-    // 面板层级降到键盘之下，让键盘浮出（layoutPanel 已让面板上移露出键盘）。
-    UIKeyboardImpl *kb = [objc_getClass("UIKeyboardImpl") activeInstance];
-    CGFloat level = 100.0;
-    if (kb && kb.window) {
-        level = kb.window.windowLevel - 1.0;
-        if (level <= 0) level = 100.0;
-    }
-    g_clipboardPanelWindow.windowLevel = level;
-    g_panelOverKeyboard = NO;
-}
-
-+ (void)searchEnded {
-    if (!g_clipboardPanelWindow) return;
-    // 搜索结束：键盘收起，面板恢复覆盖态，再次视觉隐藏键盘窗口。
-    g_clipboardPanelWindow.windowLevel = [self aboveKeyboardWindowLevel];
-    g_panelOverKeyboard = YES;
-    UIKeyboardImpl *kb = [objc_getClass("UIKeyboardImpl") activeInstance];
-    if (kb && kb.window && !kb.window.hidden) {
-        g_hiddenKeyboardWindow = kb.window;
-        g_hiddenKeyboardWindow.hidden = YES;
-    }
 }
 
 + (void)keyboardFrameChanged:(NSNotification *)note {
@@ -696,12 +665,7 @@ static void DXClipboardSnapshotCallback(CFNotificationCenterRef center, void *ob
     }
     if (!g_clipboardPanelWindow) return;
 
-    // 面板关闭：恢复输入会话的键盘窗口（光标一直停留在输入框，键盘随之回来）。
-    if (g_panelOverKeyboard && g_hiddenKeyboardWindow) {
-        g_hiddenKeyboardWindow.hidden = NO;
-    }
-    g_hiddenKeyboardWindow = nil;
-    g_panelOverKeyboard = NO;
+    // 面板从不隐藏/改造键盘窗口，无需恢复任何状态。
 
     [NSNotificationCenter.defaultCenter removeObserver:self
                                                   name:UIKeyboardWillChangeFrameNotification

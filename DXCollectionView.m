@@ -1209,7 +1209,8 @@ static BOOL DXIsHiddenShortcutSelector(NSString *selector) {
 
     BOOL clipEnabled = preferencesBool(kClipboardEnabledKey, YES);
     if (clipEnabled) {
-        // 进程内浮层面板：任何注入进程（宿主 app / SpringBoard）都直接弹。
+        // 进程内浮层面板（宿主 app / SpringBoard 均可触发；面板弹窗前校验
+        // 前台 scene 存在才显示，规避空白窗口）。
         [DXClipboardPanel present];
         return;
     }
