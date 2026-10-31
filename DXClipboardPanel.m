@@ -10,7 +10,7 @@
 
 // ---------------------------------------------------------------------------
 // 剪贴板面板（TypeX 内置，取代 Kayoko 剪贴板 UI）
-// 承载：独立 UIWindow（level 2e6，高于键盘窗口；从屏幕底部弹出，盖住键盘
+// 承载：独立 UIWindow（windowLevel = CGFLOAT_MAX，盖住键盘；从屏幕底部弹出，
 //  但不抢焦点、不收宿主键盘，输入光标保留；搜索框聚焦时上移露出键盘）
 // 数据：SpringBoard 发布的 cfprefsd 快照 kClipboardSnapshotKey
 // 命令：写 kClipboardCommandKey + 广播 kClipboardCommandIdentifier（SB 执行）
@@ -524,15 +524,10 @@ static BOOL DXClipboardProbeKeyboardFrame(CGRect *outFrame) {
 }
 
 + (CGFloat)aboveKeyboardWindowLevel {
-    // 面板从屏幕底部贴底弹出，需盖住宿主键盘窗口。
-    // 键盘窗口层级因 iOS 版本而异，取活跃键盘窗口层级 + 余量，兜底固定高位。
-    CGFloat level = 2000000.0;
-    UIKeyboardImpl *keyboard = [objc_getClass("UIKeyboardImpl") activeInstance];
-    UIWindow *keyboardWindow = keyboard ? keyboard.window : nil;
-    if (keyboardWindow) {
-        level = MAX(level, keyboardWindow.windowLevel + 200.0);
-    }
-    return level;
+    // UIWindowLevel 没有公共上限声明，键盘窗口层级因 iOS 版本而异且宿主内
+    // 探测到的键盘窗口往往层级偏低（探测值 + 偏移仍盖不住）。源项目 Kayoko
+    // 的做法：用 CGFloat 最大有限值，保证任何键盘/宿主窗口之下（内）都能盖过。
+    return CGFLOAT_MAX;
 }
 
 + (void)present {
