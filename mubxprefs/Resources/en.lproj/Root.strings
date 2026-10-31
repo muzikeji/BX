@@ -1,0 +1,69 @@
+//translated by udevs
+
+//=====================Main Section Page=====================
+"TWEAK" = "Tweak";
+"ENABLED" = "Enabled";
+"DISABLED" = "Disabled";
+"SHORTCUTS" = "Shortcuts";
+"HAPTIC" = "Haptic";
+"ICON" = "Icon";
+"TEXT" = "Text";
+"TOP_SETTINGS" = "Top Settings";
+"BOTTOM_SETTINGS" = "Bottom Settings";
+"FOOTER_DISPLAY_STYLE" = "Set shortcuts displaying style.";
+"ANSWER_YES" = "Yes";
+"ANSWER_NO" = "No";
+"FOOTER_TOGGLE_BUTTON" = "Set the button to be used for toggling MUBX.";
+"GLOBE" = "Globe";
+"DICTATION" = "Dictation";
+"BOTH" = "Both";
+"FOOTER_GESTURE_TYPE" = "Single tap will completely replace button's original functionality. Long press will retain it. This setting is disabled if button is \"None\".";
+"SINGLE_TAP" = "Single Tap";
+"LONG_PRESS" = "Long Press";
+"SPACE_BAR_SCROLLING" = "SpaceBar Swipe Scrolling";
+"FOOTER_SPACE_BAR_SCROLLING" = "Set the granularity of scrolling when swiping space bar left/right.";
+"FOOTER_CREDITS" = "Special thanks\nudevs, lclrc乌贼,Aransh";
+
+"PASTE_CHIP" = "Clipboard Image Quick Paste";
+"PASTE_CHIP_FOOTER" = "Only in enabled apps: when a NEW image or text lands on the clipboard, a chip floats at the screen's right edge, level with the text caret above the keyboard, for 3 seconds (image thumbnail or text preview); tap it to paste. While enabled, the system paste-permission prompt is answered automatically. All apps are off by default.";
+"PASTE_CHIP_APPS" = "Enabled Apps";
+"SMS_CODE_SECTION" = "SMS Verification Codes";
+"SMS_CODE_COPY" = "Automatically Copy Codes";
+"SMS_CODE_FOOTER" = "Off by default. Copies an unambiguous 4–8 digit verification code from a newly received Messages notification, replacing the current clipboard. Local device only; expires after 3 minutes. Other or ambiguous messages are skipped. Codes may be unavailable when notifications are disabled or omit the message body. Requires MUBX to be enabled.";
+
+// Configuration backup
+"BACKUP_SECTION" = "Configuration Backup";
+"BACKUP_CONFIG" = "Back Up Configuration";
+"RESTORE_CONFIG" = "Restore Configuration";
+"BACKUP_FOOTER" = "Export all settings to a file and keep it safe in the Files app; restoring a backup overwrites the entire current configuration. Backup files contain the full configuration (including AI engine API keys) — do not share them.";
+
+"KEYBOARD_PANEL_SETTINGS" = "Panel settings";
+"FLOATING_APP_SETTINGS" = "Floating Apps";
+"GESTURE_SETTINGS" = "Gesture Settings";
+
+// Independent status-bar gesture entries.
+"STATUS_BAR_SETTINGS" = "Status Bar Gestures";
+"STATUS_BAR_LANDSCAPE" = "Enable in Landscape";
+"STATUS_BAR_LEFT" = "Left Area";
+"STATUS_BAR_MIDDLE" = "Middle Area";
+"STATUS_BAR_RIGHT" = "Right Area";
+"STATUS_BAR_TAP" = "Single Tap";
+"STATUS_BAR_DOUBLETAP" = "Double Tap";
+"STATUS_BAR_LONGPRESS" = "Long Press";
+"STATUS_BAR_LEFTSWIPE" = "Swipe Left";
+"STATUS_BAR_RIGHTSWIPE" = "Swipe Right";
+"STATUS_BAR_FOOTER" = "Configure five gestures independently in each area. Off by default and disabled while locked. Areas follow the current status bar width. The notch is not touchable; Dynamic Island and native controls keep their system interactions.";
+"STATUS_BAR_ENTRY_FOOTER" = "Bind one action to this gesture. Unassigned gestures leave touches alone. A single tap waits briefly when double tap is enabled in the same area. Vertical drags keep their system behavior.";
+"STATUS_BAR_UNASSIGNED" = "Unassigned";
+"STATUS_BAR_CLEAR" = "Clear Action";
+"STATUS_BAR_PANELS" = "Open Panel";
+"STATUS_BAR_PICKER_FOOTER" = "Choose or add a system action, app, App Quick Action, or link. Text, JavaScript, and actions requiring the current input are unavailable here.";
+// MUBX built-in clipboard (replaces Kayoko clipboard)
+"CLIPBOARD_SECTION" = "Clipboard History";
+"CLIPBOARD_FOOTER" = "Automatically records copied text and images. Review, search and paste them from the Keyboard Toolbar's Clipboard button. Kayoko history is imported automatically on first launch.";
+"CLIPBOARD_ENABLED" = "Enable Clipboard History";
+"CLIPBOARD_SAVE_TEXT" = "Save Text";
+"CLIPBOARD_SAVE_IMAGES" = "Save Images";
+"CLIPBOARD_REPLACE_DICTATION" = "Clipboard Instead of Dictation";
+"CLIPBOARD_MAX_COUNT" = "History Limit";
+"CLIPBOARD_BLACKLIST" = "Ignore Apps";

@@ -40,7 +40,7 @@ static BOOL DXRecordingInterfaceAvailable(id recorder, BOOL stopping) {
     self.activeRecorder = nil;
     self.busy = NO;
     self.timedOut = NO;
-    NSLog(@"[TypeX][SystemRecording] completion generation=%lu result=%llu", (unsigned long)generation, (unsigned long long)result);
+    NSLog(@"[MUBX][SystemRecording] completion generation=%lu result=%llu", (unsigned long)generation, (unsigned long long)result);
     if (reply) reply(result);
 }
 - (void)toggleRecorder:(id)recorder microphoneEnabled:(BOOL)enabled reply:(DXSystemOpenReply)reply {
@@ -64,7 +64,7 @@ static BOOL DXRecordingInterfaceAvailable(id recorder, BOOL stopping) {
     // getter exists to separate the two.
     BOOL stopping = recording.boolValue;
     if (!DXRecordingInterfaceAvailable(recorder, stopping)) {
-        NSLog(@"[TypeX][SystemRecording] unavailable stage=interface stopping=%d", stopping);
+        NSLog(@"[MUBX][SystemRecording] unavailable stage=interface stopping=%d", stopping);
         if (reply) reply(DXSystemOpenUnavailable);
         return;
     }
@@ -77,7 +77,7 @@ static BOOL DXRecordingInterfaceAvailable(id recorder, BOOL stopping) {
     self.activeRecorder = recorder;
     self.pendingReply = reply;
     NSUInteger generation = ++self.generation;
-    NSLog(@"[TypeX][SystemRecording] submit generation=%lu stopping=%d microphone=%d", (unsigned long)generation, stopping, enabled);
+    NSLog(@"[MUBX][SystemRecording] submit generation=%lu stopping=%d microphone=%d", (unsigned long)generation, stopping, enabled);
     // ReplayKit may complete on a worker queue. Only the current operation
     // can consume a reply, including synchronous or duplicate callbacks.
     __weak typeof(self) weakSelf = self;
@@ -86,7 +86,7 @@ static BOOL DXRecordingInterfaceAvailable(id recorder, BOOL stopping) {
             __strong typeof(weakSelf) self = weakSelf;
             if (!self) return;
             if (!self.busy || self.generation != generation) return;
-            if (error) NSLog(@"[TypeX][SystemRecording] native error domain=%@ code=%ld", error.domain, (long)error.code);
+            if (error) NSLog(@"[MUBX][SystemRecording] native error domain=%@ code=%ld", error.domain, (long)error.code);
             [self finish:error ? DXSystemOpenFailed : DXSystemOpenSucceeded generation:generation];
         });
     };
@@ -103,7 +103,7 @@ static BOOL DXRecordingInterfaceAvailable(id recorder, BOOL stopping) {
         self.timedOut = YES;
         DXSystemOpenReply timedOutReply = self.pendingReply;
         self.pendingReply = nil;
-        NSLog(@"[TypeX][SystemRecording] timeout generation=%lu; outcome unknown, no retry", (unsigned long)generation);
+        NSLog(@"[MUBX][SystemRecording] timeout generation=%lu; outcome unknown, no retry", (unsigned long)generation);
         if (timedOutReply) timedOutReply(DXSystemOpenTimedOut);
         // Keep the flight guard until native completion or an observed terminal
         // state. A timeout never starts/stops a recording or retries an action.

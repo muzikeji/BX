@@ -5,7 +5,7 @@
 #import <UniformTypeIdentifiers/UniformTypeIdentifiers.h>
 
 @class UIKeyboardDockView;
-// TypeX.xm's handle on the visible keyboard dock; its window is the full-screen
+// MUBX.xm's handle on the visible keyboard dock; its window is the full-screen
 // text-effects window the chip is pinned into.
 extern UIKeyboardDockView *dockView;
 
@@ -497,7 +497,7 @@ static __weak UIResponder *DXPasteChipCapturedResponder = nil;
     // so each app's own paste handling turns the image into a draft attachment.
     BOOL delivered = [UIApplication.sharedApplication sendAction:@selector(paste:) to:nil from:self forEvent:nil];
     if (!delivered) {
-        NSLog(@"[TypeX] paste chip: no responder handled paste:");
+        NSLog(@"[MUBX] paste chip: no responder handled paste:");
     }
 }
 

@@ -89,7 +89,7 @@
             installed++;
         }
     }
-    if (installed) NSLog(@"[TypeX][FloatingApp] input installed windows=%lu", (unsigned long)installed);
+    if (installed) NSLog(@"[MUBX][FloatingApp] input installed windows=%lu", (unsigned long)installed);
 }
 - (void)windowVisible:(__unused NSNotification *)notification { [self refresh]; }
 - (BOOL)gestureRecognizer:(__unused UIGestureRecognizer *)gesture shouldReceiveTouch:(UITouch *)touch {
@@ -121,7 +121,7 @@
     if (word && notify_set_state(self.inputToken, word) == NOTIFY_STATUS_OK)
         notify_post(DXFloatInputName((uint32_t)getpid()).UTF8String);
     if (phase == DXFloatPinchBegan || phase == DXFloatPinchEnded)
-        NSLog(@"[TypeX][FloatingApp] input pinch phase=%u serial=%u", phase, self.gestureSerial);
+        NSLog(@"[MUBX][FloatingApp] input pinch phase=%u serial=%u", phase, self.gestureSerial);
 }
 @end
 

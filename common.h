@@ -13,15 +13,15 @@
 
 #import "DXPrefsManager.h"
 
-#define bundlePath DX_ROOT_PATH_NS(@"/Library/PreferenceBundles/TypeXPrefs.bundle")
-//#define typexBundlePath @"/Library/Application Support/TypeX.bundle"
+#define bundlePath DX_ROOT_PATH_NS(@"/Library/PreferenceBundles/MUBXPrefs.bundle")
+//#define mubxBundlePath @"/Library/Application Support/MUBX.bundle"
 #define LOCALIZED(str) [tweakBundle localizedStringForKey:str value:@"" table:nil]
 
-#define kIdentifier @"com.lindo.typex"
-#define kIPCCenterPrefsManager @"com.lindo.typex.prefsmanager"
-#define kIPCCenterTypeX @"com.lindo.typex"
-#define kPrefsChangedIdentifier @"com.lindo.typex/prefschanged"
-#define kPrefsPath @"/var/mobile/Library/Preferences/com.lindo.typex.plist"
+#define kIdentifier @"com.lindo.mubx"
+#define kIPCCenterPrefsManager @"com.lindo.mubx.prefsmanager"
+#define kIPCCenterMUBX @"com.lindo.mubx"
+#define kPrefsChangedIdentifier @"com.lindo.mubx/prefschanged"
+#define kPrefsPath @"/var/mobile/Library/Preferences/com.lindo.mubx.plist"
 
 #define kEnabledkey @"enabledBOOL"
 #define kEnabledHaptickey @"hapticBOOL"
@@ -42,7 +42,7 @@
 // picker. Definitions are global so the same ordered list is available to the
 // top and bottom toolbar configurations.
 #define kLinkActionskey @"linkactions"
-#define kLinkActionSelectorPrefix @"__typex_link_action_"
+#define kLinkActionSelectorPrefix @"__mubx_link_action_"
 // 自定义动作分组：条目上的可选组名 + 有序分组注册表（管理与选择页展示专用，
 // 执行路径不读取）。
 #define kLinkActionGroupsKey @"linkactiongroups"
@@ -119,7 +119,7 @@
 // Settings all default to off.
 #define kPasteImageChipAppsKey @"pasteimagechipapps"
 
-// ---- TypeX-built-in clipboard history (取代 Kayoko 剪贴板) ----
+// ---- MUBX-built-in clipboard history (取代 Kayoko 剪贴板) ----
 // 总开关与容量：与 Kayoko 对齐，上限默认 200（50..5000 步进可选）。
 #define kClipboardEnabledKey @"clipboardBOOL"
 #define kClipboardReplacesDictationKey @"clipboardreplacesdictationBOOL"
@@ -133,22 +133,25 @@
 // 剪贴板快照与命令通道（cfprefsd 隔离域 + jbroot 共享文件双写）。
 #define kClipboardSnapshotKey @"clipboard-v1"
 #define kClipboardCommandKey @"clipboard-cmd"
-#define kClipboardChangedIdentifier @"com.lindo.typex/clipboardchanged"
-#define kClipboardCommandIdentifier @"com.lindo.typex/clipboardcmd"
+#define kClipboardChangedIdentifier @"com.lindo.mubx/clipboardchanged"
+#define kClipboardCommandIdentifier @"com.lindo.mubx/clipboardcmd"
 // Kayoko 同款跨进程采集：粘贴板守护进程在任何 App 写入时都跨进程广播该 Darwin
 // 通知，SpringBoard 侧监听后读取内容落库，无需 hook 或轮询。
 #define kClipboardPasteboardChangedName @"com.apple.pasteboard.notify.changed"
 // 权威存储：SpringBoard 写，schema 与 Kayoko history-v4 一致。
-#define kClipboardDatabasePath @"/var/mobile/Library/com.lindo.typex/clipboard.sqlite"
-#define kClipboardImagesPath @"/var/mobile/Library/com.lindo.typex/images"
+#define kClipboardDatabasePath @"/var/mobile/Library/com.lindo.mubx/clipboard.sqlite"
+#define kClipboardImagesPath @"/var/mobile/Library/com.lindo.mubx/images"
 // 图片镜像：jbroot 前缀下 app 沙盒可读，供面板显示缩略图（best-effort）。
-#define kClipboardImagesMirrorPath DX_ROOT_PATH_NS(@"/Library/TypeX/clipboard-images")
-// 剪贴板跨进程共享快照/命令文件：位于 jbroot 下 app 沙盒可读的目录
-// （与 TypeXSharedPrefsPath 同策略），SpringBoard 写快照、面板（任意进程）读；
-// 命令由面板写、SpringBoard 读后即删。cfprefsd 域仅未沙盒进程（SpringBoard/
-// 设置 App）可达，沙盒 App 一律经共享文件交换。
-#define TypeXClipboardSnapshotPath DX_ROOT_PATH_NS(@"/Library/TypeX/clipboard-snapshot.plist")
-#define TypeXClipboardCommandPath DX_ROOT_PATH_NS(@"/Library/TypeX/clipboard-command.plist")
+#define kClipboardImagesMirrorPath DX_ROOT_PATH_NS(@"/Library/MUBX/clipboard-images")
+// 剪贴板跨进程共享：快照由 SpringBoard 写（域 + jbroot 共享文件双写）、
+// 面板（任意进程）读，位于 jbroot 下 App 沙盒可读的目录（与
+// MUBXSharedPrefsPath 同策略）；命令由面板写 cfprefsd 域 + 广播 Darwin 通知、
+// SpringBoard 读后即清（纯域通道，04f215b 实测可用）。共享命令文件
+// （MUBXClipboardCommandPath）曾做文件优先、取走即删：RootHide iOS 16 下
+// SpringBoard 沙盒拒绝对 /Library/MUBX 的写操作，文件残留后命令被旧文件
+// 反复消费或读不到，导致收藏/删除/清空全部失效，已弃用。
+#define MUBXClipboardSnapshotPath DX_ROOT_PATH_NS(@"/Library/MUBX/clipboard-snapshot.plist")
+#define MUBXClipboardCommandPath DX_ROOT_PATH_NS(@"/Library/MUBX/clipboard-command.plist")
 
 static inline void DXWriteSharedPlistFile(NSDictionary *dictionary, NSString *path) {
     if (![dictionary isKindOfClass:[NSDictionary class]]) return;
@@ -208,28 +211,28 @@ static inline NSDictionary *DXReadSharedPlistFile(NSString *path) {
 // stages the directory world-writable (no sticky bit: mobile writers must be
 // able to atomically replace the root-owned seed file) so mobile processes
 // (Settings, SpringBoard) can refresh the snapshot without a helper daemon.
-#define TypeXCachePath DX_ROOT_PATH_NS(@"/Library/TypeX")
-#define TypeXSharedPrefsPath DX_ROOT_PATH_NS(@"/Library/TypeX/shared.plist")
+#define MUBXCachePath DX_ROOT_PATH_NS(@"/Library/MUBX")
+#define MUBXSharedPrefsPath DX_ROOT_PATH_NS(@"/Library/MUBX/shared.plist")
 
 // Settings and SpringBoard exchange quick-action data through an isolated
 // CFPreferences domain. On RootHide iOS 16, SpringBoard can read shared files
-// but its sandbox rejects direct writes under /Library/TypeX; cfprefsd provides
+// but its sandbox rejects direct writes under /Library/MUBX; cfprefsd provides
 // the supported cross-process persistence path. Requests carry
 // {format: 3, requestID, bundles}; responses replace one complete generation.
-#define TypeXQuickActionDomain @"com.lindo.typex.quickactions"
-#define TypeXQuickActionRequestKey @"request-v3"
-#define TypeXQuickActionStatusKey @"status-v3"
-#define TypeXQuickActionSnapshotKey @"snapshot-v3"
-#define kShortcutRefreshRequestIdentifier @"com.lindo.typex/shortcutrefresh"
-#define kShortcutSnapshotChangedIdentifier @"com.lindo.typex/shortcutschanged"
+#define MUBXQuickActionDomain @"com.lindo.mubx.quickactions"
+#define MUBXQuickActionRequestKey @"request-v3"
+#define MUBXQuickActionStatusKey @"status-v3"
+#define MUBXQuickActionSnapshotKey @"snapshot-v3"
+#define kShortcutRefreshRequestIdentifier @"com.lindo.mubx/shortcutrefresh"
+#define kShortcutSnapshotChangedIdentifier @"com.lindo.mubx/shortcutschanged"
 
-// TypeX 自带 AI 面板通道：工具栏进程只写请求（{format:2, requestID, created,
+// MUBX 自带 AI 面板通道：工具栏进程只写请求（{format:2, requestID, created,
 // mode: text|image|empty, origin: sb|app, text?}），SpringBoard 端收到 Darwin
 // 通知后整包读取并在 SB 进程内创建 DXAIPanel 悬浮窗。面板不能在键盘进程承载：
 // 窗口会被限制在键盘宿主区域内（第三方键盘扩展里完全无法悬浮）。与快捷方式
 // 目录共用隔离域，避免再开共享面。
-#define TypeXAIChatRequestKey @"ai-chat-request"
-#define kAIChatRequestIdentifier @"com.lindo.typex/aichat"
+#define MUBXAIChatRequestKey @"ai-chat-request"
+#define kAIChatRequestIdentifier @"com.lindo.mubx/aichat"
 
 // Complete SpringBoard-authored snapshot of each app's current static and
 // dynamic UIApplicationShortcutItems. The value is replaced as one generation,
@@ -238,7 +241,7 @@ static inline NSDictionary *DXReadSharedPlistFile(NSString *path) {
 //    apps: {bundleID: {name, items: [{type, title, subtitle, source}]}}}
 
 static inline id DXQuickActionSharedValue(NSString *key) {
-    CFStringRef domain = (__bridge CFStringRef)TypeXQuickActionDomain;
+    CFStringRef domain = (__bridge CFStringRef)MUBXQuickActionDomain;
     CFPreferencesSynchronize(domain, kCFPreferencesCurrentUser, kCFPreferencesAnyHost);
     return CFBridgingRelease(CFPreferencesCopyValue((__bridge CFStringRef)key,
                                                     domain,
@@ -247,7 +250,7 @@ static inline id DXQuickActionSharedValue(NSString *key) {
 }
 
 static inline BOOL DXSetQuickActionSharedValue(id value, NSString *key) {
-    CFStringRef domain = (__bridge CFStringRef)TypeXQuickActionDomain;
+    CFStringRef domain = (__bridge CFStringRef)MUBXQuickActionDomain;
     CFPreferencesSetValue((__bridge CFStringRef)key,
                           (__bridge CFPropertyListRef)value,
                           domain,
@@ -376,12 +379,12 @@ typedef NS_ENUM(NSInteger, DXShortcutGestureType) {
 // Temporary identifier used by the "add button" flow: the entry written into
 // the tap store before the new button's action (and therefore its real
 // identifier) exists. Rewritten to the real selector once the user picks one.
-#define kNewButtonPendingIdentifier @"__typex_pending_new_button__"
+#define kNewButtonPendingIdentifier @"__mubx_pending_new_button__"
 
 // Buttons saved without a tap action get a synthetic identifier so gesture
 // stores never collide between them. They render on the toolbar but stay
 // inert until a tap action is configured for them.
-#define kDraftActionPrefix @"__typexdraft_"
+#define kDraftActionPrefix @"__mubxdraft_"
 
 static inline BOOL DXIsDraftActionSelector(NSString *selector) {
     return [selector isKindOfClass:[NSString class]] && [selector hasPrefix:kDraftActionPrefix];

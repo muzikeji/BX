@@ -2,12 +2,12 @@
 #include <math.h>
 #include <stdint.h>
 
-static NSString * const DXFloatInputSessionName = @"com.lindo.typex.floating-input.session-v1";
+static NSString * const DXFloatInputSessionName = @"com.lindo.mubx.floating-input.session-v1";
 static inline NSString *DXFloatInputName(uint32_t pid) {
-    return [NSString stringWithFormat:@"com.lindo.typex.floating-input.pinch-v1.%u", pid];
+    return [NSString stringWithFormat:@"com.lindo.mubx.floating-input.pinch-v1.%u", pid];
 }
 static inline NSString *DXFloatInputSceneName(uint32_t pid) {
-    return [NSString stringWithFormat:@"com.lindo.typex.floating-input.scene-v1.%u", pid];
+    return [NSString stringWithFormat:@"com.lindo.mubx.floating-input.scene-v1.%u", pid];
 }
 static inline uint64_t DXFloatInputSceneHash(NSString *identifier) {
     if (![identifier isKindOfClass:NSString.class] || !identifier.length) return 0;

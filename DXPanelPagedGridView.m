@@ -94,7 +94,7 @@
 }
 - (void)logPage {
     if (!self.diagnosticName.length || !self.window || self.pageCount < 2) return;
-    NSLog(@"[TypeX][PanelGrid] page kind=%@ page=%lu/%lu items=%lu", self.diagnosticName,
+    NSLog(@"[MUBX][PanelGrid] page kind=%@ page=%lu/%lu items=%lu", self.diagnosticName,
         (unsigned long)self.currentPage + 1, (unsigned long)self.pageCount, (unsigned long)self.items.count);
 }
 - (void)scrollViewDidEndDecelerating:(UIScrollView *)scrollView { if (scrollView == self) [self logPage]; }

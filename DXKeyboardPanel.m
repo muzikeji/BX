@@ -78,7 +78,7 @@
         [center addObserver:self selector:@selector(invalidated:) name:UIApplicationWillResignActiveNotification object:nil];
         [center addObserver:self selector:@selector(invalidated:) name:UISceneWillDeactivateNotification object:nil];
         [center addObserver:self selector:@selector(invalidated:) name:UIDeviceOrientationDidChangeNotification object:nil];
-        [center addObserver:self selector:@selector(invalidated:) name:@"typeXLayoutChanged" object:nil];
+        [center addObserver:self selector:@selector(invalidated:) name:@"mubXLayoutChanged" object:nil];
         [center addObserver:self selector:@selector(invalidated:) name:UITextFieldTextDidBeginEditingNotification object:nil];
         [center addObserver:self selector:@selector(invalidated:) name:UITextFieldTextDidEndEditingNotification object:nil];
         [center addObserver:self selector:@selector(invalidated:) name:UITextViewTextDidBeginEditingNotification object:nil];
@@ -235,7 +235,7 @@
     UIWindow *inputWindow = [input isKindOfClass:UIView.class] ? ((UIView *)input).window : nil;
     UIWindowScene *scene = inputWindow.windowScene ?: toolbar.window.windowScene;
     if (!input || !scene || scene.activationState != UISceneActivationStateForegroundActive) {
-        NSLog(@"[TypeX][KeyboardPanel] open cancelled: no active source input/scene");
+        NSLog(@"[MUBX][KeyboardPanel] open cancelled: no active source input/scene");
         return;
     }
     [self dismiss];
@@ -255,7 +255,7 @@
 
     UIWindow *window = [self keyboardHostForScene:scene];
     if (!window) {
-        NSLog(@"[TypeX][KeyboardPanel] open cancelled: no keyboard host window");
+        NSLog(@"[MUBX][KeyboardPanel] open cancelled: no keyboard host window");
         [self dismiss];
         return;
     }
@@ -381,7 +381,7 @@
     [self layoutPanel];
     if (!self.window) return;
     [self.controlSession enqueueAction:@"state" value:nil];
-    NSLog(@"[TypeX][KeyboardPanel] open side=%@ toolbar=%@ items=%lu rect=%@ host=%@ source=%@ toggleRow=%d sliderRow=%d",
+    NSLog(@"[MUBX][KeyboardPanel] open side=%@ toolbar=%@ items=%lu rect=%@ host=%@ source=%@ toggleRow=%d sliderRow=%d",
         profile, toolbar.configuration, (unsigned long)buttons.count, NSStringFromCGRect(self.overlay.panelRect),
         NSStringFromClass(window.class), NSStringFromClass(toolbar.window.class),
         self.systemControls.showsToggleRow, self.systemControls.showsSliderRow);
@@ -390,7 +390,7 @@
     if (!self.window) return;
     CGRect coverage = [self coverageInWindow:self.window];
     if (CGRectIsNull(coverage) || CGRectIsEmpty(coverage)) {
-        NSLog(@"[TypeX][KeyboardPanel] open cancelled: keyboard geometry unavailable");
+        NSLog(@"[MUBX][KeyboardPanel] open cancelled: keyboard geometry unavailable");
         [self dismiss];
         return;
     }

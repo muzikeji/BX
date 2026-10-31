@@ -3,7 +3,7 @@
 #import "common.h"
 #import "DXShared.h"
 #import "DXHelper.h"
-#import "TypeX.h"
+#import "MUBX.h"
 #import <notify.h>
 #import <objc/message.h>
 #import <QuartzCore/QuartzCore.h>
@@ -18,14 +18,15 @@ static __weak UIResponder *g_clipboardRestoreResponder;
 static __weak UIWindow *g_clipboardHostKeyWindow;
 
 // ---------------------------------------------------------------------------
-// 剪贴板面板（TypeX 内置，取代 Kayoko 剪贴板 UI）
+// 剪贴板面板（MUBX 内置，取代 Kayoko 剪贴板 UI）
 // 呈现模型（参考 Kayoko）：打开时先主动收起宿主键盘（记录输入 responder，
 // 粘贴时恢复原输入会话写回），面板从屏幕底部贴底弹出，不被键盘遮挡、不
 // 依赖键盘 frame 探测；搜索聚焦时键盘重新弹出，面板自动上移避让。窗口与
 // 控制器进程内常驻（首次创建一次，之后 hidden 切换，绝不销毁重建），保证
 // 反复呼出始终有效（Kayoko installPanelInStatusBarWindow 同款生命周期）。
 // 数据：SpringBoard 发布的 cfprefsd 快照 kClipboardSnapshotKey
-// 命令：写 kClipboardCommandKey + 广播 kClipboardCommandIdentifier（SB 执行）
+// 命令：写 cfprefsd 域 kClipboardCommandKey + 广播 kClipboardCommandIdentifier
+// （纯域通道，SB 读后即清；04f215b 实测可用，弃用共享命令文件）
 // ---------------------------------------------------------------------------
 
 @interface DXClipboardHostWindow : UIWindow
@@ -314,7 +315,7 @@ static __weak UIWindow *g_clipboardHostKeyWindow;
 - (void)reloadSnapshot {
     // 沙盒 App 进程读不到 cfprefsd 隔离域（设置 App 等未沙盒进程可以），
     // 普通 App 面板一律优先读 jbroot 共享快照文件（SpringBoard 双写）。
-    NSDictionary *snapshot = DXReadSharedPlistFile(TypeXClipboardSnapshotPath);
+    NSDictionary *snapshot = DXReadSharedPlistFile(MUBXClipboardSnapshotPath);
     if (![snapshot isKindOfClass:[NSDictionary class]]) {
         snapshot = DXQuickActionSharedValue(kClipboardSnapshotKey);
     }
@@ -454,11 +455,13 @@ static __weak UIWindow *g_clipboardHostKeyWindow;
     }];
 }
 
-// 命令通道：沙盒 App 进程写 jbroot 共享命令文件（SpringBoard 读后即删），
-// 同时广播 Darwin 通知唤醒 SpringBoard；未沙盒进程直接走 cfprefsd 域。
+// 命令通道：面板（键盘宿主 App 沙盒进程）与 SpringBoard 之间经 cfprefsd
+// 隔离域传递（与 Kayoko 的 Darwin 通知触发一致，04f215b 实测可用）。
+// 做过共享文件双写（822b923），在 RootHide iOS 16 下 SB 沙盒拒绝对
+// /Library/MUBX 目录的写操作，命令文件残留后优先级异常导致命令整体失效；
+// 恢复纯域通道：写域 + 广播 Darwin 通知唤醒 SpringBoard 消费。
 - (void)sendCommand:(NSDictionary *)command {
     if (![command isKindOfClass:[NSDictionary class]]) return;
-    DXWriteSharedPlistFile(command, TypeXClipboardCommandPath);
     DXSetQuickActionSharedValue(command, kClipboardCommandKey);
     notify_post([kClipboardCommandIdentifier UTF8String]);
 }
@@ -468,7 +471,7 @@ static __weak UIWindow *g_clipboardHostKeyWindow;
     NSString *imageName = item[@"image_name"] ?: @"";
     UIPasteboard *pasteboard = [UIPasteboard generalPasteboard];
     if (imageName.length > 0) {
-        NSString *mirrorPath = DX_ROOT_PATH_NS(@"/Library/TypeX/clipboard-images");
+        NSString *mirrorPath = DX_ROOT_PATH_NS(@"/Library/MUBX/clipboard-images");
         NSString *imagePath = [mirrorPath stringByAppendingPathComponent:imageName];
         UIImage *image = [UIImage imageWithContentsOfFile:imagePath];
         if (image) {
@@ -502,7 +505,7 @@ static __weak UIWindow *g_clipboardHostKeyWindow;
     cell.imageBadgeView.hidden = !cell.showsThumbnail;
 
     if (cell.showsThumbnail) {
-        NSString *mirrorPath = DX_ROOT_PATH_NS(@"/Library/TypeX/clipboard-images");
+        NSString *mirrorPath = DX_ROOT_PATH_NS(@"/Library/MUBX/clipboard-images");
         NSString *imagePath = [mirrorPath stringByAppendingPathComponent:imageName];
         cell.thumbView.image = [UIImage imageWithContentsOfFile:imagePath];
         cell.textLabel2.text = [self localized:@"（图片）"] ?: @"[图片]";

@@ -695,7 +695,7 @@ static BOOL DXAIModelsEntrySupportsChat(id entry) {
     request.HTTPMethod = @"GET";
     request.timeoutInterval = 30.0;
     DXAIApplyModelsAuthHeaders(request, vendor, [self apiKeyForEngine:engine]);
-    NSLog(@"[TypeX] ai: models fetch GET %@ (vendor %ld, key %@)",
+    NSLog(@"[MUBX] ai: models fetch GET %@ (vendor %ld, key %@)",
           modelsURL.absoluteString, (long)vendor,
           [self apiKeyForEngine:engine].length > 0 ? @"configured" : @"EMPTY");
 
@@ -712,7 +712,7 @@ static BOOL DXAIModelsEntrySupportsChat(id entry) {
             NSString *message = [NSString stringWithFormat:@"HTTP %ld%@",
                                  (long)status,
                                  bodyHead.length > 0 ? [NSString stringWithFormat:@" %@", bodyHead] : @""];
-            NSLog(@"[TypeX] ai: models fetch failed: %@ (%@)", message, error.localizedDescription ?: @"");
+            NSLog(@"[MUBX] ai: models fetch failed: %@ (%@)", message, error.localizedDescription ?: @"");
             dispatch_async(dispatch_get_main_queue(), ^{
                 completion(@[], error ?: [NSError errorWithDomain:@"DXAIChat" code:status userInfo:@{NSLocalizedDescriptionKey: message}]);
             });
@@ -740,7 +740,7 @@ static BOOL DXAIModelsEntrySupportsChat(id entry) {
         if (models.count == 0) {
             // HTTP 200 但解析不出任何模型：大概率端点/响应形态不符。绝不静默
             // 返回空列表——那正是“抓取成功却一个模型都没有”的体验。
-            NSLog(@"[TypeX] ai: models fetch got HTTP %ld with unparseable/empty body from %@: %@",
+            NSLog(@"[MUBX] ai: models fetch got HTTP %ld with unparseable/empty body from %@: %@",
                   (long)status, modelsURL.absoluteString, bodyHead);
             NSString *message = [NSString stringWithFormat:@"响应无法解析为模型列表（HTTP %ld）\n%@\n%@",
                                  (long)status, modelsURL.absoluteString, bodyHead];
@@ -750,7 +750,7 @@ static BOOL DXAIModelsEntrySupportsChat(id entry) {
             [session finishTasksAndInvalidate];
             return;
         }
-        NSLog(@"[TypeX] ai: models fetch OK: %lu models from %@", (unsigned long)models.count, modelsURL.absoluteString);
+        NSLog(@"[MUBX] ai: models fetch OK: %lu models from %@", (unsigned long)models.count, modelsURL.absoluteString);
         dispatch_async(dispatch_get_main_queue(), ^{
             completion(models, nil);
         });

@@ -37,7 +37,7 @@ static void DXTryInstallGlobalPanelHooks(void);
 - (instancetype)init {
     if ((self = [super init])) {
         for (NSString *name in @[UIApplicationWillResignActiveNotification, UISceneWillDeactivateNotification,
-            UIDeviceOrientationDidChangeNotification, @"typeXLayoutChanged"])
+            UIDeviceOrientationDidChangeNotification, @"mubXLayoutChanged"])
             [NSNotificationCenter.defaultCenter addObserver:self selector:@selector(invalidated:) name:name object:nil];
     }
     return self;
@@ -99,7 +99,7 @@ static void DXTryInstallGlobalPanelHooks(void);
     if (!DXDockPanelTouchIsBackground(self.dock, touch.view, point)) {
         if (!self.loggedRejectedTouch) {
             self.loggedRejectedTouch = YES;
-            NSLog(@"[TypeX][DockGesture] rejected icon/control hit=%@", NSStringFromClass(touch.view.class));
+            NSLog(@"[MUBX][DockGesture] rejected icon/control hit=%@", NSStringFromClass(touch.view.class));
         }
         return NO;
     }
@@ -110,7 +110,7 @@ static void DXTryInstallGlobalPanelHooks(void);
     if (!active) return NO;
     self.sourceWindow = self.dock.window;
     self.snapshot = [preferences copy]; self.sourceFrame = frame; self.sourceBounds = window.bounds;
-    NSLog(@"[TypeX][DockGesture] tracking request=%lu zone=%@ hit=%@", (unsigned long)self.generation,
+    NSLog(@"[MUBX][DockGesture] tracking request=%lu zone=%@ hit=%@", (unsigned long)self.generation,
         point.y > CGRectGetMaxY(frame) ? @"below" : @"inside", NSStringFromClass(touch.view.class));
     return YES;
 }
@@ -142,7 +142,7 @@ static void DXTryInstallGlobalPanelHooks(void);
 - (void)dockPan:(UIPanGestureRecognizer *)gesture {
     if (!NSThread.isMainThread || gesture != self.pan) return;
     if (gesture.state == UIGestureRecognizerStateCancelled || gesture.state == UIGestureRecognizerStateFailed) {
-        if (self.sourceWindow && !self.opened) NSLog(@"[TypeX][DockGesture] cancelled request=%lu state=%ld", (unsigned long)self.generation, (long)gesture.state);
+        if (self.sourceWindow && !self.opened) NSLog(@"[MUBX][DockGesture] cancelled request=%lu state=%ld", (unsigned long)self.generation, (long)gesture.state);
         [self invalidated:nil]; return;
     }
     if (gesture.state == UIGestureRecognizerStateEnded &&
@@ -154,7 +154,7 @@ static void DXTryInstallGlobalPanelHooks(void);
             self.opened = YES;
             NSString *direction = self.direction;
             NSUInteger request = self.generation;
-            NSLog(@"[TypeX][DockGesture] trigger request=%lu direction=%@ panel=%d", (unsigned long)request, direction, isPanel);
+            NSLog(@"[MUBX][DockGesture] trigger request=%lu direction=%@ panel=%d", (unsigned long)request, direction, isPanel);
             if (isPanel) {
                 NSDictionary *snapshot = self.snapshot;
                 CGRect frame = self.sourceFrame, bounds = self.sourceBounds;
@@ -171,7 +171,7 @@ static void DXTryInstallGlobalPanelHooks(void);
                         CGRectEqualToRect(frame, [handler.dock convertRect:handler.dock.bounds toView:window]) &&
                         CGRectEqualToRect(bounds, window.bounds) && [handler hasAction:direction preferences:snapshot];
                     if (!current) {
-                        NSLog(@"[TypeX][DockGesture] presentation cancelled request=%lu", (unsigned long)request);
+                        NSLog(@"[MUBX][DockGesture] presentation cancelled request=%lu", (unsigned long)request);
                         return;
                     }
                     [DXGlobalPanel.sharedInstance presentPanelSelector:selector fromWindow:window origin:@"dockgesture"];
@@ -185,7 +185,7 @@ static void DXTryInstallGlobalPanelHooks(void);
                         DXDockPanelGestureHandler *handler = weakSelf;
                         BOOL current = handler && handler.generation == request && source && handler.dock.window == source &&
                             [handler available] && [snapshot isEqual:DXPrefsManager.sharedInstance.prefs];
-                        NSLog(@"[TypeX][DockGesture] result request=%lu direction=%@ status=%llu current=%d",
+                        NSLog(@"[MUBX][DockGesture] result request=%lu direction=%@ status=%llu current=%d",
                             (unsigned long)request, direction, (unsigned long long)result, current);
                     });
                 });
@@ -224,10 +224,10 @@ static void DXInstallDockPanelGesture(UIView *dock) {
     objc_setAssociatedObject(pan, &DXDockRecognizerKey, @YES, OBJC_ASSOCIATION_RETAIN_NONATOMIC);
     objc_setAssociatedObject(dock, &DXDockPanelHandlerKey, handler, OBJC_ASSOCIATION_RETAIN_NONATOMIC);
     [dock.window addGestureRecognizer:pan];
-    NSLog(@"[TypeX][DockGesture] installed directions=up,left,right class=%@ window=%@", NSStringFromClass(dock.class), NSStringFromClass(dock.window.class));
+    NSLog(@"[MUBX][DockGesture] installed directions=up,left,right class=%@ window=%@", NSStringFromClass(dock.class), NSStringFromClass(dock.window.class));
 }
 
-%group TypeXGlobalDock
+%group MUBXGlobalDock
 %hook SBDockView
 - (void)didMoveToWindow {
     %orig;
@@ -236,7 +236,7 @@ static void DXInstallDockPanelGesture(UIView *dock) {
 %end
 %end
 
-%group TypeXGlobalTransition
+%group MUBXGlobalTransition
 %hook SBMainSwitcherControllerCoordinator
 - (void)layoutStateTransitionCoordinator:(id)coordinator transitionDidBeginWithTransitionContext:(id)context {
     for (DXDockPanelGestureHandler *handler in DXDockGestureHandlers.allObjects) [handler invalidated:nil];
@@ -246,7 +246,7 @@ static void DXInstallDockPanelGesture(UIView *dock) {
 %end
 %end
 
-%group TypeXGlobalLaunch
+%group MUBXGlobalLaunch
 %hook SpringBoard
 - (void)applicationDidFinishLaunching:(id)application {
     %orig;
@@ -260,9 +260,9 @@ static void DXTryInstallGlobalPanelHooks(void) {
     if (!NSThread.isMainThread) return;
     static BOOL dockInstalled = NO, transitionInstalled = NO;
     Class dock = NSClassFromString(@"SBDockView");
-    if (!dockInstalled && !dock) NSLog(@"[TypeX][GlobalPanel] dock hook pending: SBDockView unavailable");
+    if (!dockInstalled && !dock) NSLog(@"[MUBX][GlobalPanel] dock hook pending: SBDockView unavailable");
     if (!dockInstalled && [dock instancesRespondToSelector:@selector(didMoveToWindow)]) {
-        %init(TypeXGlobalDock, SBDockView = dock);
+        %init(MUBXGlobalDock, SBDockView = dock);
         dockInstalled = YES;
         // Also cover a Dock that had already joined its window before hooks.
         #pragma clang diagnostic push
@@ -283,7 +283,7 @@ static void DXTryInstallGlobalPanelHooks(void) {
         NSMethodSignature *signature = [NSMethodSignature signatureWithObjCTypes:method_getTypeEncoding(method)];
         if (signature.numberOfArguments == 4 && !strcmp(signature.methodReturnType, @encode(void)) &&
             !strcmp([signature getArgumentTypeAtIndex:2], "@") && !strcmp([signature getArgumentTypeAtIndex:3], "@")) {
-            %init(TypeXGlobalTransition, SBMainSwitcherControllerCoordinator = transition);
+            %init(MUBXGlobalTransition, SBMainSwitcherControllerCoordinator = transition);
             transitionInstalled = YES;
         }
     }
@@ -300,7 +300,7 @@ static void DXTryInstallGlobalPanelHooks(void) {
             NSMethodSignature *signature = [NSMethodSignature signatureWithObjCTypes:method_getTypeEncoding(method)];
             if (signature.numberOfArguments == 3 && !strcmp(signature.methodReturnType, @encode(void)) &&
                 !strcmp([signature getArgumentTypeAtIndex:2], "@")) {
-                %init(TypeXGlobalLaunch, SpringBoard = springBoard);
+                %init(MUBXGlobalLaunch, SpringBoard = springBoard);
             }
         }
     }

@@ -10,7 +10,7 @@ static inline const char *DXSystemUnqualifiedType(const char *type) {
 // Validate the runtime ABI instead of trusting historical private headers.
 // Only scalar/object returns and explicitly typed arguments are supported.
 static inline BOOL DXSystemInvocationRejected(id target, NSString *selector, NSString *stage) {
-    NSLog(@"[TypeX][SystemAction] rejected class=%@ selector=%@ stage=%@", target ? NSStringFromClass([target class]) : @"nil", selector, stage);
+    NSLog(@"[MUBX][SystemAction] rejected class=%@ selector=%@ stage=%@", target ? NSStringFromClass([target class]) : @"nil", selector, stage);
     return NO;
 }
 static inline BOOL DXSystemInvokeReportingError(id target, NSString *name, NSArray *arguments, id *result, NSError **error) {
@@ -61,7 +61,7 @@ static inline BOOL DXSystemInvokeReportingError(id target, NSString *name, NSArr
     }
     [invocation retainArguments];
     @try { [invocation invoke]; }
-    @catch (NSException *exception) { NSLog(@"[TypeX][SystemAction] invocation exception=%@", exception.name); return NO; }
+    @catch (NSException *exception) { NSLog(@"[MUBX][SystemAction] invocation exception=%@", exception.name); return NO; }
     if (error) *error = invocationError;
     if (*returned == 'v') return YES;
     if (*returned == '@') {

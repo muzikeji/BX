@@ -1,7 +1,7 @@
 #import <Foundation/Foundation.h>
 #import <UIKit/UIKit.h>
 
-// AI 问答偏好键（com.lindo.typex 域）。Settings 端写入权威域+共享快照，键盘
+// AI 问答偏好键（com.lindo.mubx 域）。Settings 端写入权威域+共享快照，键盘
 // 进程面板经 DXPrefsManager 快照读取。带引擎后缀的键按引擎标识拼接。
 #define DXAIPrefEngine           @"aiEngine"
 #define DXAIPrefKeyPrefix        @"aiKey_"

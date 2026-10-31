@@ -401,7 +401,7 @@ static BOOL DXIsHiddenShortcutSelector(NSString *selector) {
         self.showsHorizontalScrollIndicator = NO;
         self.pagingEnabled = NO;
         self.scrollEnabled = NO;
-        [self registerClass:NSClassFromString(@"DXCell") forCellWithReuseIdentifier:@"kTypeXCellID"];
+        [self registerClass:NSClassFromString(@"DXCell") forCellWithReuseIdentifier:@"kMUBXCellID"];
         // A page preview never joins the live keyboard/panel lifecycle or routes actions.
         if (preview) {
             self.userInteractionEnabled = NO;
@@ -416,7 +416,7 @@ static BOOL DXIsHiddenShortcutSelector(NSString *selector) {
             [self keyboardRotated:nil];
         });
         
-        [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(typeXLayoutChanged:) name:@"typeXLayoutChanged" object:nil];
+        [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(mubXLayoutChanged:) name:@"mubXLayoutChanged" object:nil];
         [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(keyboardRotated:) name:UIDeviceOrientationDidChangeNotification object:nil];
         [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(keyboardWillHideForSubActionPanel:) name:UIKeyboardWillHideNotification object:nil];
         [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(keyboardWillHideForSubActionPanel:) name:UIApplicationWillResignActiveNotification object:nil];
@@ -455,7 +455,7 @@ static BOOL DXIsHiddenShortcutSelector(NSString *selector) {
         DXSubActionPanelFloatingHostWindow = nil;
     }
     if (DXActiveSubActionPanelOwner == self) DXActiveSubActionPanelOwner = nil;
-    [[NSNotificationCenter defaultCenter] removeObserver:self name:@"typeXLayoutChanged" object:nil];
+    [[NSNotificationCenter defaultCenter] removeObserver:self name:@"mubXLayoutChanged" object:nil];
     [[NSNotificationCenter defaultCenter] removeObserver:self name:UIDeviceOrientationDidChangeNotification object:nil];
     [[NSNotificationCenter defaultCenter] removeObserver:self name:UIKeyboardWillHideNotification object:nil];
     [[NSNotificationCenter defaultCenter] removeObserver:self name:UIApplicationWillResignActiveNotification object:nil];
@@ -683,7 +683,7 @@ static BOOL DXIsHiddenShortcutSelector(NSString *selector) {
 }
 
 
--(void)typeXLayoutChanged:(NSNotification*)notification{
+-(void)mubXLayoutChanged:(NSNotification*)notification{
     //self.hidden = isLandscape||isDictating?YES:NO;
     //[self reloadData];
     if (toggledOn){
@@ -1200,7 +1200,7 @@ static BOOL DXIsHiddenShortcutSelector(NSString *selector) {
     DXPostPixPinSystemAction(@"pixpin-area", DX_ROOT_PATH_NS(DXPixPinDylibPath));
 }
 
-// 剪贴板按钮：TypeX 已内置剪贴板历史（DXClipboardPanel，SpringBoard 监听 +
+// 剪贴板按钮：MUBX 已内置剪贴板历史（DXClipboardPanel，SpringBoard 监听 +
 // cfprefsd 快照 + 面板进程内浮层），不再依赖 Kayoko。总开关 clipboardBOOL
 // 关闭时回退到旧的 Kayoko 唤起通知（dev.traurige.kayoko.core.show），保证
 // 装了 Kayoko 的老配置行为不变。
@@ -1227,11 +1227,11 @@ static BOOL DXIsHiddenShortcutSelector(NSString *selector) {
 }
 
 // AI 问答按钮，按承载能力分派（第一版 + ShellX 时代两套验证过的路径）：
-// 系统键盘——TypeX 跑在宿主 app / SpringBoard 进程内（工具栏就长在 UIKeyboardImpl
+// 系统键盘——MUBX 跑在宿主 app / SpringBoard 进程内（工具栏就长在 UIKeyboardImpl
 // 上），面板第一版同款进程内承载，点按钮立即弹出，不依赖跨进程通道；
 // 第三方键盘扩展——扩展进程的窗口逃不出键盘宿主区域，只能走 cfprefsd+Darwin
 // 通道交 SpringBoard 弹出（种子：输入框全文 > 剪贴板文本 > 剪贴板图片；app
-// 来源等回桌面再显示）。SB 端解析与桌面门控在 TypeX.xm。
+// 来源等回桌面再显示）。SB 端解析与桌面门控在 MUBX.xm。
 -(void)aiChatAction:(UIButton*)sender{
     [self triggerImpactAndAnimationWithButton:sender];
 
@@ -1274,7 +1274,7 @@ static BOOL DXIsHiddenShortcutSelector(NSString *selector) {
                               @"mode": mode,
                               @"origin": isSpringBoard ? @"sb" : @"app",
                               @"text": seed ?: @""};
-    DXSetQuickActionSharedValue(request, TypeXAIChatRequestKey);
+    DXSetQuickActionSharedValue(request, MUBXAIChatRequestKey);
     notify_post(kAIChatRequestIdentifier.UTF8String);
 }
 
@@ -1746,7 +1746,7 @@ static BOOL DXIsHiddenShortcutSelector(NSString *selector) {
     if (subActions.count == 0) return;
 
     self.hapticType = gesture == DXShortcutGestureTap ? 1 : 2;
-    NSLog(@"[TypeX][Gesture] trigger gesture=%ld count=%lu configuration=%@", (long)gesture, (unsigned long)subActions.count, self.configuration);
+    NSLog(@"[MUBX][Gesture] trigger gesture=%ld count=%lu configuration=%@", (long)gesture, (unsigned long)subActions.count, self.configuration);
 
     if (subActions.count == 1) {
         [self dispatchSubActionSelector:subActions.firstObject sender:button];
@@ -1898,19 +1898,19 @@ static BOOL DXIsHiddenShortcutSelector(NSString *selector) {
     // PullOver hosting the target) never triggers another open or a timeout toast.
     __block BOOL completionDelivered = NO;
     NSString *scheme = url.scheme.lowercaseString;
-    NSLog(@"[TypeX] URL scheme single-shot dispatch: scheme=%@ sb=%d", scheme, isSpringBoard);
+    NSLog(@"[MUBX] URL scheme single-shot dispatch: scheme=%@ sb=%d", scheme, isSpringBoard);
     void (^finish)(BOOL) = ^(BOOL success) {
         dispatch_async(dispatch_get_main_queue(), ^{
             if (completionDelivered) return;
             completionDelivered = YES;
-            NSLog(@"[TypeX] URL scheme single-shot completion: scheme=%@ success=%d", scheme, success);
+            NSLog(@"[MUBX] URL scheme single-shot completion: scheme=%@ success=%d", scheme, success);
             [self finishCustomActionOpen:completion success:success];
         });
     };
     @try {
         ((void (*)(id, SEL, id, id, id))objc_msgSend)(application, openSelector, url, @{}, finish);
     } @catch (NSException *exception) {
-        NSLog(@"[TypeX] URL scheme single-shot exception: scheme=%@ exception=%@", scheme, exception.name);
+        NSLog(@"[MUBX] URL scheme single-shot exception: scheme=%@ exception=%@", scheme, exception.name);
         finish(NO);
     }
 }
@@ -2453,7 +2453,7 @@ static UIWindow *DXSubActionPanelCreateHostWindow(UIWindow *sourceWindow) {
     // write into a different input session after animation or another tap.
     [self dismissSubActionPanelAnimated:NO completion:nil];
     if (!valid) {
-        NSLog(@"[TypeX] text-record: selection cancelled after input/window change");
+        NSLog(@"[MUBX] text-record: selection cancelled after input/window change");
         return;
     }
     [self insertTextIntoInputField:text];
@@ -2480,7 +2480,7 @@ static UIWindow *DXSubActionPanelCreateHostWindow(UIWindow *sourceWindow) {
         UIWindow *floating = DXSubActionPanelCreateHostWindow(sourceWindow);
         if (floating) hostWindow = floating;
     }
-    NSLog(@"[TypeX] panel: presenting %lu %@ (floating host: %d)",
+    NSLog(@"[MUBX] panel: presenting %lu %@ (floating host: %d)",
           (unsigned long)itemCount, textMode ? @"text records" : @"sub-actions", hostWindow != sourceWindow);
 
     UIControl *overlay = [[UIControl alloc] initWithFrame:hostWindow.bounds];
@@ -2621,7 +2621,7 @@ static UIWindow *DXSubActionPanelCreateHostWindow(UIWindow *sourceWindow) {
     if (DXIsLinkActionSelector(selector)) return preferencesLinkActionForSelector(selector) != nil;
     if (![DXShortcutsGenerator isVisibleShortcutSelector:selector] || ![self respondsToSelector:NSSelectorFromString(selector)]) return NO;
     if ([selector isEqualToString:@"shellxScreenshotAction:"]) return [DXShortcutsGenerator isShellXScreenshotAvailable];
-    // TypeX 已内置剪贴板历史，按钮永远可用；Kayoko 只作为总开关关闭时的回退。
+    // MUBX 已内置剪贴板历史，按钮永远可用；Kayoko 只作为总开关关闭时的回退。
     if ([selector isEqualToString:@"clipboardAction:"]) return YES;
     if ([selector isEqualToString:@"pulloverWakeAction:"]) return [DXShortcutsGenerator isPullOverXInstalled];
     return YES;
@@ -2693,7 +2693,7 @@ static UIWindow *DXSubActionPanelCreateHostWindow(UIWindow *sourceWindow) {
 }
 
 - (UICollectionViewCell *)collectionView:(UICollectionView *)collectionView cellForItemAtIndexPath:(NSIndexPath *)indexPath {
-    DXCell *cell = [collectionView dequeueReusableCellWithReuseIdentifier:@"kTypeXCellID" forIndexPath:indexPath];
+    DXCell *cell = [collectionView dequeueReusableCellWithReuseIdentifier:@"kMUBXCellID" forIndexPath:indexPath];
     //cell.transform = CGAffineTransformMakeScale(-1, 1);
     int cellIndex = (int)indexPath.item;
     //[cell.btn setTitle:_buttons[indexPath.row] forState:UIControlStateNormal];

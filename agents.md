@@ -178,6 +178,6 @@ git diff
 开发完成后按以下顺序收尾：
 
 1. 提交 commit（本地提交，不要 push 上库）。
-2. 归档 deb 到 iCloud 云盘：把本次构建生成的两套 deb 分别 cp 到 `~/Library/Mobile Documents/com~apple~CloudDocs/Downloads/TypeX/ios16` 和 `.../Downloads/TypeX/ios17`，旧版本保留不删除，归档后 shasum 抽查两端一致。
-3. 同步坚果云：执行 `python3 webdav-sync.py TypeX`（脚本在项目根目录，凭据在 `~/.netrc`），同步后确认对账一致。2026-10-07 起坚果云只归档 iOS 16 版本，`ios17` 子目录不上传（脚本自动跳过），iCloud 归档仍保留双平台。
+2. 归档 deb 到 iCloud 云盘：把本次构建生成的两套 deb 分别 cp 到 `~/Library/Mobile Documents/com~apple~CloudDocs/Downloads/MUBX/ios16` 和 `.../Downloads/MUBX/ios17`，旧版本保留不删除，归档后 shasum 抽查两端一致。
+3. 同步坚果云：执行 `python3 webdav-sync.py MUBX`（脚本在项目根目录，凭据在 `~/.netrc`），同步后确认对账一致。2026-10-07 起坚果云只归档 iOS 16 版本，`ios17` 子目录不上传（脚本自动跳过），iCloud 归档仍保留双平台。
 4. 报告中明确设备功能验证状态：编译成功不代表设备验证成功，未验证项如实标注。

@@ -1,0 +1,636 @@
+//translated by udevs
+
+//=====================Short Text for Shortcuts=====================
+//5 letters word is optimal
+//6 letters is still acceptable, but not recommended
+"SHORT_SELECT_ALL" = "全选";
+"SHORT_COPY" = "复制";
+"SHORT_PASTE" = "粘贴";
+"SHORT_CUT" = "剪切";
+"SHORT_UNDO" = "撤销";
+"SHORT_REDO" = "重做";
+"SHORT_SELECT" = "选择";
+"SHORT_BEGINNING" = "开头";
+"SHORT_ENDING" = "结尾";
+"SHORT_DELETE" = "删除";
+"SHORT_DISMISS_KEYBOARD" = "收起";
+"SHORT_MOVE_CURSOR_LEFT" = "左";
+"SHORT_MOVE_CURSOR_RIGHT" = "右";
+"SHORT_MOVE_CURSOR_UP" = "上";
+"SHORT_MOVE_CURSOR_DOWN" = "下";
+"SHORT_DEFINE" = "查词";
+"SHORT_RUN_COMMAND" = "命令";
+"SHORT_MOVE_CURSOR_PREVIOUS_WORD" = "前词";
+"SHORT_MOVE_CURSOR_NEXT_WORD" = "后词";
+"SHORT_MOVE_CURSOR_START_OF_LINE" = "行首";
+"SHORT_MOVE_CURSOR_END_OF_LINE" = "行尾";
+"SHORT_MOVE_CURSOR_START_OF_PARAGRAPH" = "段首";
+"SHORT_MOVE_CURSOR_END_OF_PARAGRAPH" = "段末";
+"SHORT_MOVE_CURSOR_START_OF_SENTENCE" = "句首";
+"SHORT_MOVE_CURSOR_END_OF_SENTENCE" = "句尾";
+"SHORT_SELECT_LINE" = "选择行";
+"SHORT_SELECT_PARAGRAPH" = "选择段落";
+"SHORT_SELECT_SENTENCE" = "选择句子";
+"SHORT_DELETE_FORWARD" = "向后删除";
+"SHORT_DELETE_WORD" = "删词";
+"SHORT_DELETE_ALL" = "清空";
+"SHORT_COPY_LOG" = "复制记录";
+"SHORT_SPONGEBOB" = "交错大小写";
+
+//=====================Long Text for Shortcuts=====================
+//Used for showing shortcuts name in "Manage Shortcuts" etc.
+"LONG_SELECT_ALL" = "全选";
+"LONG_COPY" = "复制";
+"LONG_PASTE" = "粘贴";
+"LONG_CUT" = "剪切";
+"LONG_UNDO" = "撤销";
+"LONG_REDO" = "重做";
+"LONG_SELECT" = "选择";
+"LONG_BEGINNING" = "移动到文档开头";
+"LONG_ENDING" = "移动到文档末尾";
+"LONG_DELETE" = "删除";
+"LONG_DISMISS_KEYBOARD" = "收起键盘";
+"LONG_MOVE_CURSOR_LEFT" = "光标向左";
+"LONG_MOVE_CURSOR_RIGHT" = "光标向右";
+"LONG_MOVE_CURSOR_UP" = "光标向上";
+"LONG_MOVE_CURSOR_DOWN" = "光标向下";
+"LONG_DEFINE" = "查词";
+"LONG_RUN_COMMAND" = "命令行";
+"LONG_MOVE_CURSOR_PREVIOUS_WORD" = "上一个词";
+"LONG_MOVE_CURSOR_NEXT_WORD" = "下一个词";
+"LONG_MOVE_CURSOR_START_OF_LINE" = "移动光标到行首";
+"LONG_MOVE_CURSOR_END_OF_LINE" = "移动光标到行尾";
+"LONG_MOVE_CURSOR_START_OF_PARAGRAPH" = "移动光标到段首";
+"LONG_MOVE_CURSOR_END_OF_PARAGRAPH" = "移动光标到段尾";
+"LONG_MOVE_CURSOR_START_OF_SENTENCE" = "移动光标到句首";
+"LONG_MOVE_CURSOR_END_OF_SENTENCE" = "移动光标到句尾";
+"LONG_SELECT_LINE" = "选择整行";
+"LONG_SELECT_PARAGRAPH" = "选择整段";
+"LONG_SELECT_SENTENCE" = "选择整句";
+"LONG_DELETE_FORWARD" = "向后删除";
+"LONG_DELETE_WORD" = "删除单词";
+"LONG_DELETE_ALL" = "清空";
+"LONG_COPY_LOG" = "复制记录";
+"LONG_SPONGEBOB" = "交错大小写";
+
+//=====================Manage Shortcuts=====================
+//Title
+"ENABLED_SHORTCUTS" = "已启用的快捷方式";
+"DISABLED_SHORTCUTS" = "已禁用的快捷方式";
+"SHORTCUTS" = "快捷方式";
+
+//Error
+"INCOMPATIBLE_RESET" = "不兼容，请重置";
+
+//Reset
+"RESET" = "重置";
+"RESET_MESSAGE" = "将所有快捷方式（包括自定义手势操作）恢复为默认设置？";
+"RESET_YES" = "是";
+"RESET_NO" = "否";
+
+//Footer
+"FOOTER_TEXT_FOR_ENABLED_SHORTCUTS" = "您可以添加任意数量的快捷方式！点击任意快捷方式即可自定义其手势操作。
+
+注意：如果遇到问题或快捷方式显示不正确，请尝试重置。";
+
+//=====================CUSTOM ACTIONS PAGE=====================
+"ACTION" = "动作";
+
+//=====================TOOLBAR SETTINGS (top / bottom pages)=====================
+//Shortcuts
+"FOOTER_SPACING" = "快捷方式之间的间距";
+"FOOTER_HEIGHT" = "高度";
+"FOOTER_RADIUS" = "按钮圆角半径（开启背景或边框后生效）";
+//Button settings (per toolbar)
+"BUTTON_SETTINGS" = "按钮设置";
+"FOOTER_BUTTON_SETTINGS" = "以下设置仅对当前工具栏生效，顶部与底部工具栏相互独立。边框颜色自动适配深浅色模式；按钮大小为按钮宽度占单元格宽度的百分比。";
+"FOOTER_BUTTON_SETTINGS_TOP" = "以下设置仅对当前工具栏生效，顶部与底部工具栏相互独立。边框颜色自动适配深浅色模式；按钮大小为按钮宽度占单元格宽度的百分比。顶部工具栏固定按每行个数自动换行，最多两行。";
+"BORDER_ENABLED" = "显示边框";
+"BORDER_WIDTH" = "边框粗细";
+"BUTTON_WIDTH" = "按钮大小";
+"TOOLBAR_HEIGHT" = "工具栏高度";
+"PANEL_SETTINGS" = "面板设置";
+"PANEL_SIZE" = "面板大小";
+"FOOTER_PANEL_SETTINGS" = "调整当前工具栏打开的子动作弹出面板大小，顶部与底部设置相互独立。";
+"MULTILINE_SETTINGS" = "多行布局";
+"BUTTONS_PER_ROW" = "每行个数";
+"BUTTON_ROW_SPACING" = "按钮行距";
+"FOOTER_MULTILINE" = "顶部工具栏固定使用多行布局，第一行紧贴键盘、第二行向上排列，最多两行。可启用数量为每行个数 × 2，最多 16 个按钮（每行个数在按钮设置中调整）；按钮行距可在 0–20 之间以 0.1 调整。";
+"MULTI_ROW_LIMIT_MESSAGE" = "当前设置每行 %2$d 个，多行模式最多两行，因此最多可启用 %1$d 个按钮。请先关闭多余按钮或增加每行个数。";
+"ENABLED_BUTTON_LIMIT_MESSAGE" = "顶部工具栏最多同时开启 %d 个按钮。请先关闭一个已开启的按钮，才能开启新的按钮。";
+//Offsets
+"OFFSETS" = "偏移";
+//Insets
+
+//=====================KEYBOARD INPUT BEHAVIOR=====================
+"DISABLED_INPUT_TYPE" = "已禁用的输入法";
+"ENABLED_INPUT_TYPE" = "已启用的输入法";
+"FOOTER_ENABLED" = "启用后，点击快捷方式即可循环切换输入法。如果“默认”与“原始”相同，将跳过“默认”。请至少选择两个项目，并包含“原始”。\n\n注意：某些输入法不支持切换输入类型，MUBX 会将当前图标显示为空心、灰色或带删除线，以表示该状态。";
+"RESET_TO_DEFAULT_MESSAGE" = "恢复为默认设置？";
+
+//=====================GESTURES PAGE=====================
+"GESTURES" = "手势";
+"SINGLE_TAP" = "单击";
+"LONG_PRESS" = "长按";
+"SWIPE_UP" = "上滑";
+"SWIPE_DOWN" = "下滑";
+"SWIPE_LEFT" = "左滑";
+"SWIPE_RIGHT" = "右滑";
+
+//=====================SUB ACTIONS PAGE=====================
+"SUB_ACTIONS" = "子动作";
+"ADD_SUB_ACTION" = "添加子动作";
+"SUB_ACTION" = "子动作";
+"ADD" = "添加";
+"CHOOSE_ACTION" = "选择动作";
+
+"DISPLAY_STYLE" = "显示样式";
+"ICON" = "图标";
+"NAME" = "名称";
+"ACTION_LINK" = "动作链接";
+"BASIC_ACTIONS" = "基础动作";
+"CUSTOM_ACTIONS" = "自定义动作";
+"CUSTOM_ACTION" = "自定义动作";
+"CUSTOM_ACTION_SETTINGS" = "自定义动作设置";
+"EDIT" = "编辑";
+"DELETE" = "删除";
+"CUSTOM_LINK_ACTION_FOOTER" = "图标请填写 SF Symbols 名称或应用 Bundle ID（如 com.apple.Preferences）。\n网址填写方式：以 http://、https:// 或 www. 开头，如 https://apple.com\nURL Scheme 填写方式：如 example://open\nBundle ID 填写方式：如 com.apple.Preferences\n使用 @@@ 可传入当前输入框的内容。开启「剪切替换」后，@@@ 传入内容的同时清空输入框；关闭则保留输入框内容。";
+"CUSTOM_ACTION_LINK_ERROR" = "动作链接设置错误";
+"TEXT" = "文本";
+
+//=====================CUSTOM ACTION TYPES=====================
+"ACTION_TYPE" = "类型";
+"CHOOSE_ACTION_TYPE" = "选择动作类型";
+"ACTION_TYPE_URL_SCHEME" = "链接协议";
+"ACTION_TYPE_TEXT" = "文本";
+"ACTION_TYPE_URL" = "网页链接";
+"ACTION_TYPE_OPEN_APP" = "打开应用";
+"URL_SCHEME_SETTINGS" = "链接协议设置";
+"TEXT_SETTINGS" = "文本设置";
+"URL_SETTINGS" = "网页链接设置";
+"OPEN_IN_APP" = "应用内打开";
+"CUT_REPLACE_FIELD" = "剪切替换";
+"TYPE_FOOTER_URL_SCHEME" = "默认关闭悬浮，按 URL Scheme 正常跳转。开启“悬浮打开应用”后，将对应应用悬浮打开并投递原始链接。不对应应用的系统命令请保持悬浮关闭。支持 @@@ 传入输入框内容。";
+"TYPE_FOOTER_TEXT" = "管理多条纯文本记录。一条时直接插入，多条时打开悬浮列表，点选记录后插入并关闭。原样保留文本、空格和换行。点击“编辑”可删除记录或拖动排序。";
+"TYPE_FOOTER_URL" = "点击后打开该网址，可选择在 APP 内或 APP 外打开；url 支持入参替换，使用 @@@ 传入当前输入框的内容。开启「剪切替换」后，@@@ 传入内容的同时清空输入框；关闭则保留输入框内容。";
+"TYPE_FOOTER_OPEN_APP" = "默认以 MUBX 小窗悬浮打开所选应用，可直接操作、拖动标题栏，并点击关闭按钮结束悬浮。关闭此开关可正常全屏打开。无需安装 PullOver-X。";
+
+//=====================APP / SHORTCUT PICKERS=====================
+"OPEN_APP" = "打开应用";
+"SELECT_APP" = "选择应用";
+"SELECT_APP_REQUIRED" = "请先选择一个已安装的应用再保存。";
+"SELECT_SHORTCUT" = "选择快捷方式";
+"User Applications" = "用户应用";
+"System Applications" = "系统应用";
+"SELECTED" = "已选择";
+"UNSELECTED" = "未选择";
+"NO_APP_SHORTCUTS" = "没有找到应用快捷方式。系统桌面正在刷新当前静态与动态快捷项，请稍后重新打开此页。";
+"STATIC_SHORTCUTS_FOOTER" = "列出系统桌面从各应用解析到的当前静态声明与运行时注册快捷项；执行前会重新取得最新的快捷项对象。";
+"SHORTCUT_SOURCE_STATIC" = "静态";
+"SHORTCUT_SOURCE_DYNAMIC" = "动态";
+
+//=====================SHELL COMMAND BEHAVIOR=====================
+"SHELL_TITLE" = "命令标题";
+"SHELL_COMMAND" = "命令";
+"FOOTER_SHELL_SINGLE_TAP" = "单击快捷方式时执行设置的命令。";
+"FOOTER_SHELL_LONG_PRESS" = "长按快捷方式时执行设置的命令。\n\n注意：如果在上方设置了自定义长按手势，此项将被忽略。";
+
+//=====================SHORTCUT APPEARANCE=====================
+"CUSTOM_APPEARANCE" = "显示";
+"FOOTER_CUSTOM_APPEARANCE" = "名称会替换短文本工具栏模式中的快捷方式显示名称。图标支持 SF Symbols 标准图标名称（如 doc.on.doc），或应用 Bundle ID（如 com.apple.Preferences，显示对应应用图标，大小与 SF 图标一致），无效的名称将回退为默认图标。";
+"CUSTOM_NAME" = "名称";
+"CUSTOM_ICON" = "图标";
+"CUSTOM_ICON_INVALID" = "图标无效。请填写 SF Symbols 名称或应用 Bundle ID，将使用默认图标。";
+
+//=====================MISC=====================
+"SEARCHBAR_PLACEHOLDER" = "搜索设置";
+"RESPRING" = "重新加载界面";
+"RESPRING_MESSAGE" = "重新加载界面不是必须的，但建议执行以便立即应用更改。现在重新加载吗？";
+"DEFAULT" = "默认";
+"ANSWER_YES" = "是";
+"ANSWER_NO" = "否";
+"FOOTER_SPONGEBOB_ENTROPY" = "选择生成文本的随机程度。";
+"SPONGEBOB_ENTROPY" = "海绵宝宝文本随机程度";
+"SPONGEBOB_RANDOM" = "随机";
+"SPONGEBOB_ALTERNATE" = "交替";
+"SPONGEBOB_VOWEL" = "元音";
+"SPONGEBOB_CONSONENT" = "辅音";
+"SPACING" = "按钮间距";
+"BOTTOM_SPACING" = "底部间距";
+"HEIGHT" = "按钮高度";
+"RADIUS" = "圆角半径";
+"DESCRIPTION" = "描述";
+"ICON_TYPE" = "图标类型";
+"ICON_PATH" = "图标路径";
+"EMOJI" = "表情符号";
+"GESTURE_TAP" = "点按";
+"NEW_BUTTON" = "新建按钮";
+"MAX_BUTTONS_REACHED" = "顶部工具栏最多同时开启 %d 个按钮";
+"DUPLICATE_ACTION" = "该动作已添加到工具栏";
+"CHOOSE_TAP_FIRST" = "请先设置点按动作";
+"FOOTER_TOOLBAR_BUTTONS" = "点击按钮编辑手势，拖动调整顺序。底部工具栏最多同时启用 8 个按钮，不支持翻页。超出的按钮保留配置并关闭。";
+"FOOTER_TOP_TOOLBAR_BUTTONS" = "按钮可无限保存，启用数量限定为当前一屏容量：单行按每行个数，双行按两行容量。减少容量时，超出的按钮会关闭，配置不会删除。";
+"ANSWER_OK" = "好";
+"ANSWER_CANCEL" = "取消";
+"SAVE" = "保存";
+"DONE" = "完成";
+"DEFAULT_BUTTON_NAME" = "动作";
+"TEST_INPUT_FIELD" = "测试输入框（点击弹出键盘试试按钮）";
+"TEST_INPUT_FIELD_PLACEHOLDER" = "输入文本试试工具栏按钮…";
+"TOOLBAR_PREVIEW" = "工具栏预览";
+"TOOLBAR_PREVIEW_EMPTY" = "暂无已开启的按钮";
+"TOOLBAR_PREVIEW_UNAVAILABLE" = "预览暂不可用，请安装 MUBX 后重新打开设置。";
+
+"LONG_SHELLX_SCREENSHOT" = "ShellX 截图";
+"SHORT_SHELLX_SCREENSHOT" = "截图";
+"LONG_PIXPIN_SCREENSHOT" = "PixPin 截图";
+"SHORT_PIXPIN_SCREENSHOT" = "PixPin";
+"LONG_AI_CHAT" = "AI问答";
+"SHORT_AI_CHAT" = "AI";
+"LONG_CLIPBOARD" = "剪切板";
+"SHORT_CLIPBOARD" = "剪切板";
+"LONG_PULLOVER_WAKE" = "小把手";
+"SHORT_PULLOVER_WAKE" = "把手";
+
+/* Custom actions management page (KayokoX-style layout) */
+"NO_CUSTOM_ACTIONS" = "暂无自定义动作";
+"UNGROUPED" = "未分组";
+"GROUP_ACTIONS_COUNT" = "%lu 个动作";
+"MOVE_TO_GROUP" = "移动到分组…";
+"REMOVE_FROM_GROUP" = "从分组移除";
+"NEW_GROUP" = "新建分组";
+"GROUP_NAME" = "分组名称";
+"RENAME_GROUP" = "重命名分组";
+"DELETE_GROUP" = "删除分组";
+"DELETE_GROUP_CONFIRM" = "删除后，组内动作将移回「未分组」。";
+"GROUP_EXISTS" = "已存在同名分组";
+"SEARCH_NO_MATCH" = "没有匹配的动作";
+"BATCH_ADD_APPLICATIONS" = "批量添加应用";
+"BATCH_ADD_RESULT" = "已添加 %lu 个动作，跳过 %lu 个重复项";
+"BATCH_ADD_ALL_DUPLICATES" = "所选应用均已存在，未新增动作";
+"ADD_TYPE_HINT" = "选择一种类型即可创建新动作";
+
+/* AI 问答 */
+"AI_CARD_TITLE" = "AI";
+"AI_CARD_PLACEHOLDER" = "问点什么…";
+"AI_CARD_SEND" = "发送";
+"AI_CARD_STOP" = "停止";
+"AI_CARD_PHOTOS" = "相册";
+"AI_CARD_CAMERA" = "相机";
+"AI_CARD_FILES" = "文件";
+"AI_CARD_IMAGE" = "图片";
+"AI_CARD_NO_KEY_ALERT" = "请先在 MUBX 设置 → AI问答 中配置 API Key";
+"AI_CARD_NO_MODEL_ALERT" = "请先在 MUBX 设置 → AI问答 中配置模型";
+"AI_CARD_REQUEST_FAILED" = "请求失败";
+"AI_CARD_FILE_UNREADABLE" = "无法读取该文件内容";
+"AI_CARD_REPLY_COPIED" = "回复已复制，回到应用后粘贴";
+
+/* AI 问答设置 */
+"AI_SETTINGS_TITLE" = "AI问答";
+"AI_ENGINE" = "AI 引擎";
+"AI_CURRENT_ENGINE" = "当前使用的引擎";
+"AI_ENGINE_PICKER_FOOTER" = "选择 Ai，点击右上角添加按钮可自定义 API。所有引擎统一使用 OpenAI 兼容协议（Gemini 走其 OpenAI 兼容端点）。";
+"AI_ENGINE_BUILTIN_SECTION" = "内置";
+"AI_ENGINE_CUSTOM_SECTION" = "自定义";
+"AI_ENGINE_ADD" = "添加";
+"AI_ENGINE_SWIPE_DELETE" = "左滑可删除";
+"AI_CUSTOM_ENGINE_TITLE" = "自定义引擎";
+"AI_SAVE" = "保存";
+"AI_INVALID_ENDPOINT" = "接口地址无效，请填写以 http:// 或 https:// 开头的完整地址";
+"AI_API_KEY" = "接口密钥";
+"AI_MODELS_LABEL" = "模型";
+"AI_FETCH_MODELS" = "模型抓取";
+"AI_FETCHING_MODELS" = "抓取中…";
+"AI_OPEN_KEYS_URL" = "获取接口密钥";
+"AI_ENDPOINT" = "接口地址";
+"AI_CUSTOM_NAME" = "显示名称";
+"AI_CUSTOM_ADD_TITLE" = "添加自定义接口";
+"AI_CUSTOM_ADD_MESSAGE" = "兼容接口：填 Base URL（如 https://xxx/v1）或完整 …/chat/completions，任意兼容均可";
+"AI_CUSTOM_BASEURL_HINT" = "接口地址（https://xxx/v1 或 …/chat/completions）";
+"AI_CUSTOM_MODEL_HINT" = "模型标识（例 gpt-4o-mini）";
+"AI_PERSONA_SECTION" = "AI 人设";
+"AI_PERSONA_ROW" = "人设";
+"AI_STREAM_ROW" = "流式输出";
+"AI_PERSONA_FOOTER" = "点击可改内容。长按拖动排序，第一位为默认人设。左滑删除。右上角「+」添加新人设。添加后新人设按钮在框选菜单中默认为打开，人设名称则是按钮名称。";
+"AI_PERSONA_EDIT_TITLE" = "编辑人设";
+"AI_PERSONA_NAME_HEADER" = "名称";
+"AI_PERSONA_CONTENT_HEADER" = "人设内容";
+"AI_PERSONA_DEFAULT_MARK" = "默认";
+"AI_PERSONA_NEW" = "新人设";
+"AI_HINT_QWEN" = "通义默认 qwen3.8-flash、qwen3-vl-flash。模型用逗号分隔。抓取走百炼 compatible-mode /v1/models。";
+"AI_HINT_DEEPSEEK" = "DeepSeek 默认 deepseek-chat、deepseek-reasoner。模型用逗号分隔，抓取走 /v1/models。";
+"AI_HINT_OPENAI" = "OpenAI 默认 gpt-4o-mini、gpt-4o。模型用逗号分隔，抓取走 /v1/models。";
+"AI_HINT_SILICONFLOW" = "硅基流动模型名带组织前缀（如 deepseek-ai/DeepSeek-V3）。抓取走 /v1/models。";
+"AI_HINT_DOUBAO" = "豆包使用接入点 ID 作为模型名，请先在方舟控制台创建接入点，或直接抓取。";
+"AI_HINT_ZHIPU" = "智谱默认 glm-4-flash、glm-4-plus。模型用逗号分隔，抓取走 /api/paas/v4/models。";
+"AI_HINT_GEMINI" = "Gemini 走 OpenAI 兼容端点（v1beta/openai）。模型用逗号分隔。";
+"AI_HINT_CUSTOM" = "自定义引擎需填写 OpenAI 兼容接口地址（含 /v1 一类前缀），模型用逗号分隔，抓取走 {地址}/models。";
+
+"PASTE_CHIP_ACTION" = "粘贴";
+
+/* 设置页通用（补齐缺失键） */
+"TWEAK" = "插件";
+"ENABLED" = "启用";
+"HAPTIC" = "触感反馈";
+"PASTE_CHIP" = "粘贴悬浮窗";
+"PASTE_CHIP_FOOTER" = "剪贴板有新内容时在键盘上方弹出悬浮粘贴窗，并自动放行系统「允许粘贴」弹窗。";
+"PASTE_CHIP_APPS" = "生效应用";
+"FOOTER_CREDITS" = "MUBX 由 lindo 开发，感谢使用与支持";
+
+// App quick actions
+"ACTION_TYPE_SHORTCUT" = "快捷方式";
+"TYPE_FOOTER_SHORTCUT" = "选择应用图标长按菜单中的快捷项。执行时使用应用当前的快捷项；若该项已失效，请重新选择。";
+"SELECT_SHORTCUT_REQUIRED" = "请先选择要执行的应用快捷方式。";
+"SHORTCUTS_LOADING" = "正在加载快捷方式…";
+"SHORTCUTS_NO_MATCHES" = "没有匹配的快捷方式";
+"SHORTCUTS_REFRESH_FAILED" = "刷新失败，请下拉重试。";
+"CUSTOM_ACTION_SHORTCUT_ERROR" = "快捷方式无法执行，请刷新列表后重新选择。";
+"SEARCH" = "搜索应用或快捷方式";
+
+// JavaScript custom actions
+"JS_SOURCE" = "脚本源码";
+"JS_BEHAVIOR" = "输入与结果";
+"JS_INPUT" = "输入";
+"JS_OUTPUT" = "输出";
+"JS_AUTO" = "选区优先";
+"JS_ALL" = "全文";
+"JS_CLIPBOARD" = "剪贴板";
+"JS_REPLACE" = "替换";
+"JS_INSERT" = "插入";
+"JS_COPY" = "复制";
+"JS_TEST" = "测试脚本";
+"JS_RUN" = "运行测试";
+"JS_RESULT" = "脚本结果";
+"JS_SOURCE_INVALID" = "请输入脚本，长度不能超过 131072 个字符。";
+"JS_INPUT_UNAVAILABLE" = "当前输入框无法用于脚本，请先结束拼音输入；密码框不支持。";
+"JS_TEST_HINT" = "填写测试文本后运行。网络请求会真实发送；文本与跳转动作只预览。日志仅保留在本页。";
+"JS_HELP" = "入口：async function main(str)。选区优先：无选区时读取全文。替换：替换读取的选区或全文；剪贴板输入则替换当前选区。插入：在当前光标或选区写入；复制：写入剪贴板。\n支持 $http.get/post/put/patch/delete({url, headers, body})，返回 UTF-8 字符串，JSON 用 JSON.parse 解析；body 请传字符串。支持 $url.open、$url.openInApp、$app.open 和 console.log。\n返回字符串，或 {type, content, title?, args?}；type 支持 txt/url/urlInApp/app/function。数组多项显示菜单，null 不写入。跳转后结束当前脚本会话。网络或输入状态失效时不回写。\n暂不支持图片、文件、$pb、$kb、旧式 js 类型或完整浏览器/Node 环境。";
+
+// Text action records
+"TEXT_RECORDS" = "文本记录";
+"TEXT_RECORD_ADD" = "添加记录";
+"TEXT_RECORD_NUMBER" = "记录 %ld";
+"TEXT_RECORD_EMPTY" = "点击输入文本";
+"TEXT_RECORD_REQUIRED" = "请为每条记录填写文本，或在编辑模式下删除不用的记录。";
+"TEXT_RECORD_INPUT_UNAVAILABLE" = "当前输入框不可用。";
+"TEXT_RECORD_COUNT" = "%lu 条记录";
+
+// 配置备份
+"BACKUP_EMPTY" = "当前没有可备份的配置";
+"BACKUP_FAILED" = "备份文件创建失败，请重试";
+"RESTORE_CONFIRM_TITLE" = "恢复配置";
+"RESTORE_CONFIRM_MESSAGE" = "备份包含 %lu 项配置。\n恢复将覆盖当前全部配置且无法撤销，确定继续吗？";
+"RESTORE_DONE" = "配置已恢复";
+"RESTORE_FAILED_TITLE" = "恢复失败";
+"RESTORE_FAILED_MESSAGE" = "无法读取有效的 MUBX 备份文件";
+
+// Keyboard-covering swipe panels
+"GESTURE_SETTINGS" = "手势设置";
+"DOCK_GESTURE_SETTINGS" = "Dock 手势设置";
+"DOCK_GESTURE_FOOTER" = "分别配置 Dock 上划、左滑和右滑的动作。手势只能选择手势面板或无需键盘的自定义动作。";
+"DOCK_ENABLE_UP" = "启用上滑";
+"DOCK_ACTION_UP" = "上滑动作";
+"DOCK_ENABLE_LEFT" = "启用左滑";
+"DOCK_ACTION_LEFT" = "左滑动作";
+"DOCK_ENABLE_RIGHT" = "启用右滑";
+"DOCK_ACTION_RIGHT" = "右滑动作";
+"DOCK_ACTION_NONE" = "不执行动作";
+"DOCK_ACTION_PICKER_FOOTER" = "可选择任意手势面板或无需输入框的自定义动作。";
+"KEYBOARD_GESTURE_SETTINGS" = "键盘工具栏手势";
+"KEYBOARD_PANEL_SETTINGS" = "面板设置";
+"KEYBOARD_PANEL_ENTRANCE" = "面板入口";
+"KEYBOARD_PANEL_TOP" = "顶部工具栏长滑";
+"KEYBOARD_PANEL_BOTTOM" = "底部工具栏长滑";
+"KEYBOARD_PANEL_CONTENT" = "面板内容";
+"KEYBOARD_PANEL_CONTENT_FOOTER" = "系统开关、亮度与媒体音量显示、每行图标数和外观只影响当前面板。下方仅显示本面板添加的自定义动作。";
+"KEYBOARD_PANEL_SYSTEM_TOGGLES" = "显示第一排系统开关";
+"KEYBOARD_PANEL_SYSTEM_SLIDERS" = "显示第二排亮度与音量";
+"GLOBAL_PANEL_SETTINGS" = "独立面板";
+"GLOBAL_PANEL_ENABLED" = "启用手势面板";
+"GLOBAL_PANEL_DOCK_SWIPE" = "主屏幕 Dock 底部上划";
+"GLOBAL_PANEL_FOOTER" = "独立面板无需弹出键盘，支持系统控制、链接、应用和快捷操作；需要输入框的文字和脚本动作请在键盘面板中执行。";
+"GLOBAL_PANEL_INPUT_REQUIRED" = "执行失败：手势面板无法读取或替换输入内容，请从键盘面板执行。";
+"KEYBOARD_PANEL_APPEARANCE" = "面板外观";
+"KEYBOARD_PANEL_DARK" = "深色背景";
+"KEYBOARD_PANEL_COLUMNS" = "每行图标数";
+"KEYBOARD_PANEL_SCALE" = "内容大小（%）";
+"KEYBOARD_PANEL_ITEMS_FOOTER" = "键盘面板支持全部操作，手势面板只支持无需键盘的动作及手势面板。左滑删除当前条目，长按拖动排序，点击编辑；条目删除不删除原动作或原面板。";
+"KEYBOARD_PANEL_PICKER_DELETE_FOOTER" = "点击选择动作或同类面板。左滑可删除自定义动作，并清除其引用；面板请在面板设置中管理。";
+"KEYBOARD_PANEL_ITEM_APPEARANCE" = "编辑名称";
+"KEYBOARD_PANEL_NAME" = "名称（留空使用动作名称）";
+"KEYBOARD_PANEL_SAVE" = "保存";
+"KEYBOARD_PANEL_REPLACE_ACTION" = "更换动作";
+"KEYBOARD_PANEL_EDIT_ACTION" = "编辑自定义动作";
+"KEYBOARD_PANEL_CLOSE" = "关闭面板";
+"KEYBOARD_TOOLBAR_CAPACITY" = "当前工具栏一屏最多显示 %ld 个按钮。请先关闭一个按钮，再启用新按钮。";
+
+// Custom system actions
+"ACTION_TYPE_SYSTEM" = "系统动作";
+"SELECT_SYSTEM_ACTION" = "选择系统动作";
+"SELECT_SYSTEM_ACTION_REQUIRED" = "请先选择一个系统动作。";
+"TYPE_FOOTER_SYSTEM" = "在 SpringBoard 中执行系统动作。开关动作切换当前状态；亮度、音量每次增减一档。系统接口或权限不可用时会提示失败。";
+"SYSTEM_GROUP_MEDIA" = "媒体控制";
+"SYSTEM_GROUP_DEVICE" = "设备操作";
+"SYSTEM_GROUP_CONTROL" = "控制中心";
+"SYSTEM_GROUP_PIXPIN" = "PixPin 截图";
+"SYSTEM_PIXPIN_FULL" = "PixPin 全屏截图";
+"SYSTEM_PIXPIN_AREA" = "PixPin 区域截图";
+"SYSTEM_PIXPIN_FREEZE" = "PixPin 冻结截图";
+"SYSTEM_PIXPIN_INSTANT" = "PixPin 即时区域截图";
+"SYSTEM_PIXPIN_MARKUP" = "PixPin 全屏标记";
+"SYSTEM_PIXPIN_LONG" = "PixPin 滚动截图";
+"SYSTEM_PIXPIN_CANCEL" = "PixPin 取消当前任务";
+"SYSTEM_PIXPIN_FOOTER" = "仅在已安装 PixPin 时显示。按 PixPin 当前设置执行；关闭功能、任务忙碌或尚未注入时可能不响应。请求已发送不代表截图或保存完成。";
+"SYSTEM_DEVICE_FOOTER" = "注销会重启界面服务，注销（SB）仅退出 SpringBoard。安全模式依赖越狱环境，重启用户空间需要系统权限。注销、安全模式、关机和重启执行前需要确认。";
+"SYSTEM_ACTION_CONFIRM" = "此操作会中断当前会话。确定继续？";
+"SYSTEM_ACTION_UNAVAILABLE" = "当前系统没有可用的动作接口";
+"SYSTEM_PREVIOUS" = "上一首";
+"SYSTEM_NEXT" = "下一首";
+"SYSTEM_PLAY_PAUSE" = "播放 / 暂停";
+"SYSTEM_RESPRING" = "注销";
+"SYSTEM_RESPRING_SB" = "注销（SB）";
+"SYSTEM_SAFE_MODE" = "安全模式";
+"SYSTEM_SHUTDOWN" = "关机";
+"SYSTEM_REBOOT" = "重启设备";
+"SYSTEM_USERSPACE_REBOOT" = "重启用户空间";
+"SYSTEM_HOME" = "返回桌面";
+"SYSTEM_SWITCHER" = "打开后台";
+"SYSTEM_SCREENSHOT" = "系统截图";
+"SYSTEM_CONTROL_CENTER" = "打开控制中心";
+"SYSTEM_SCREEN_RECORDING" = "录屏";
+"SYSTEM_SCREEN_RECORDING_MICROPHONE" = "开麦录屏";
+"SYSTEM_RECORDING_FOOTER" = "录屏关闭麦克风，开麦录屏开启麦克风。录制中再次执行任一录屏动作会停止并由系统保存。启动、停止期间请等待；超时结果未知，不会自动重试。";
+"SYSTEM_FLASHLIGHT" = "手电筒";
+"SYSTEM_WIFI" = "Wi-Fi";
+"SYSTEM_BLUETOOTH" = "蓝牙";
+"SYSTEM_AIRPLANE" = "飞行模式";
+"SYSTEM_CELLULAR" = "蜂窝数据";
+"SYSTEM_ORIENTATION" = "方向锁定";
+"SYSTEM_DND" = "勿扰模式";
+"SYSTEM_DARK_MODE" = "深色模式";
+"SYSTEM_BRIGHTNESS_UP" = "增加亮度";
+"SYSTEM_BRIGHTNESS_DOWN" = "降低亮度";
+"SYSTEM_VOLUME_UP" = "增加音量";
+"SYSTEM_VOLUME_DOWN" = "降低音量";
+
+"ACTION_TYPE_JAVASCRIPT" = "脚本";
+
+"SYSTEM_ACTION_FAILED" = "系统拒绝执行该动作，请查看诊断日志";
+
+"SYSTEM_ACTION_TIMEOUT" = "未收到系统回复，执行结果未知，请检查插件是否已注入";
+
+"SYSTEM_ACTION_INVALID" = "系统动作配置已失效，请重新选择并保存";
+
+"SYSTEM_ACTION_EXPIRED" = "操作已取消或过期，请重新触发";
+
+//=====================Action groups & SF symbol picker=====================
+"ACTION_GROUP_EDIT" = "编辑";
+"ACTION_GROUP_DELETE" = "删除";
+"ACTION_GROUP_SELECT" = "选择";
+"ACTION_GROUP_CURSOR" = "光标";
+"ACTION_GROUP_TOOLS" = "工具";
+"SF_SYMBOL_PICKER_TITLE" = "图标库";
+"SF_SYMBOL_SEARCH" = "搜索图标名";
+"SF_SYMBOL_LOADING" = "正在加载本机 SF 图标…";
+"SF_SYMBOL_LOAD_FAILED" = "未能从本机系统资源获取可用的 SF 图标";
+"SF_SYMBOL_NO_RESULTS" = "没有匹配的图标";
+"SF_SYMBOL_RETRY" = "重新加载";
+"SF_SYMBOL_UNAVAILABLE" = "此图标当前不可用，请重新选择";
+"SF_SYMBOL_CATEGORIES_UNAVAILABLE" = "暂时无法加载分类，可进入「全部」选择图标，或重新加载。";
+"SF_SYMBOL_CATEGORY_all" = "全部";
+"SF_SYMBOL_CATEGORY_multicolor" = "多色";
+"SF_SYMBOL_CATEGORY_variable" = "可变颜色";
+"SF_SYMBOL_CATEGORY_communication" = "通信";
+"SF_SYMBOL_CATEGORY_weather" = "天气";
+"SF_SYMBOL_CATEGORY_maps" = "地图";
+"SF_SYMBOL_CATEGORY_objectsandtools" = "物品与工具";
+"SF_SYMBOL_CATEGORY_devices" = "设备";
+"SF_SYMBOL_CATEGORY_cameraandphotos" = "相机与照片";
+"SF_SYMBOL_CATEGORY_gaming" = "游戏";
+"SF_SYMBOL_CATEGORY_connectivity" = "连接";
+"SF_SYMBOL_CATEGORY_transportation" = "交通";
+"SF_SYMBOL_CATEGORY_automotive" = "汽车";
+"SF_SYMBOL_CATEGORY_accessibility" = "辅助功能";
+"SF_SYMBOL_CATEGORY_privacyandsecurity" = "隐私与安全";
+"SF_SYMBOL_CATEGORY_human" = "人物";
+"SF_SYMBOL_CATEGORY_home" = "居家";
+"SF_SYMBOL_CATEGORY_fitness" = "健身";
+"SF_SYMBOL_CATEGORY_nature" = "自然";
+"SF_SYMBOL_CATEGORY_editing" = "编辑";
+"SF_SYMBOL_CATEGORY_textformatting" = "文本格式";
+"SF_SYMBOL_CATEGORY_media" = "媒体";
+"SF_SYMBOL_CATEGORY_keyboard" = "键盘";
+"SF_SYMBOL_CATEGORY_commerce" = "商务";
+"SF_SYMBOL_CATEGORY_time" = "时间";
+"SF_SYMBOL_CATEGORY_health" = "健康";
+"SF_SYMBOL_CATEGORY_shapes" = "形状";
+"SF_SYMBOL_CATEGORY_arrows" = "箭头";
+"SF_SYMBOL_CATEGORY_indices" = "索引";
+"SF_SYMBOL_CATEGORY_math" = "数学";
+"SF_SYMBOL_CATEGORY_whatsnew" = "新增图标";
+"SF_SYMBOL_CATEGORY_draw" = "绘图";
+
+"ICON_LIBRARY_ROW" = "从图标库选择";
+"KEYBOARD_PANEL_ACTIONS" = "配置面板动作";
+"SF_SYMBOL_COLUMNS_ONE" = "单列";
+"SF_SYMBOL_COLUMNS_TWO" = "双列";
+"SF_SYMBOL_COLUMNS_THREE" = "三列";
+"SF_SYMBOL_COLUMNS_FOUR" = "四列";
+
+// Independent status-bar gesture entries.
+"STATUS_BAR_SETTINGS" = "状态栏手势";
+"STATUS_BAR_LANDSCAPE" = "横屏也启用";
+"STATUS_BAR_LEFT" = "左边区域";
+"STATUS_BAR_MIDDLE" = "中间区域";
+"STATUS_BAR_RIGHT" = "右边区域";
+"STATUS_BAR_TAP" = "单击";
+"STATUS_BAR_DOUBLETAP" = "双击";
+"STATUS_BAR_LONGPRESS" = "长按";
+"STATUS_BAR_LEFTSWIPE" = "左滑";
+"STATUS_BAR_RIGHTSWIPE" = "右滑";
+"STATUS_BAR_FOOTER" = "每个区域的五种手势分别配置，默认关闭，设备未解锁时禁用。区域按当前状态栏宽度划分，刘海切口无法触摸。灵动岛单击使用中间区域的单击动作，未配置时保留系统操作。";
+"STATUS_BAR_ENTRY_FOOTER" = "每个手势绑定一个动作。未选择动作时不接管触摸；同一区域同时启用单击和双击时，单击会稍作等待。上下拖动保留系统操作。";
+"STATUS_BAR_UNASSIGNED" = "未选择";
+"STATUS_BAR_CLEAR" = "清除动作";
+"STATUS_BAR_PANELS" = "打开面板";
+"STATUS_BAR_PICKER_FOOTER" = "可选择任意手势面板或无需输入框的自定义动作。";
+
+"PANEL_KIND_KEYBOARD" = "键盘面板";
+"PANEL_KIND_GESTURE" = "手势面板";
+"PANEL_ADD" = "添加面板";
+"PANEL_NAME" = "面板名称";
+"PANEL_TYPES_FOOTER" = "面板可任意添加、改名和删除，并作为动作被选择。键盘入口只可选择键盘面板；Dock 和状态栏手势只可选择手势面板。左滑面板可删除，删除会清除它的动作引用。";
+"PANEL_KEYBOARD_FOOTER" = "可配置基础键盘操作、自定义动作和其他键盘面板；可从键盘按钮、按钮手势或工具栏手势打开。";
+"PANEL_GESTURE_FOOTER" = "只可从 Dock、状态栏手势或其他手势面板打开。不能添加基础键盘操作、文本或脚本。链接等动作允许配置，执行时若需要输入内容或替换则报错。";
+"PANEL_TOOLBAR_FOOTER" = "左右长滑分别执行所选动作，未选择时不触发。只能选择键盘面板；单个按钮内滑动仍使用按钮自身手势。";
+"PANEL_KEYBOARD_TEST" = "输入文字，测试键盘面板";
+
+"OPEN_FLOATING_APP" = "悬浮打开应用";
+
+"FLOATING_APP_CLOSE" = "关闭悬浮应用";
+
+"FLOATING_APP_MINIMIZE" = "最小化悬浮应用";
+
+"FLOATING_APP_SETTINGS" = "应用悬浮";
+
+"FLOATING_APP_SIZE_GROUP" = "默认大小";
+
+"FLOATING_APP_MAX_SCALE" = "大小比例";
+
+"FLOATING_APP_SCALE_FOOTER" = "调整悬浮小窗默认最大占屏比例，设为 100% 时全屏打开，对新打开的悬浮生效。";
+
+"FLOATING_APP_POSITION_GROUP" = "默认位置";
+
+"FLOATING_APP_POSITION" = "停靠位置";
+
+"FLOATING_APP_POSITION_FOOTER" = "设置悬浮小窗打开时的默认水平位置；手动拖动后以拖动位置为准，对新打开的悬浮生效。";
+
+"FLOATING_APP_POSITION_LEFT" = "居左";
+
+"FLOATING_APP_POSITION_CENTER" = "居中";
+
+"FLOATING_APP_POSITION_RIGHT" = "居右";
+
+"FLOATING_APP_OPEN_ERROR" = "悬浮打开失败，请检查目标应用或重试";
+
+"ACTION_GROUP" = "所属分组";
+"ACTION_GROUP_GONE" = "目标分组已不存在，请重新选择分组。";
+"ACTION_GROUP_MANAGER" = "分组管理";
+"ACTION_GROUP_NAME_INVALID" = "分组名称不能为空，且最多 32 个字符。";
+"ACTION_TYPE_FILTER" = "类型";
+"ACTION_ALL_TYPES" = "全部类型";
+"ACTION_SELECT" = "选择";
+"ACTION_MORE" = "更多";
+"ACTION_SELECT_ALL" = "全选结果";
+"ACTION_MOVE_SHORT" = "移入分组";
+"ACTION_UNGROUP_SHORT" = "移出分组";
+"ACTION_SELECTED_COUNT" = "已选择 %lu 项";
+"ACTION_DELETE_CONFIRM" = "删除选中的 %lu 个动作，并清除其工具栏、手势、面板和子动作引用？";
+"ACTION_COLLAPSE_ALL" = "全部折叠";
+"ACTION_EXPAND_ALL" = "全部展开";
+"ACTION_SORT" = "调整动作顺序";
+"ACTION_SEARCH_RESULTS" = "搜索／筛选结果";
+"ACTION_ORGANIZE_HINT" = "点击动作编辑；点击分组标题展开或折叠；选择多个动作后可批量归类。";
+
+// Floating app shelf
+"FLOATING_SHELF_GROUP" = "后台 App 停靠栏";
+"FLOATING_SHELF_SWITCH" = "底部工具栏显示悬浮 App";
+"FLOATING_SHELF_FOOTER" = "开启后，键盘底部显示悬浮 App，替代原动作按钮及其滑动手势；一行 4 个，最多 8 个，左右滑动翻页。最近缩小的 App 排在第一位；超过 8 个时最老的图标退出列表，App 仍由系统管理。关闭后恢复原工具栏配置，App 不会被关闭。停靠列表在 SpringBoard 重启后清空。";
+"FLOATING_SHELF_ACTIVE" = "正在悬浮使用";
+"FLOATING_SHELF_RESTORE_FAILED" = "暂时无法恢复，请再次点击。";
+"FLOATING_SHELF_PREVIEW" = "App 停靠栏已开启：每页 4 个，最多 8 个。原动作配置保留。";
+"FLOATING_SHELF_FOREGROUND" = "正在前台使用";
+// MUBX 剪贴板面板（DXClipboardPanel）
+"剪贴板" = "剪贴板";
+"剪贴板历史" = "剪贴板历史";
+"收藏" = "收藏";
+"搜索剪贴板" = "搜索剪贴板";
+"暂无剪贴板记录" = "暂无剪贴板记录";
+"清空剪贴板历史" = "清空剪贴板历史";
+"取消" = "取消";
+"清空" = "清空";
+"复制" = "复制";
+"收藏条目" = "收藏";
+"取消收藏" = "取消收藏";
+"删除" = "删除";
+"（图片）" = "[图片]";

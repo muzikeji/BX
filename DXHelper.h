@@ -1,5 +1,5 @@
 @interface DXHelper : NSObject
-+(UIImage *)imageForTypeXWithPlaceholder:(BOOL)placeholder;
++(UIImage *)imageForMUBXWithPlaceholder:(BOOL)placeholder;
 +(UIImage *)imageForName:(NSString *)imageName withSystemColor:(BOOL)withSystemColor completion:(void (^)(BOOL isThirteen, BOOL isCustomImagePath))handler;
 +(UIImage *)imageFromArray:(NSArray *)array atIndex:(NSUInteger)index withSystemColor:(BOOL)withSystemColor completion:(void (^)(BOOL isThirteen, BOOL isCustomImagePath))handler;
 +(NSString *)labelFromArray:(NSArray *)array atIndex:(NSUInteger)index;

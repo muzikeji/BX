@@ -1,0 +1,637 @@
+//translated by udevs
+
+//=====================Short Text for Shortcuts=====================
+//5 letters word is optimal
+//6 letters is still acceptable, but not recommended
+"SHORT_SELECT_ALL" = "All";
+"SHORT_COPY" = "Copy";
+"SHORT_PASTE" = "Paste";
+"SHORT_CUT" = "Cut";
+"SHORT_UNDO" = "Undo";
+"SHORT_REDO" = "Redo";
+"SHORT_SELECT" = "Slct";
+"SHORT_BEGINNING" = "Bgn";
+"SHORT_ENDING" = "End";
+"SHORT_DELETE" = "Del";
+"SHORT_DISMISS_KEYBOARD" = "Dmiss";
+"SHORT_MOVE_CURSOR_LEFT" = "Left";
+"SHORT_MOVE_CURSOR_RIGHT" = "Right";
+"SHORT_MOVE_CURSOR_UP" = "Up";
+"SHORT_MOVE_CURSOR_DOWN" = "Down";
+"SHORT_DEFINE" = "Dfne";
+"SHORT_RUN_COMMAND" = "Cmd";
+"SHORT_MOVE_CURSOR_PREVIOUS_WORD" = "Prev";
+"SHORT_MOVE_CURSOR_NEXT_WORD" = "Next";
+"SHORT_MOVE_CURSOR_START_OF_LINE" = "LStrt";
+"SHORT_MOVE_CURSOR_END_OF_LINE" = "LEnd";
+"SHORT_MOVE_CURSOR_START_OF_PARAGRAPH" = "SPrgh";
+"SHORT_MOVE_CURSOR_END_OF_PARAGRAPH" = "EPrgh";
+"SHORT_MOVE_CURSOR_START_OF_SENTENCE" = "SStn";
+"SHORT_MOVE_CURSOR_END_OF_SENTENCE" = "EStn";
+"SHORT_SELECT_LINE" = "Line";
+"SHORT_SELECT_PARAGRAPH" = "Prgph";
+"SHORT_SELECT_SENTENCE" = "Stn";
+"SHORT_DELETE_FORWARD" = "DelFw";
+"SHORT_DELETE_WORD" = "DelWd";
+"SHORT_DELETE_ALL" = "Clear";
+"SHORT_COPY_LOG" = "CLog";
+"SHORT_SPONGEBOB" = "sPoNge";
+
+//=====================Long Text for Shortcuts=====================
+//Used for showing shortcuts name in "Manage Shortcuts" etc.
+"LONG_SELECT_ALL" = "Select All";
+"LONG_COPY" = "Copy";
+"LONG_PASTE" = "Paste";
+"LONG_CUT" = "Cut";
+"LONG_UNDO" = "Undo";
+"LONG_REDO" = "Redo";
+"LONG_SELECT" = "Select";
+"LONG_BEGINNING" = "Beginning of Document";
+"LONG_ENDING" = "Ending of Document";
+"LONG_DELETE" = "Delete";
+"LONG_DISMISS_KEYBOARD" = "Dismiss Keyboard";
+"LONG_MOVE_CURSOR_LEFT" = "Cursor Left";
+"LONG_MOVE_CURSOR_RIGHT" = "Cursor Right";
+"LONG_MOVE_CURSOR_UP" = "Cursor Up";
+"LONG_MOVE_CURSOR_DOWN" = "Cursor Down";
+"LONG_DEFINE" = "Define Word";
+"LONG_RUN_COMMAND" = "Shell Command";
+"LONG_MOVE_CURSOR_PREVIOUS_WORD" = "Previous Word";
+"LONG_MOVE_CURSOR_NEXT_WORD" = "Next Word";
+"LONG_MOVE_CURSOR_START_OF_LINE" = "Line Start";
+"LONG_MOVE_CURSOR_END_OF_LINE" = "Line End";
+"LONG_MOVE_CURSOR_START_OF_PARAGRAPH" = "Start of Paragraph";
+"LONG_MOVE_CURSOR_END_OF_PARAGRAPH" = "End of Paragraph";
+"LONG_MOVE_CURSOR_START_OF_SENTENCE" = "Start of Sentence";
+"LONG_MOVE_CURSOR_END_OF_SENTENCE" = "End of Sentence";
+"LONG_SELECT_LINE" = "Select Line";
+"LONG_SELECT_PARAGRAPH" = "Select Paragraph";
+"LONG_SELECT_SENTENCE" = "Select Sentence";
+"LONG_DELETE_FORWARD" = "Delete Forward";
+"LONG_DELETE_WORD" = "Delete Word";
+"LONG_DELETE_ALL" = "Clear All";
+"LONG_SPONGEBOB" = "sPonGeBob teXt";
+
+//=====================Manage Shortcuts=====================
+//Title
+"ENABLED_SHORTCUTS" = "Enabled Shorcuts";
+"DISABLED_SHORTCUTS" = "Disabled Shorcuts";
+"SHORTCUTS" = "Shortcuts";
+
+//Error
+"INCOMPATIBLE_RESET" = "Incompatible, please reset";
+
+//Reset
+"RESET" = "Reset";
+"RESET_MESSAGE" = "Reset all shortcuts including customized gesture actions to default?";
+"RESET_YES" = "Yes";
+"RESET_NO" = "No";
+
+//Footer
+"FOOTER_TEXT_FOR_ENABLED_SHORTCUTS" = "Add as many shortcuts as you wish! Tap any shortcut to customize its gesture actions.
+
+NOTE: If you experiencing any issue or shortcuts not showing correctly, please reset.";
+
+//=====================CUSTOM ACTIONS PAGE=====================
+"ACTION" = "Action";
+
+//=====================TOOLBAR SETTINGS (top / bottom pages)=====================
+//Shortcuts
+"FOOTER_SPACING" = "Spacing between shortcuts";
+"FOOTER_HEIGHT" = "Height";
+"FOOTER_RADIUS" = "Corner radius (applies when background tint or border is on)";
+//Button settings (per toolbar)
+"BUTTON_SETTINGS" = "Button Settings";
+"FOOTER_BUTTON_SETTINGS" = "These settings apply only to this toolbar; the top and bottom toolbars are styled independently. The border color adapts to light and dark mode. Button Size is the percentage of the cell width each button fills.";
+"FOOTER_BUTTON_SETTINGS_TOP" = "These settings apply only to this toolbar; the top and bottom toolbars are styled independently. The border color adapts to light and dark mode. Button Size is the percentage of the cell width each button fills. The top toolbar always wraps by Buttons per Row, with at most two rows.";
+"BORDER_ENABLED" = "Show Border";
+"BORDER_WIDTH" = "Border Thickness";
+"BUTTON_WIDTH" = "Button Size";
+"TOOLBAR_HEIGHT" = "Toolbar Height";
+"PANEL_SETTINGS" = "Panel settings";
+"PANEL_SIZE" = "Panel Size";
+"FOOTER_PANEL_SETTINGS" = "Adjust the size of the sub-action panel opened from this toolbar. Top and bottom settings are independent.";
+"MULTILINE_SETTINGS" = "Multi-Row Layout";
+"BUTTONS_PER_ROW" = "Buttons per Row";
+"BUTTON_ROW_SPACING" = "Button Row Spacing";
+"FOOTER_MULTILINE" = "The top toolbar always uses multi-row layout. The first row hugs the keyboard and the second stacks above it, with at most two rows. The enabled limit is twice the per-row count, up to 16 buttons (adjust Buttons per Row under Button Settings). Row spacing is adjustable from 0–20 in 0.1 increments.";
+"MULTI_ROW_LIMIT_MESSAGE" = "With %2$d buttons per row, multi-row mode supports at most two rows and %1$d enabled buttons. Disable extra buttons or increase the per-row count first.";
+"ENABLED_BUTTON_LIMIT_MESSAGE" = "The top toolbar can have at most %d enabled buttons. Disable an enabled button before turning on another one.";
+//Offsets
+"OFFSETS" = "Offsets";
+//Insets
+
+//=====================KEYBOARD INPUT BEHAVIOR=====================
+"DISABLED_INPUT_TYPE" = "Disabled Input Type";
+"ENABLED_INPUT_TYPE" = "Enabled Input Type";
+"FOOTER_ENABLED" = "Enabled input will be cycled when shorcut is tapped. \"Default\" type will be skipped if it is same as \"Original\". Set a minimum of 2 items, including Original.\n\nNOTE: Some input doesn't support changing input type, MUBX indicates it by changing the current icon to hollow/grey/strikethrough.";
+"RESET_TO_DEFAULT_MESSAGE" = "Reset to default?";
+
+//=====================GESTURES PAGE=====================
+"GESTURES" = "Gestures";
+"SINGLE_TAP" = "Single Tap";
+"LONG_PRESS" = "Long Press";
+"SWIPE_UP" = "Swipe Up";
+"SWIPE_DOWN" = "Swipe Down";
+"SWIPE_LEFT" = "Swipe Left";
+"SWIPE_RIGHT" = "Swipe Right";
+
+//=====================SUB ACTIONS PAGE=====================
+"SUB_ACTIONS" = "Sub-actions";
+"ADD_SUB_ACTION" = "Add Sub-actions";
+"SUB_ACTION" = "Sub-action";
+"ADD" = "Add";
+"CHOOSE_ACTION" = "Choose Action";
+
+"DISPLAY_STYLE" = "Display Style";
+"ICON" = "Icon";
+"NAME" = "Name";
+"ACTION_LINK" = "Action Link";
+"BASIC_ACTIONS" = "Basic Actions";
+"CUSTOM_ACTIONS" = "Custom Actions";
+"CUSTOM_ACTION" = "Custom Action";
+"CUSTOM_ACTION_SETTINGS" = "Custom Action Settings";
+"EDIT" = "Edit";
+"DELETE" = "Delete";
+"CUSTOM_LINK_ACTION_FOOTER" = "Enter an SF Symbol name or an app Bundle ID (e.g. com.apple.Preferences) for the icon.\nWeb link: must begin with http://, https://, or www., e.g. https://apple.com\nURL scheme: e.g. example://open\nBundle ID: e.g. com.apple.Preferences\nUse @@@ to insert the current input field's text. With Cut & Replace on, the field is cleared as its text is passed in; off keeps the field's content.";
+"CUSTOM_ACTION_LINK_ERROR" = "The action link is invalid";
+"TEXT" = "Text";
+
+//=====================CUSTOM ACTION TYPES=====================
+"ACTION_TYPE" = "Type";
+"CHOOSE_ACTION_TYPE" = "Choose Action Type";
+"ACTION_TYPE_URL_SCHEME" = "URL Scheme";
+"ACTION_TYPE_TEXT" = "Text";
+"ACTION_TYPE_URL" = "URL";
+"ACTION_TYPE_OPEN_APP" = "Open App";
+"URL_SCHEME_SETTINGS" = "URL Scheme";
+"TEXT_SETTINGS" = "Text";
+"URL_SETTINGS" = "URL";
+"OPEN_IN_APP" = "Open in App";
+"CUT_REPLACE_FIELD" = "Cut & Replace";
+"TYPE_FOOTER_URL_SCHEME" = "Floating is off by default, so the URL Scheme opens normally. Turn on Open in a floating window to host the handling app and deliver the original link. Keep floating off for system commands without a hostable app. @@@ passes the current input text.";
+"TYPE_FOOTER_TEXT" = "Manage literal text records. One record is inserted directly; multiple records open a floating list. Tap a record to insert it and close the panel. Text, spaces and line breaks are preserved. Use Edit to delete or reorder records.";
+"TYPE_FOOTER_URL" = "Opens the web URL, either inside this app or outside. Use @@@ to pass the current input field's text as a parameter. With Cut & Replace on, the field is cleared as its text is passed in; off keeps the field's content.";
+"TYPE_FOOTER_OPEN_APP" = "MUBX opens the selected app in an interactive floating window by default. Drag its title bar or tap close to end hosting. Turn this off for normal full-screen opening. PullOver-X is not required.";
+
+//=====================APP / SHORTCUT PICKERS=====================
+"OPEN_APP" = "Open App";
+"SELECT_APP" = "Select App";
+"SELECT_APP_REQUIRED" = "Please select an installed app before saving.";
+"SELECT_SHORTCUT" = "Select Shortcut";
+"User Applications" = "User Applications";
+"System Applications" = "System Applications";
+"SELECTED" = "Selected";
+"UNSELECTED" = "Not Selected";
+"NO_APP_SHORTCUTS" = "No app shortcuts found. SpringBoard is refreshing the current static and dynamic shortcuts; reopen this page in a moment.";
+"STATIC_SHORTCUTS_FOOTER" = "Lists each app\u2019s current static declarations and runtime-registered quick actions as resolved by SpringBoard. The shortcut object is resolved again immediately before execution.";
+"SHORTCUT_SOURCE_STATIC" = "Static";
+"SHORTCUT_SOURCE_DYNAMIC" = "Dynamic";
+
+//=====================SHELL COMMAND BEHAVIOR=====================
+"SHELL_TITLE" = "Title";
+"SHELL_COMMAND" = "Command";
+"FOOTER_SHELL_SINGLE_TAP" = "Set the shell command to be executed when shortcut tapped.";
+"FOOTER_SHELL_LONG_PRESS" = "Set the shell command to be executed when shortcut long pressed.\n\nNOTE: When custom long press gesture is set in previous section, this will be ignored.";
+
+//=====================SHORTCUT APPEARANCE=====================
+"CUSTOM_APPEARANCE" = "Appearance";
+"FOOTER_CUSTOM_APPEARANCE" = "The name replaces the shortcut's label in short-label toolbar mode. The icon accepts a standard SF Symbol name (e.g. doc.on.doc) or an app Bundle ID (e.g. com.apple.Preferences) to show that app's icon at symbol size; an invalid value falls back to the default icon.";
+"CUSTOM_NAME" = "Name";
+"CUSTOM_ICON" = "Icon";
+"CUSTOM_ICON_INVALID" = "Invalid icon. Enter an SF Symbol name or an app Bundle ID; the default icon will be used.";
+
+//=====================SPONGEBOB BEHAVIOR=====================
+"SPONGEBOB_ENTROPY" = "Randomness of Spongebob Text";
+"FOOTER_SPONGEBOB_ENTROPY" = "Select the entropy for the randomness of generated text.";
+"SPONGEBOB_RANDOM" = "Random";
+"SPONGEBOB_ALTERNATE" = "Alternate";
+"SPONGEBOB_VOWEL" = "Vowel";
+"SPONGEBOB_CONSONENT" = "Consonent";
+
+//=====================MISC=====================
+"SEARCHBAR_PLACEHOLDER" = "How Does It Looks?";
+"RESPRING" = "Respring";
+"RESPRING_MESSAGE" = "Respring is not necessary, but recommended for changes to take effect instantly. Respring now?";
+"DEFAULT" = "Default";
+"ANSWER_YES" = "Yes";
+"ANSWER_NO" = "No";
+"SPACING" = "Button Spacing";
+"BOTTOM_SPACING" = "Bottom Spacing";
+"HEIGHT" = "Button Height";
+"RADIUS" = "Corner Radius";
+"DESCRIPTION" = "Description";
+"ICON_TYPE" = "Icon Type";
+"ICON_PATH" = "Icon Path";
+"EMOJI" = "Emoji";
+"GESTURE_TAP" = "Tap";
+"NEW_BUTTON" = "New Button";
+"MAX_BUTTONS_REACHED" = "The top toolbar can have at most %d enabled buttons";
+"DUPLICATE_ACTION" = "This action is already in the toolbar";
+"CHOOSE_TAP_FIRST" = "Set the tap action first";
+"FOOTER_TOOLBAR_BUTTONS" = "Tap to edit gestures and drag to reorder. The bottom toolbar supports up to eight enabled buttons without paging. Excess buttons are retained and disabled.";
+"FOOTER_TOP_TOOLBAR_BUTTONS" = "Store any number of buttons; only one surface can be enabled: one row or two rows at the configured column count. Reducing capacity disables excess buttons without deleting them.";
+"ANSWER_OK" = "OK";
+"ANSWER_CANCEL" = "Cancel";
+"SAVE" = "Save";
+"DONE" = "Done";
+"DEFAULT_BUTTON_NAME" = "Action";
+"TEST_INPUT_FIELD" = "Test Field (tap to try the toolbar buttons)";
+"TEST_INPUT_FIELD_PLACEHOLDER" = "Type here to test the toolbar…";
+"TOOLBAR_PREVIEW" = "Toolbar Preview";
+"TOOLBAR_PREVIEW_EMPTY" = "No enabled buttons";
+"TOOLBAR_PREVIEW_UNAVAILABLE" = "Preview unavailable. Restart Settings after installing MUBX.";
+
+"LONG_SHELLX_SCREENSHOT" = "ShellX Screenshot";
+"SHORT_SHELLX_SCREENSHOT" = "Shot";
+"LONG_PIXPIN_SCREENSHOT" = "PixPin Screenshot";
+"SHORT_PIXPIN_SCREENSHOT" = "PixPin";
+"LONG_AI_CHAT" = "AI Chat";
+"SHORT_AI_CHAT" = "AI";
+"LONG_CLIPBOARD" = "Clipboard";
+"SHORT_CLIPBOARD" = "Clip";
+"LONG_PULLOVER_WAKE" = "PullOver Handle";
+"SHORT_PULLOVER_WAKE" = "Handle";
+
+/* Custom actions management page (KayokoX-style layout) */
+"NO_CUSTOM_ACTIONS" = "No custom actions yet";
+"UNGROUPED" = "Ungrouped";
+"GROUP_ACTIONS_COUNT" = "%lu actions";
+"MOVE_TO_GROUP" = "Move to Group…";
+"REMOVE_FROM_GROUP" = "Remove from Group";
+"NEW_GROUP" = "New Group";
+"GROUP_NAME" = "Group name";
+"RENAME_GROUP" = "Rename Group";
+"DELETE_GROUP" = "Delete Group";
+"DELETE_GROUP_CONFIRM" = "Actions in this group will move back to Ungrouped.";
+"GROUP_EXISTS" = "A group with this name already exists";
+"SEARCH_NO_MATCH" = "No matching actions";
+"BATCH_ADD_APPLICATIONS" = "Add Applications in Bulk";
+"BATCH_ADD_RESULT" = "Added %lu actions, skipped %lu duplicates";
+"BATCH_ADD_ALL_DUPLICATES" = "All selected apps already exist; nothing was added";
+"ADD_TYPE_HINT" = "Pick a type below to create a new action";
+
+/* AI Chat */
+"AI_CARD_TITLE" = "AI";
+"AI_CARD_PLACEHOLDER" = "Ask anything…";
+"AI_CARD_SEND" = "Send";
+"AI_CARD_STOP" = "Stop";
+"AI_CARD_PHOTOS" = "Photos";
+"AI_CARD_CAMERA" = "Camera";
+"AI_CARD_FILES" = "Files";
+"AI_CARD_IMAGE" = "Image";
+"AI_CARD_NO_KEY_ALERT" = "Configure an API Key in MUBX Settings → AI Chat first";
+"AI_CARD_NO_MODEL_ALERT" = "Configure a model in MUBX Settings → AI Chat first";
+"AI_CARD_REQUEST_FAILED" = "Request failed";
+"AI_CARD_FILE_UNREADABLE" = "Unable to read this file";
+"AI_CARD_REPLY_COPIED" = "Reply copied — paste it in your app";
+
+/* AI Chat settings */
+"AI_SETTINGS_TITLE" = "AI Chat";
+"AI_ENGINE" = "AI Engine";
+"AI_CURRENT_ENGINE" = "Current Engine";
+"AI_ENGINE_PICKER_FOOTER" = "Pick an AI; tap Add (top-right) to configure a custom API. All engines use the OpenAI-compatible protocol (Gemini via its OpenAI-compatible endpoint).";
+"AI_ENGINE_BUILTIN_SECTION" = "Built-in";
+"AI_ENGINE_CUSTOM_SECTION" = "Custom";
+"AI_ENGINE_ADD" = "Add";
+"AI_ENGINE_SWIPE_DELETE" = "Swipe left to delete";
+"AI_CUSTOM_ENGINE_TITLE" = "Custom Engine";
+"AI_SAVE" = "Save";
+"AI_INVALID_ENDPOINT" = "Invalid endpoint. Use a full URL starting with http:// or https://";
+"AI_API_KEY" = "API Key";
+"AI_MODELS_LABEL" = "Models";
+"AI_FETCH_MODELS" = "Fetch Models";
+"AI_FETCHING_MODELS" = "Fetching…";
+"AI_OPEN_KEYS_URL" = "Open API Keys Page";
+"AI_ENDPOINT" = "Endpoint";
+"AI_CUSTOM_NAME" = "Display Name";
+"AI_CUSTOM_ADD_TITLE" = "Add Custom API";
+"AI_CUSTOM_ADD_MESSAGE" = "Compatible endpoint: enter a Base URL (e.g. https://xxx/v1) or a full …/chat/completions URL. Any OpenAI-compatible API works.";
+"AI_CUSTOM_BASEURL_HINT" = "Base URL (https://xxx/v1 or …/chat/completions)";
+"AI_CUSTOM_MODEL_HINT" = "Model ID (e.g. gpt-4o-mini)";
+"AI_PERSONA_SECTION" = "AI Persona";
+"AI_PERSONA_ROW" = "Persona";
+"AI_STREAM_ROW" = "Streaming Output";
+"AI_PERSONA_FOOTER" = "Tap a row to edit. Long-press and drag to reorder; the first persona is the default. Swipe left to delete. Use \"+\" to add a persona; new personas appear in the panel persona menu by default, and the persona name is the button title.";
+"AI_PERSONA_EDIT_TITLE" = "Edit Persona";
+"AI_PERSONA_NAME_HEADER" = "Name";
+"AI_PERSONA_CONTENT_HEADER" = "Persona Content";
+"AI_PERSONA_DEFAULT_MARK" = "Default";
+"AI_PERSONA_NEW" = "New Persona";
+"AI_HINT_QWEN" = "Qwen defaults to qwen3.8-flash and qwen3-vl-flash. Comma-separate models. Fetch uses Bailian compatible-mode /v1/models.";
+"AI_HINT_DEEPSEEK" = "DeepSeek defaults to deepseek-chat and deepseek-reasoner. Comma-separate models. Fetch uses /v1/models.";
+"AI_HINT_OPENAI" = "OpenAI defaults to gpt-4o-mini and gpt-4o. Comma-separate models. Fetch uses /v1/models.";
+"AI_HINT_SILICONFLOW" = "SiliconFlow model names carry the org prefix (e.g. deepseek-ai/DeepSeek-V3). Fetch uses /v1/models.";
+"AI_HINT_DOUBAO" = "Doubao uses endpoint IDs as model names. Create an endpoint in the Ark console first, or just fetch.";
+"AI_HINT_ZHIPU" = "Zhipu defaults to glm-4-flash and glm-4-plus. Comma-separate models. Fetch uses /api/paas/v4/models.";
+"AI_HINT_GEMINI" = "Gemini uses its OpenAI-compatible endpoint (v1beta/openai). Comma-separate models.";
+"AI_HINT_CUSTOM" = "Custom engines need an OpenAI-compatible endpoint (with the /v1-style prefix). Comma-separate models. Fetch uses {endpoint}/models.";
+
+"PASTE_CHIP_ACTION" = "Paste";
+
+/* Settings (previously missing keys) */
+"TWEAK" = "Tweak";
+"ENABLED" = "Enabled";
+"HAPTIC" = "Haptic Feedback";
+"PASTE_CHIP" = "Paste Chip";
+"PASTE_CHIP_FOOTER" = "Shows a floating paste chip above the keyboard when the clipboard holds new content, and auto-answers the system paste-permission alert.";
+"PASTE_CHIP_APPS" = "Enabled Apps";
+"FOOTER_CREDITS" = "MUBX by lindo. Thanks for your support.";
+
+// App quick actions
+"ACTION_TYPE_SHORTCUT" = "App Shortcut";
+"TYPE_FOOTER_SHORTCUT" = "Choose a quick action from an app’s Home Screen menu. If the app no longer provides it, choose another shortcut.";
+"SELECT_SHORTCUT_REQUIRED" = "Choose an app shortcut before saving.";
+"SHORTCUTS_LOADING" = "Loading app shortcuts…";
+"SHORTCUTS_NO_MATCHES" = "No matching shortcuts";
+"SHORTCUTS_REFRESH_FAILED" = "Could not refresh. Pull down to try again.";
+"CUSTOM_ACTION_SHORTCUT_ERROR" = "Could not run this shortcut. Refresh the list and choose it again.";
+"SEARCH" = "Search apps or shortcuts";
+
+// JavaScript custom actions
+"JS_SOURCE" = "Script source";
+"JS_BEHAVIOR" = "Input and result";
+"JS_INPUT" = "Input";
+"JS_OUTPUT" = "Output";
+"JS_AUTO" = "Selection";
+"JS_ALL" = "All text";
+"JS_CLIPBOARD" = "Clipboard";
+"JS_REPLACE" = "Replace";
+"JS_INSERT" = "Insert";
+"JS_COPY" = "Copy";
+"JS_TEST" = "Test script";
+"JS_RUN" = "Run test";
+"JS_RESULT" = "Script result";
+"JS_SOURCE_INVALID" = "Enter a script of at most 131072 characters.";
+"JS_INPUT_UNAVAILABLE" = "This input is unavailable for scripting. Finish composing text first; secure fields are not supported.";
+"JS_TEST_HINT" = "Enter test input. HTTP requests are real; text and navigation actions are previewed. Logs stay on this page.";
+"JS_HELP" = "Entry: async function main(str). Selection uses the full text when nothing is selected. Replace changes the input selection/full text; clipboard input replaces the current selection. Insert writes at the caret/selection. Copy writes to the clipboard.\n$http.get/post/put/patch/delete({url, headers, body}) returns UTF-8 text; use JSON.parse for JSON and a string body. $url.open, $url.openInApp, $app.open and console.log are supported.\nReturn text or {type, content, title?, args?}; types: txt/url/urlInApp/app/function. Multiple results show a menu; null does not insert. Navigation ends the session. Stale input/network results are discarded.\nImages, files, $pb, $kb, legacy js actions and browser/Node APIs are not supported.";
+
+// Text action records
+"TEXT_RECORDS" = "Text Records";
+"TEXT_RECORD_ADD" = "Add Record";
+"TEXT_RECORD_NUMBER" = "Record %ld";
+"TEXT_RECORD_EMPTY" = "Tap to enter text";
+"TEXT_RECORD_REQUIRED" = "Enter text for each record, or delete unused records in Edit mode.";
+"TEXT_RECORD_INPUT_UNAVAILABLE" = "The current input field is unavailable.";
+"TEXT_RECORD_COUNT" = "%lu records";
+
+// Configuration backup
+"BACKUP_EMPTY" = "There is no configuration to back up";
+"BACKUP_FAILED" = "Failed to create the backup file, please try again";
+"RESTORE_CONFIRM_TITLE" = "Restore Configuration";
+"RESTORE_CONFIRM_MESSAGE" = "The backup contains %lu settings.\nRestoring overwrites the entire current configuration and cannot be undone. Continue?";
+"RESTORE_DONE" = "Configuration restored";
+"RESTORE_FAILED_TITLE" = "Restore Failed";
+"RESTORE_FAILED_MESSAGE" = "The file is not a valid MUBX backup";
+
+// Keyboard-covering swipe panels
+"GESTURE_SETTINGS" = "Gesture Settings";
+"DOCK_GESTURE_SETTINGS" = "Dock Gesture Settings";
+"DOCK_GESTURE_FOOTER" = "Configure upward, left and right Dock swipes separately. Choose gesture panels or custom actions that do not need a keyboard.";
+"DOCK_ENABLE_UP" = "Enable swipe up";
+"DOCK_ACTION_UP" = "Swipe up action";
+"DOCK_ENABLE_LEFT" = "Enable swipe left";
+"DOCK_ACTION_LEFT" = "Swipe left action";
+"DOCK_ENABLE_RIGHT" = "Enable swipe right";
+"DOCK_ACTION_RIGHT" = "Swipe right action";
+"DOCK_ACTION_NONE" = "No action";
+"DOCK_ACTION_PICKER_FOOTER" = "Choose any gesture panel or custom action that does not need input.";
+"KEYBOARD_GESTURE_SETTINGS" = "Keyboard Toolbar Gestures";
+"KEYBOARD_PANEL_SETTINGS" = "Panel settings";
+"KEYBOARD_PANEL_ENTRANCE" = "Panel entrances";
+"KEYBOARD_PANEL_TOP" = "Top toolbar long swipe";
+"KEYBOARD_PANEL_BOTTOM" = "Bottom toolbar long swipe";
+"KEYBOARD_PANEL_CONTENT" = "Panel content";
+"KEYBOARD_PANEL_CONTENT_FOOTER" = "System toggles, brightness/media-volume visibility, columns and appearance affect only this panel. Only this panel’s custom actions appear below.";
+"KEYBOARD_PANEL_SYSTEM_TOGGLES" = "Show first row: system toggles";
+"KEYBOARD_PANEL_SYSTEM_SLIDERS" = "Show second row: brightness and volume";
+"GLOBAL_PANEL_SETTINGS" = "Independent panels";
+"GLOBAL_PANEL_ENABLED" = "Enable gesture panels";
+"GLOBAL_PANEL_DOCK_SWIPE" = "Swipe up from the Home Screen Dock";
+"GLOBAL_PANEL_FOOTER" = "Independent panels work without showing the keyboard and support system controls, links, apps, and quick actions. Use keyboard panels for text or scripts that require an input field.";
+"GLOBAL_PANEL_INPUT_REQUIRED" = "Action failed: gesture panels cannot read or replace input. Run this action from a keyboard panel.";
+"KEYBOARD_PANEL_APPEARANCE" = "Panel appearance";
+"KEYBOARD_PANEL_DARK" = "Dark background";
+"KEYBOARD_PANEL_COLUMNS" = "Icons per row";
+"KEYBOARD_PANEL_SCALE" = "Content size (%)";
+"KEYBOARD_PANEL_ITEMS_FOOTER" = "Keyboard panels support all actions. Gesture panels support actions without a keyboard and other gesture panels. Swipe to remove an item, hold to reorder or tap to edit. Removing an item keeps its original action or panel.";
+"KEYBOARD_PANEL_PICKER_DELETE_FOOTER" = "Select an action or a panel of the same type. Swipe to delete a custom action and its references. Manage panels in Panel settings.";
+"KEYBOARD_PANEL_ITEM_APPEARANCE" = "Edit name";
+"KEYBOARD_PANEL_NAME" = "Name (empty uses action name)";
+"KEYBOARD_PANEL_SAVE" = "Save";
+"KEYBOARD_PANEL_REPLACE_ACTION" = "Choose another action";
+"KEYBOARD_PANEL_EDIT_ACTION" = "Edit custom action";
+"KEYBOARD_PANEL_CLOSE" = "Close panel";
+"KEYBOARD_TOOLBAR_CAPACITY" = "This toolbar fits %ld enabled buttons. Disable a button before enabling another.";
+
+// Custom system actions
+"ACTION_TYPE_SYSTEM" = "System action";
+"SELECT_SYSTEM_ACTION" = "Select system action";
+"SELECT_SYSTEM_ACTION_REQUIRED" = "Select a system action first.";
+"TYPE_FOOTER_SYSTEM" = "Execute through SpringBoard. Toggles change the current state; brightness and volume change by one step. Unavailable APIs or permissions report failure.";
+"SYSTEM_GROUP_MEDIA" = "Media";
+"SYSTEM_GROUP_DEVICE" = "Device";
+"SYSTEM_GROUP_CONTROL" = "Control Center";
+"SYSTEM_GROUP_PIXPIN" = "PixPin Screenshots";
+"SYSTEM_PIXPIN_FULL" = "PixPin Full-Screen Capture";
+"SYSTEM_PIXPIN_AREA" = "PixPin Area Capture";
+"SYSTEM_PIXPIN_FREEZE" = "PixPin Frozen Capture";
+"SYSTEM_PIXPIN_INSTANT" = "PixPin Instant Area Capture";
+"SYSTEM_PIXPIN_MARKUP" = "PixPin Full-Screen Markup";
+"SYSTEM_PIXPIN_LONG" = "PixPin Scrolling Capture";
+"SYSTEM_PIXPIN_CANCEL" = "PixPin Cancel Current Task";
+"SYSTEM_PIXPIN_FOOTER" = "Shown only when PixPin is installed. Uses PixPin's current settings; disabled features, a busy task, or missing injection may prevent a response. Sending a request does not confirm capture or saving.";
+"SYSTEM_DEVICE_FOOTER" = "Respring restarts the interface service; Respring (SB) exits SpringBoard. Safe mode requires jailbreak support and userspace reboot requires system permission. Exit and power actions require confirmation.";
+"SYSTEM_ACTION_CONFIRM" = "This action interrupts the current session. Continue?";
+"SYSTEM_ACTION_UNAVAILABLE" = "No supported system interface is available";
+"SYSTEM_PREVIOUS" = "Previous track";
+"SYSTEM_NEXT" = "Next track";
+"SYSTEM_PLAY_PAUSE" = "Play / Pause";
+"SYSTEM_RESPRING" = "Respring";
+"SYSTEM_RESPRING_SB" = "Respring (SB)";
+"SYSTEM_SAFE_MODE" = "Safe mode";
+"SYSTEM_SHUTDOWN" = "Shut down";
+"SYSTEM_REBOOT" = "Reboot device";
+"SYSTEM_USERSPACE_REBOOT" = "Reboot userspace";
+"SYSTEM_HOME" = "Home";
+"SYSTEM_SWITCHER" = "App switcher";
+"SYSTEM_SCREENSHOT" = "System Screenshot";
+"SYSTEM_CONTROL_CENTER" = "Open Control Center";
+"SYSTEM_SCREEN_RECORDING" = "Screen Recording";
+"SYSTEM_SCREEN_RECORDING_MICROPHONE" = "Screen Recording with Microphone";
+"SYSTEM_RECORDING_FOOTER" = "Screen Recording starts with the microphone off; the microphone action starts with it on. While recording, either action stops and lets the system save the video. Wait during start/stop. A timeout means the result is unknown; no automatic retry occurs.";
+"SYSTEM_FLASHLIGHT" = "Flashlight";
+"SYSTEM_WIFI" = "Wi-Fi";
+"SYSTEM_BLUETOOTH" = "Bluetooth";
+"SYSTEM_AIRPLANE" = "Airplane mode";
+"SYSTEM_CELLULAR" = "Cellular data";
+"SYSTEM_ORIENTATION" = "Orientation lock";
+"SYSTEM_DND" = "Do Not Disturb";
+"SYSTEM_DARK_MODE" = "Dark mode";
+"SYSTEM_BRIGHTNESS_UP" = "Increase brightness";
+"SYSTEM_BRIGHTNESS_DOWN" = "Decrease brightness";
+"SYSTEM_VOLUME_UP" = "Increase volume";
+"SYSTEM_VOLUME_DOWN" = "Decrease volume";
+
+"ACTION_TYPE_JAVASCRIPT" = "JavaScript";
+
+"SYSTEM_ACTION_FAILED" = "The system rejected this action. Check diagnostics.";
+
+"SYSTEM_ACTION_TIMEOUT" = "No system reply. The outcome is unknown; check tweak injection.";
+
+"SYSTEM_ACTION_INVALID" = "This system action configuration is invalid. Select and save it again.";
+
+"SYSTEM_ACTION_EXPIRED" = "The operation was canceled or expired. Trigger it again.";
+
+//=====================Action groups & SF symbol picker=====================
+"ACTION_GROUP_EDIT" = "Edit";
+"ACTION_GROUP_DELETE" = "Delete";
+"ACTION_GROUP_SELECT" = "Select";
+"ACTION_GROUP_CURSOR" = "Cursor";
+"ACTION_GROUP_TOOLS" = "Tools";
+"SF_SYMBOL_PICKER_TITLE" = "Icon Library";
+"SF_SYMBOL_SEARCH" = "Search symbol name";
+"SF_SYMBOL_LOADING" = "Loading local SF symbols…";
+"SF_SYMBOL_LOAD_FAILED" = "Could not load available SF symbols from local system resources";
+"SF_SYMBOL_NO_RESULTS" = "No matching symbols";
+"SF_SYMBOL_RETRY" = "Reload";
+"SF_SYMBOL_UNAVAILABLE" = "This symbol is currently unavailable. Choose another symbol.";
+"SF_SYMBOL_CATEGORIES_UNAVAILABLE" = "Categories could not be loaded. Choose a symbol from All, or reload.";
+"SF_SYMBOL_CATEGORY_all" = "All";
+"SF_SYMBOL_CATEGORY_multicolor" = "Multicolor";
+"SF_SYMBOL_CATEGORY_variable" = "Variable Color";
+"SF_SYMBOL_CATEGORY_communication" = "Communication";
+"SF_SYMBOL_CATEGORY_weather" = "Weather";
+"SF_SYMBOL_CATEGORY_maps" = "Maps";
+"SF_SYMBOL_CATEGORY_objectsandtools" = "Objects & Tools";
+"SF_SYMBOL_CATEGORY_devices" = "Devices";
+"SF_SYMBOL_CATEGORY_cameraandphotos" = "Camera & Photos";
+"SF_SYMBOL_CATEGORY_gaming" = "Gaming";
+"SF_SYMBOL_CATEGORY_connectivity" = "Connectivity";
+"SF_SYMBOL_CATEGORY_transportation" = "Transportation";
+"SF_SYMBOL_CATEGORY_automotive" = "Automotive";
+"SF_SYMBOL_CATEGORY_accessibility" = "Accessibility";
+"SF_SYMBOL_CATEGORY_privacyandsecurity" = "Privacy & Security";
+"SF_SYMBOL_CATEGORY_human" = "Human";
+"SF_SYMBOL_CATEGORY_home" = "Home";
+"SF_SYMBOL_CATEGORY_fitness" = "Fitness";
+"SF_SYMBOL_CATEGORY_nature" = "Nature";
+"SF_SYMBOL_CATEGORY_editing" = "Editing";
+"SF_SYMBOL_CATEGORY_textformatting" = "Text Formatting";
+"SF_SYMBOL_CATEGORY_media" = "Media";
+"SF_SYMBOL_CATEGORY_keyboard" = "Keyboard";
+"SF_SYMBOL_CATEGORY_commerce" = "Commerce";
+"SF_SYMBOL_CATEGORY_time" = "Time";
+"SF_SYMBOL_CATEGORY_health" = "Health";
+"SF_SYMBOL_CATEGORY_shapes" = "Shapes";
+"SF_SYMBOL_CATEGORY_arrows" = "Arrows";
+"SF_SYMBOL_CATEGORY_indices" = "Indices";
+"SF_SYMBOL_CATEGORY_math" = "Math";
+"SF_SYMBOL_CATEGORY_whatsnew" = "What's New";
+"SF_SYMBOL_CATEGORY_draw" = "Draw";
+
+"ICON_LIBRARY_ROW" = "Pick from Icon Library";
+"KEYBOARD_PANEL_ACTIONS" = "Configure panel actions";
+"SF_SYMBOL_COLUMNS_ONE" = "One";
+"SF_SYMBOL_COLUMNS_TWO" = "Two";
+"SF_SYMBOL_COLUMNS_THREE" = "Three";
+"SF_SYMBOL_COLUMNS_FOUR" = "Four";
+
+// Independent status-bar gesture entries.
+"STATUS_BAR_SETTINGS" = "Status Bar Gestures";
+"STATUS_BAR_LANDSCAPE" = "Enable in Landscape";
+"STATUS_BAR_LEFT" = "Left Area";
+"STATUS_BAR_MIDDLE" = "Middle Area";
+"STATUS_BAR_RIGHT" = "Right Area";
+"STATUS_BAR_TAP" = "Single Tap";
+"STATUS_BAR_DOUBLETAP" = "Double Tap";
+"STATUS_BAR_LONGPRESS" = "Long Press";
+"STATUS_BAR_LEFTSWIPE" = "Swipe Left";
+"STATUS_BAR_RIGHTSWIPE" = "Swipe Right";
+"STATUS_BAR_FOOTER" = "Configure five gestures independently in each area. Off by default and disabled while locked. Areas follow the current status bar width. The notch is not touchable. Dynamic Island taps use the middle area's single-tap action; unassigned taps keep their system behavior.";
+"STATUS_BAR_ENTRY_FOOTER" = "Bind one action to this gesture. Unassigned gestures leave touches alone. A single tap waits briefly when double tap is enabled in the same area. Vertical drags keep their system behavior.";
+"STATUS_BAR_UNASSIGNED" = "Unassigned";
+"STATUS_BAR_CLEAR" = "Clear Action";
+"STATUS_BAR_PANELS" = "Open Panel";
+"STATUS_BAR_PICKER_FOOTER" = "Choose any gesture panel or custom action that does not need input.";
+
+"PANEL_KIND_KEYBOARD" = "Keyboard panels";
+"PANEL_KIND_GESTURE" = "Gesture panels";
+"PANEL_ADD" = "Add panel";
+"PANEL_NAME" = "Panel name";
+"PANEL_TYPES_FOOTER" = "Add, rename or delete any number of panels and select them as actions. Keyboard entrances offer keyboard panels; Dock and status-bar gestures offer gesture panels. Swipe to delete a panel and clear its references.";
+"PANEL_KEYBOARD_FOOTER" = "Supports built-in keyboard operations, custom actions and other keyboard panels. Open from keyboard buttons, button gestures or toolbar gestures.";
+"PANEL_GESTURE_FOOTER" = "Open from Dock/status-bar gestures or other gesture panels. Built-in keyboard actions, text and scripts are unavailable. Links are selectable, but actions requiring input or replacement fail with an error.";
+"PANEL_TOOLBAR_FOOTER" = "Configure left and right long swipes separately. Unassigned swipes do nothing. Only keyboard panels are available; swipes confined to a button keep its own gesture action.";
+"PANEL_KEYBOARD_TEST" = "Type to test keyboard panels";
+
+"OPEN_FLOATING_APP" = "Open in a floating window";
+
+"FLOATING_APP_CLOSE" = "Close floating app";
+
+"FLOATING_APP_MINIMIZE" = "Minimize floating app";
+
+"FLOATING_APP_SETTINGS" = "Floating Apps";
+
+"FLOATING_APP_SIZE_GROUP" = "Default Size";
+
+"FLOATING_APP_MAX_SCALE" = "Size Ratio";
+
+"FLOATING_APP_SCALE_FOOTER" = "Caps the floating window's default on-screen size. 100% opens it full screen. Applies to newly opened floating windows.";
+
+"FLOATING_APP_POSITION_GROUP" = "Default Position";
+
+"FLOATING_APP_POSITION" = "Dock Position";
+
+"FLOATING_APP_POSITION_FOOTER" = "Chooses the floating window's default horizontal position when opened. Dragging the window overrides it. Applies to newly opened floating windows.";
+
+"FLOATING_APP_POSITION_LEFT" = "Left";
+
+"FLOATING_APP_POSITION_CENTER" = "Center";
+
+"FLOATING_APP_POSITION_RIGHT" = "Right";
+
+"FLOATING_APP_OPEN_ERROR" = "Could not open the floating app. Check the target or try again.";
+
+"ACTION_GROUP" = "Group";
+"ACTION_GROUP_GONE" = "This group no longer exists. Please choose another group.";
+"ACTION_GROUP_MANAGER" = "Manage Groups";
+"ACTION_GROUP_NAME_INVALID" = "Enter a group name of up to 32 characters.";
+"ACTION_TYPE_FILTER" = "Type";
+"ACTION_ALL_TYPES" = "All Types";
+"ACTION_SELECT" = "Select";
+"ACTION_MORE" = "More";
+"ACTION_SELECT_ALL" = "Select Results";
+"ACTION_MOVE_SHORT" = "Move";
+"ACTION_UNGROUP_SHORT" = "Ungroup";
+"ACTION_SELECTED_COUNT" = "%lu Selected";
+"ACTION_DELETE_CONFIRM" = "Delete %lu selected actions and their toolbar, gesture, panel and sub-action references?";
+"ACTION_COLLAPSE_ALL" = "Collapse All";
+"ACTION_EXPAND_ALL" = "Expand All";
+"ACTION_SORT" = "Reorder Actions";
+"ACTION_SEARCH_RESULTS" = "Search / Filter Results";
+"ACTION_ORGANIZE_HINT" = "Tap an action to edit it. Tap a group to expand or collapse it. Select actions to organize them together.";
+
+// Floating app shelf
+"FLOATING_SHELF_GROUP" = "Background App Shelf";
+"FLOATING_SHELF_SWITCH" = "Show Floating Apps in Bottom Toolbar";
+"FLOATING_SHELF_FOOTER" = "Replaces bottom action buttons and their gestures with floating apps while the keyboard is visible. Four apps per page, up to eight; swipe horizontally between pages. The most recently minimized app comes first. Adding a ninth removes the oldest recovery entry without closing its app. Turning this off restores your action toolbar without closing apps. The shelf clears when SpringBoard restarts.";
+"FLOATING_SHELF_ACTIVE" = "Currently Floating";
+"FLOATING_SHELF_RESTORE_FAILED" = "Unable to restore. Tap again to retry.";
+"FLOATING_SHELF_PREVIEW" = "App shelf enabled: four per page, up to eight. Action settings are preserved.";
+"FLOATING_SHELF_FOREGROUND" = "Currently in Foreground";
+// MUBX clipboard panel (DXClipboardPanel)
+"剪贴板" = "Clipboard";
+"剪贴板历史" = "History";
+"收藏" = "Favorites";
+"搜索剪贴板" = "Search clipboard";
+"暂无剪贴板记录" = "No clipboard items yet";
+"清空剪贴板历史" = "Clear clipboard history";
+"取消" = "Cancel";
+"清空" = "Clear";
+"复制" = "Copy";
+"收藏条目" = "Favorite";
+"取消收藏" = "Unfavorite";
+"删除" = "Delete";
+"（图片）" = "[Image]";

@@ -69,10 +69,10 @@ static CGRect DXJSProbeKeyboardFrame(UIWindow *window) {
     self.choiceScroll = nil; self.choiceCancelButton = nil;
     self.provider = nil; self.open = nil; self.error = nil;
     if (DXActiveJavaScriptHost == self) DXActiveJavaScriptHost = nil;
-    NSLog(@"[TypeXJS] session closed");
+    NSLog(@"[MUBXJS] session closed");
 }
 - (void)fail:(NSString *)message {
-    NSLog(@"[TypeXJS] session failed");
+    NSLog(@"[MUBXJS] session failed");
     void (^handler)(NSString *) = self.error;
     [self cancel];
     if (handler) handler(message);
@@ -170,7 +170,7 @@ static CGRect DXJSProbeKeyboardFrame(UIWindow *window) {
         [current tick];
     }];
     [NSRunLoop.mainRunLoop addTimer:host.timer forMode:NSRunLoopCommonModes];
-    NSLog(@"[TypeXJS] session started");
+    NSLog(@"[MUBXJS] session started");
     [host.engine runSource:[entry[@"script"] isKindOfClass:NSString.class] ? entry[@"script"] : @"" input:input];
 }
 - (void)execute:(NSDictionary *)action {
@@ -254,7 +254,7 @@ static CGRect DXJSProbeKeyboardFrame(UIWindow *window) {
                               bottomLimit - itemsHeight - gap - DXJSChoiceRowHeight, width, itemsHeight);
     if (!CGRectEqualToRect(self.choiceScroll.frame, frame)) {
         self.choiceScroll.frame = frame;
-        NSLog(@"[TypeXJS] choices layout rows=%lu top=%.1f bottom=%.1f anchor=%.1f level=%.0f",
+        NSLog(@"[MUBXJS] choices layout rows=%lu top=%.1f bottom=%.1f anchor=%.1f level=%.0f",
               (unsigned long)self.choices.count, frame.origin.y, bottomLimit, anchorY, window.windowLevel);
     }
     self.choiceScroll.contentSize = CGSizeMake(width, self.choices.count * DXJSChoiceRowHeight);

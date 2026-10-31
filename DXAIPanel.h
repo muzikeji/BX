@@ -1,12 +1,12 @@
 #import <UIKit/UIKit.h>
 
-// TypeX 自带 AI 问答面板（键盘工具栏 AI 按钮入口）。两种承载：
+// MUBX 自带 AI 问答面板（键盘工具栏 AI 按钮入口）。两种承载：
 // 1) 系统键盘（宿主 app / SpringBoard 进程，工具栏长在 UIKeyboardImpl 上）：
 //    openFromKeyboardWithSeedText: 进程内独立 UIWindow（level 1e6），锚定键盘
 //    上方，ShellX 同款——打开即让面板窗口成为 key、光标落进面板输入框；卡片
 //    hitTest 之外的触摸仍穿透回宿主；X 关闭即销毁会话。
 // 2) 第三方键盘扩展（进程内窗口逃不出键盘宿主区域）：工具栏写 cfprefsd+Darwin
-//    通道，TypeX.xm 的 SB 端回调解析并桌面门控后调 presentInSpringBoard...，
+//    通道，MUBX.xm 的 SB 端回调解析并桌面门控后调 presentInSpringBoard...，
 //    SB 内 plain-init UIWindow（makeKeyAndVisible）承载。
 @interface DXAIPanel : NSObject
 + (void)openFromKeyboardWithSeedText:(NSString *)seedText;

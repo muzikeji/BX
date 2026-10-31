@@ -2,7 +2,7 @@
 
 NS_ASSUME_NONNULL_BEGIN
 
-// TypeX 内置剪贴板历史——权威存储层（Schema 与 Kayoko history-v4 完全一致，
+// MUBX 内置剪贴板历史——权威存储层（Schema 与 Kayoko history-v4 完全一致，
 // 迁移 = 逐行复制，零格式转换）。仅在 SpringBoard 进程创建/写入；
 // app 进程通过 cfprefsd 快照（kClipboardSnapshotKey）读取。
 //

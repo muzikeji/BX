@@ -5,11 +5,11 @@ static inline DXSystemOpenResult DXSystemCall(id target, NSString *selector, NSA
     id result = nil;
     NSError *error = nil;
     if (!DXSystemInvokeReportingError(target, selector, arguments, &result, &error)) {
-        NSLog(@"[TypeX][SystemAction] unavailable class=%@ selector=%@", target ? NSStringFromClass([target class]) : @"nil", selector);
+        NSLog(@"[MUBX][SystemAction] unavailable class=%@ selector=%@", target ? NSStringFromClass([target class]) : @"nil", selector);
         return DXSystemOpenUnavailable;
     }
     if ([error isKindOfClass:NSError.class]) {
-        NSLog(@"[TypeX][SystemAction] native error selector=%@ domain=%@ code=%ld", selector, error.domain, (long)error.code);
+        NSLog(@"[MUBX][SystemAction] native error selector=%@ domain=%@ code=%ld", selector, error.domain, (long)error.code);
         return DXSystemOpenFailed;
     }
     return [result isKindOfClass:NSNumber.class] && ![result boolValue] ? DXSystemOpenFailed : DXSystemOpenSucceeded;
@@ -22,7 +22,7 @@ static inline DXSystemOpenResult DXSystemCallFirstAvailable(id target, NSArray<N
         if ([target respondsToSelector:NSSelectorFromString(candidate[0])])
             return DXSystemCall(target, candidate[0], candidate[1]);
     }
-    NSLog(@"[TypeX][SystemAction] no compatible interface class=%@", target ? NSStringFromClass([target class]) : @"nil");
+    NSLog(@"[MUBX][SystemAction] no compatible interface class=%@", target ? NSStringFromClass([target class]) : @"nil");
     return DXSystemOpenUnavailable;
 }
 
@@ -30,13 +30,13 @@ static inline DXSystemOpenResult DXSystemCallFirstAvailable(id target, NSArray<N
 // frameworks; keeping this route Foundation-only permits error-path tests.
 static inline DXSystemOpenResult DXSystemToggleDND(Class stateServiceClass, Class toggleManagerClass) {
     // DND daemon checks the caller's client-identifier entitlements even
-    // inside SpringBoard. A TypeX-invented identifier cannot query/assert.
+    // inside SpringBoard. A MUBX-invented identifier cannot query/assert.
     NSString *client = @"com.apple.donotdisturb.control-center.module";
     id service = nil, state = nil, manager = nil, activeIdentifier = nil;
     NSError *error = nil;
     if (!DXSystemInvoke(stateServiceClass, @"serviceForClientIdentifier:", @[client], &service) || !service ||
         !DXSystemInvokeReportingError(service, @"queryCurrentStateWithError:", @[NSNull.null], &state, &error) || !state || error) {
-        if (error) NSLog(@"[TypeX][SystemAction] DND query error domain=%@ code=%ld", error.domain, (long)error.code);
+        if (error) NSLog(@"[MUBX][SystemAction] DND query error domain=%@ code=%ld", error.domain, (long)error.code);
         return error ? DXSystemOpenFailed : DXSystemOpenUnavailable;
     }
     if (!DXSystemInvoke(toggleManagerClass, @"managerForClientIdentifier:", @[client], &manager) || !manager) return DXSystemOpenUnavailable;

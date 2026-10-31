@@ -1,4 +1,4 @@
-name: Build TypeX (roothide + rootless)
+name: Build MUBX (roothide + rootless)
 
 on:
   push:
@@ -11,7 +11,7 @@ on:
   workflow_dispatch:
 
 concurrency:
-  group: typex-roothide-${{ github.workflow }}-${{ github.ref }}
+  group: mubx-roothide-${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
 
 permissions:
@@ -19,7 +19,7 @@ permissions:
 
 jobs:
   build:
-    name: TypeX packages (roothide + rootless)
+    name: MUBX packages (roothide + rootless)
     runs-on: macos-15
 
     defaults:
@@ -85,7 +85,7 @@ jobs:
               test -s "$package"
               
               # 重命名为更清晰的格式
-              new_name="TypeX-${scheme_label}-${ios}-${VERSION}.deb"
+              new_name="MUBX-${scheme_label}-${ios}-${VERSION}.deb"
               mv "$package" "packages/$scheme/$ios/$new_name"
               echo "Package: packages/$scheme/$ios/$new_name"
             done
@@ -94,7 +94,7 @@ jobs:
       - name: Upload roothide iOS 16 Debian package
         uses: actions/upload-artifact@v4
         with:
-          name: typex-roothide-ios16
+          name: mubx-roothide-ios16
           path: packages/roothide/ios16/*.deb
           if-no-files-found: error
           retention-days: 14
@@ -102,7 +102,7 @@ jobs:
       - name: Upload roothide iOS 17 Debian package
         uses: actions/upload-artifact@v4
         with:
-          name: typex-roothide-ios17
+          name: mubx-roothide-ios17
           path: packages/roothide/ios17/*.deb
           if-no-files-found: error
           retention-days: 14
@@ -110,7 +110,7 @@ jobs:
       - name: Upload rootless iOS 16 Debian package
         uses: actions/upload-artifact@v4
         with:
-          name: typex-rootless-ios16
+          name: mubx-rootless-ios16
           path: packages/rootless/ios16/*.deb
           if-no-files-found: error
           retention-days: 14
@@ -118,7 +118,7 @@ jobs:
       - name: Upload rootless iOS 17 Debian package
         uses: actions/upload-artifact@v4
         with:
-          name: typex-rootless-ios17
+          name: mubx-rootless-ios17
           path: packages/rootless/ios17/*.deb
           if-no-files-found: error
           retention-days: 14
@@ -160,10 +160,10 @@ jobs:
             if [[ ! "$base_name" =~ \.v?[0-9]+\.[0-9]+\.[0-9]+\.deb$ ]]; then
               version="${GITHUB_REF_NAME#v}"
               # 构建新文件名，保持原文件名的可读性
-              if [[ "$base_name" =~ TypeX-(RootHide|Rootless)-(ios[0-9]+)-.*\.deb$ ]]; then
+              if [[ "$base_name" =~ MUBX-(RootHide|Rootless)-(ios[0-9]+)-.*\.deb$ ]]; then
                 scheme_label="${BASH_REMATCH[1]}"
                 ios="${BASH_REMATCH[2]}"
-                new_name="TypeX-${scheme_label}-${ios}-${version}.deb"
+                new_name="MUBX-${scheme_label}-${ios}-${version}.deb"
               else
                 # 如果原文件名不符合预期，使用目录名
                 new_name="${dir_name}-${base_name}"
@@ -205,7 +205,7 @@ jobs:
           else
             echo "Creating new release: $tag"
             gh release create "$tag" "${assets[@]}" --repo "$GH_REPO" \
-              --title "TypeX $tag" \
+              --title "MUBX $tag" \
               --generate-notes
           fi
           
@@ -252,7 +252,7 @@ jobs:
             gh release upload "$prerelease_tag" "${assets[@]}" --repo "$GH_REPO" --clobber
           else
             gh release create "$prerelease_tag" "${assets[@]}" --repo "$GH_REPO" \
-              --title "TypeX Development Build" \
+              --title "MUBX Development Build" \
               --prerelease \
               --generate-notes
           fi

@@ -16,11 +16,11 @@ static inline DXSystemOpenResult DXPostPixPinSystemAction(NSString *action, NSSt
     NSString *name = DXSystemActionDefinition(action)[@"pixpinNotification"];
     if (!name.length) return DXSystemOpenInvalid;
     if (!DXPixPinInstalledAtPath(dylibPath)) {
-        NSLog(@"[TypeX][PixPin] unavailable id=%@ reason=not-installed", action);
+        NSLog(@"[MUBX][PixPin] unavailable id=%@ reason=not-installed", action);
         return DXSystemOpenUnavailable;
     }
     uint32_t status = notify_post(name.UTF8String);
-    NSLog(@"[TypeX][PixPin] request id=%@ notify-status=%u", action, (unsigned)status);
+    NSLog(@"[MUBX][PixPin] request id=%@ notify-status=%u", action, (unsigned)status);
     // PixPin's public channel has no completion reply. Success only confirms
     // that one request was posted; disabled/busy/injection checks remain its own.
     return status == NOTIFY_STATUS_OK ? DXSystemOpenSucceeded : DXSystemOpenFailed;

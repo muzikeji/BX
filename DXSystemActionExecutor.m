@@ -48,7 +48,7 @@ BOOL DXConfirmSystemExitAction(NSString *action, NSProgress *operation) {
             if (!current || operation.cancelled || !source || source.hidden || DXKeyWindow() != source ||
                 originalPresenter.view.window != source || NSDate.date.timeIntervalSince1970 > deadline) return;
             DXSystemOpenResult result = DXPerformSystemAction(action);
-            NSLog(@"[TypeX][SystemAction] confirmed id=%@ result=%llu", action, (unsigned long long)result);
+            NSLog(@"[MUBX][SystemAction] confirmed id=%@ result=%llu", action, (unsigned long long)result);
             if (result != DXSystemOpenSucceeded) {
                 UIAlertController *error = [UIAlertController alertControllerWithTitle:title
                     message:[bundle localizedStringForKey:@"SYSTEM_ACTION_UNAVAILABLE" value:@"Unavailable" table:nil]
@@ -82,7 +82,7 @@ static void DXLoadSystemActionFrameworks(void) {
         for (NSString *name in @[@"BluetoothManager", @"DoNotDisturb", @"DoNotDisturbKit", @"AVFCapture"]) {
             NSString *path = [NSString stringWithFormat:@"/System/Library/PrivateFrameworks/%@.framework/%@", name, name];
             if (!dlopen(path.fileSystemRepresentation, RTLD_LAZY | RTLD_GLOBAL))
-                NSLog(@"[TypeX][SystemAction] framework unavailable name=%@", name);
+                NSLog(@"[MUBX][SystemAction] framework unavailable name=%@", name);
         }
         dlopen("/System/Library/Frameworks/CoreTelephony.framework/CoreTelephony", RTLD_LAZY | RTLD_GLOBAL);
     });
@@ -103,7 +103,7 @@ void DXPerformSystemRecordingAction(NSString *action, DXSystemOpenReply reply) {
     static DXSystemRecordingSession *session;
     dispatch_once(&once, ^{
         if (!dlopen("/System/Library/Frameworks/ReplayKit.framework/ReplayKit", RTLD_LAZY | RTLD_GLOBAL))
-            NSLog(@"[TypeX][SystemRecording] framework unavailable name=ReplayKit");
+            NSLog(@"[MUBX][SystemRecording] framework unavailable name=ReplayKit");
         session = [DXSystemRecordingSession new];
     });
     [session toggleRecorder:DXSystemShared(@"RPScreenRecorder", @"sharedRecorder")
@@ -186,7 +186,7 @@ DXSystemOpenResult DXPerformSystemAction(NSString *action) {
     if (DXSystemActionDefinition(action)[@"pixpinNotification"])
         return DXPostPixPinSystemAction(action, DX_ROOT_PATH_NS(DXPixPinDylibPath));
     DXLoadSystemActionFrameworks();
-    NSLog(@"[TypeX][SystemAction] execute id=%@", action);
+    NSLog(@"[MUBX][SystemAction] execute id=%@", action);
     if ([action isEqual:@"previous-track"] || [action isEqual:@"next-track"]) {
         return DXSystemCall(DXSystemShared(@"SBMediaController", @"sharedInstance"), @"changeTrack:eventSource:",
             @[@([action isEqual:@"next-track"] ? 1 : -1), @0]);
@@ -340,7 +340,7 @@ DXSystemOpenResult DXPerformPanelSystemControl(NSString *action, NSNumber *value
         if (!muted) return DXSystemOpenUnavailable;
         NSNumber *next = @(!muted.boolValue);
         return DXSystemCallFirstAvailable(ringer, @[@[@"setRingerMuted:", @[next]],
-            @[@"setRingerMuted:withFeedback:reason:clientType:", @[next, @NO, @"TypeXPanel", @0]]]);
+            @[@"setRingerMuted:withFeedback:reason:clientType:", @[next, @NO, @"MUBXPanel", @0]]]);
     }
     if ([@[@"do-not-disturb", @"wifi", @"bluetooth", @"orientation-lock"] containsObject:action]) return DXPerformSystemAction(action);
     return DXSystemOpenInvalid;

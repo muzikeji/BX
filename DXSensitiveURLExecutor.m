@@ -4,7 +4,7 @@ static dispatch_queue_t DXSensitiveURLQueue(void) {
     static dispatch_queue_t queue;
     static dispatch_once_t once;
     dispatch_once(&once, ^{
-        queue = dispatch_queue_create("com.lindo.typex.open.sensitive-rpc", DISPATCH_QUEUE_SERIAL);
+        queue = dispatch_queue_create("com.lindo.mubx.open.sensitive-rpc", DISPATCH_QUEUE_SERIAL);
     });
     return queue;
 }
@@ -25,13 +25,13 @@ void DXExecuteSensitiveURL(NSURL *url, NSDate *deadline, NSProgress *request,
                 // SBSOpenSensitiveURLAndUnlock is a synchronous client entry
                 // point into SpringBoard. Waiting for it on SpringBoard's UI
                 // thread can hold up the URL dispatch it is asking to perform.
-                NSLog(@"[TypeXSB] sensitive RPC begin scheme=%@", scheme);
+                NSLog(@"[MUBXSB] sensitive RPC begin scheme=%@", scheme);
                 @try { result = deliver(url) ? DXSystemOpenSucceeded : DXSystemOpenFailed; }
                 @catch (NSException *exception) {
-                    NSLog(@"[TypeXSB] sensitive RPC exception=%@", exception.name);
+                    NSLog(@"[MUBXSB] sensitive RPC exception=%@", exception.name);
                     result = DXSystemOpenFailed;
                 }
-                NSLog(@"[TypeXSB] sensitive RPC end scheme=%@ result=%llu", scheme, (unsigned long long)result);
+                NSLog(@"[MUBXSB] sensitive RPC end scheme=%@ result=%llu", scheme, (unsigned long long)result);
             }
             dispatch_async(dispatch_get_main_queue(), ^{
                 // The RPC cannot be cancelled once entered. A stale request must

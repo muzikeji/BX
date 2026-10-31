@@ -16,17 +16,17 @@ static const CGFloat DXAppIconSide = 24.0;
 
 // Private UIKit lookup backed by the system icon cache; available far below
 // this tweak's deployment target, but resolved defensively all the same.
-@interface UIImage (TypeXAppIcon)
+@interface UIImage (MUBXAppIcon)
 + (UIImage *)_applicationIconImageForBundleIdentifier:(NSString *)bundleIdentifier format:(NSInteger)format;
 @end
 
 @implementation DXHelper
 
-+(UIImage *)imageForTypeXWithPlaceholder:(BOOL)placeholder{
++(UIImage *)imageForMUBXWithPlaceholder:(BOOL)placeholder{
     if (placeholder){
-        return [UIImage imageWithContentsOfFile:[bundlePath stringByAppendingPathComponent:@"TypeX_Placeholder.png"]];
+        return [UIImage imageWithContentsOfFile:[bundlePath stringByAppendingPathComponent:@"MUBX_Placeholder.png"]];
     }
-    return [UIImage imageWithContentsOfFile:[bundlePath stringByAppendingPathComponent:@"TypeX.png"]];
+    return [UIImage imageWithContentsOfFile:[bundlePath stringByAppendingPathComponent:@"MUBX.png"]];
 }
 
 +(UIImage *)imageForName:(NSString *)imageName withSystemColor:(BOOL)withSystemColor completion:(void (^)(BOOL isThirteen, BOOL isCustomImagePath))handler{
@@ -56,7 +56,7 @@ static const CGFloat DXAppIconSide = 24.0;
         return resizedImage;
     };
     
-    NSString *cachedImagePath = [NSString stringWithFormat:@"%@/%lu.png", TypeXCachePath, customPath.hash];
+    NSString *cachedImagePath = [NSString stringWithFormat:@"%@/%lu.png", MUBXCachePath, customPath.hash];
     
     if (@available(iOS 13.0, *)){
         isThirteen = YES;
@@ -228,7 +228,7 @@ static const CGFloat DXAppIconSide = 24.0;
     UIImage *cached = [cache objectForKey:bundleID];
     if (cached) return cached;
 
-    NSString *cachedFilePath = [NSString stringWithFormat:@"%@/appicons/%@.png", TypeXCachePath, bundleID];
+    NSString *cachedFilePath = [NSString stringWithFormat:@"%@/appicons/%@.png", MUBXCachePath, bundleID];
     UIImage *icon = nil;
     if ([[NSFileManager defaultManager] fileExistsAtPath:cachedFilePath]){
         icon = [UIImage imageWithContentsOfFile:cachedFilePath];

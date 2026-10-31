@@ -12,7 +12,7 @@ if [ "$1" = "remove" ] || [ "$1" = "purge" ]; then
         JBROOT=""
     fi
 
-    rm -rf "$JBROOT/Library/TypeX" || true
+    rm -rf "$JBROOT/Library/MUBX" || true
 fi
 
 exit 0

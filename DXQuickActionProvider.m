@@ -27,7 +27,7 @@ static dispatch_queue_t DXQASnapshotWriterQueue(void) {
     static dispatch_queue_t queue;
     static dispatch_once_t onceToken;
     dispatch_once(&onceToken, ^{
-        queue = dispatch_queue_create("com.lindo.typex.quickactions.snapshot", DISPATCH_QUEUE_SERIAL);
+        queue = dispatch_queue_create("com.lindo.mubx.quickactions.snapshot", DISPATCH_QUEUE_SERIAL);
     });
     return queue;
 }
@@ -37,7 +37,7 @@ static void DXQAWriteStatus(NSString *phase, NSString *requestID, NSDictionary *
     status[@"phase"] = phase ?: @"unknown";
     status[@"updated"] = @([NSDate timeIntervalSinceReferenceDate]);
     if (requestID.length > 0) status[@"requestID"] = requestID;
-    DXSetQuickActionSharedValue(status, TypeXQuickActionStatusKey);
+    DXSetQuickActionSharedValue(status, MUBXQuickActionStatusKey);
 }
 
 static id DXQAApplicationController(void) {
@@ -146,7 +146,7 @@ static id DXQACurrentItem(id application, NSString *shortcutType) {
         id controller = DXQAApplicationController();
         if (!controller) {
             DXQAWriteStatus(@"failed", resolvedRequestID, @{@"error": @"SBApplicationController unavailable"});
-            NSLog(@"[TypeX] quickactions: SBApplicationController unavailable");
+            NSLog(@"[MUBX] quickactions: SBApplicationController unavailable");
             return;
         }
 
@@ -196,16 +196,16 @@ static id DXQACurrentItem(id application, NSString *shortcutType) {
             @"dynamicItems": @(dynamicCount),
         };
         dispatch_async(DXQASnapshotWriterQueue(), ^{
-            if (!DXSetQuickActionSharedValue(snapshot, TypeXQuickActionSnapshotKey)) {
+            if (!DXSetQuickActionSharedValue(snapshot, MUBXQuickActionSnapshotKey)) {
                 DXQAWriteStatus(@"failed", resolvedRequestID, @{@"error": @"Snapshot write failed"});
-                NSLog(@"[TypeX] quickactions: failed to write snapshot %@", resolvedRequestID);
+                NSLog(@"[MUBX] quickactions: failed to write snapshot %@", resolvedRequestID);
                 return;
             }
             DXQAWriteStatus(@"complete", resolvedRequestID, stats);
             CFNotificationCenterPostNotification(CFNotificationCenterGetDarwinNotifyCenter(),
                                                  (__bridge CFStringRef)kShortcutSnapshotChangedIdentifier,
                                                  NULL, NULL, YES);
-            NSLog(@"[TypeX] quickactions: snapshot %@ complete (%lu apps, %lu static, %lu dynamic)",
+            NSLog(@"[MUBX] quickactions: snapshot %@ complete (%lu apps, %lu static, %lu dynamic)",
                   resolvedRequestID, (unsigned long)apps.count,
                   (unsigned long)staticCount, (unsigned long)dynamicCount);
         });
@@ -224,7 +224,7 @@ static id DXQACurrentItem(id application, NSString *shortcutType) {
     id application = DXQAApplication(DXQAApplicationController(), bundleIdentifier);
     id item = DXQACurrentItem(application, shortcutType);
     if (!item) {
-        NSLog(@"[TypeXSB] quickaction current item missing bundleID=%@", bundleIdentifier);
+        NSLog(@"[MUBXSB] quickaction current item missing bundleID=%@", bundleIdentifier);
         return DXSystemOpenFailed;
     }
     Class iconViewClass = NSClassFromString(@"SBIconView");
@@ -236,10 +236,10 @@ static id DXQACurrentItem(id application, NSString *shortcutType) {
     }
     @try {
         ((void (*)(id, SEL, id, id, id))objc_msgSend)(iconViewClass, activate, item, bundleIdentifier, nil);
-        NSLog(@"[TypeXSB] quickaction dispatched bundleID=%@", bundleIdentifier);
+        NSLog(@"[MUBXSB] quickaction dispatched bundleID=%@", bundleIdentifier);
         return DXSystemOpenSucceeded;
     } @catch (NSException *exception) {
-        NSLog(@"[TypeXSB] quickaction exception=%@", exception.name);
+        NSLog(@"[MUBXSB] quickaction exception=%@", exception.name);
         return DXSystemOpenFailed;
     }
 }

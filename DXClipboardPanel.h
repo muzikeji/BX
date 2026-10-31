@@ -2,7 +2,7 @@
 
 NS_ASSUME_NONNULL_BEGIN
 
-// TypeX 内置剪贴板面板——参考 Kayoko 的呈现模型：
+// MUBX 内置剪贴板面板——参考 Kayoko 的呈现模型：
 // 面板窗口与控制器在进程内常驻（首次 present 创建一次），之后每次都只做
 // hidden 切换，绝不销毁重建——保证重复呼出始终有效。
 // 打开时先主动收起宿主键盘（记下输入 responder，粘贴时再恢复），面板从

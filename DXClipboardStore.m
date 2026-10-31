@@ -75,7 +75,7 @@ static NSString *const kDXClipboardFavoritesKey = @"favorites";
     if (![self ensureDirectory:dir]) return NO;
 
     if (sqlite3_open(self.databasePath.UTF8String, &_database) != SQLITE_OK) {
-        NSLog(@"[TypeX][Clipboard] sqlite3_open failed: %s", sqlite3_errmsg(_database));
+        NSLog(@"[MUBX][Clipboard] sqlite3_open failed: %s", sqlite3_errmsg(_database));
         sqlite3_close(_database);
         _database = NULL;
         return NO;
@@ -112,7 +112,7 @@ static NSString *const kDXClipboardFavoritesKey = @"favorites";
 
     char *error = NULL;
     if (sqlite3_exec(_database, schema, NULL, NULL, &error) != SQLITE_OK) {
-        NSLog(@"[TypeX][Clipboard] schema prepare failed: %s", error ? error : "?");
+        NSLog(@"[MUBX][Clipboard] schema prepare failed: %s", error ? error : "?");
         if (error) sqlite3_free(error);
         return NO;
     }

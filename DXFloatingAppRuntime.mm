@@ -1,5 +1,5 @@
 // Scene-layer hosting and foreground assertions follow the mechanisms in
-// PullOver-X (c1d3rDev / PullOver-X contributors, GPL-3.0). TypeX owns this
+// PullOver-X (c1d3rDev / PullOver-X contributors, GPL-3.0). MUBX owns this
 // session, requester identity, UI and routing; no PullOver-X binary is used.
 #import "DXFloatingApp.h"
 #import "DXFloatingAppSession.h"
@@ -18,7 +18,7 @@
 #include <signal.h>
 #include <errno.h>
 
-static NSString * const DXFloatRequester = @"com.lindo.typex.floating-app";
+static NSString * const DXFloatRequester = @"com.lindo.mubx.floating-app";
 static void *DXFloatLayerObservation = &DXFloatLayerObservation;
 static void *DXFloatContentObservation = &DXFloatContentObservation;
 // 卡片延迟显示窗口：期间挂接内容则直接带内容显示，超时才显示加载指示。
@@ -299,7 +299,7 @@ static BOOL DXFloatConfigureBackdropHitTesting(id layer) {
     BOOL hitTestingConfigured = DXFloatConfigureBackdropHitTesting(self.backdrop.layer);
     // 不支持显式图层命中的系统使用实际绘制的轻微遮罩，避免再次漏收 App 外部点击。
     if (!hitTestingConfigured) self.backdrop.backgroundColor = [UIColor colorWithWhite:0 alpha:0.03];
-    NSLog(@"[TypeX][FloatingApp] backdrop routing configured=%d", hitTestingConfigured);
+    NSLog(@"[MUBX][FloatingApp] backdrop routing configured=%d", hitTestingConfigured);
     [self.backdrop addGestureRecognizer:[[UITapGestureRecognizer alloc] initWithTarget:self action:@selector(outsideTapped:)]];
     [self.view addSubview:self.backdrop];
     self.card = [[UIView alloc] init];
@@ -344,7 +344,7 @@ static BOOL DXFloatConfigureBackdropHitTesting(id layer) {
     // 收起/替换窗口后，已经排队的旧点击不能影响新的悬浮会话。
     if (gesture.state != UIGestureRecognizerStateEnded || !owner || owner.controller != self ||
         owner.window.hidden || owner.window.card != self.card || owner.window.backdrop != gesture.view) return;
-    NSLog(@"[TypeX][FloatingApp] outside tap minimize");
+    NSLog(@"[MUBX][FloatingApp] outside tap minimize");
     [owner minimize];
 }
 - (void)setTitle:(NSString *)title { [self loadViewIfNeeded]; self.titleLabel.text = title; }
@@ -380,7 +380,7 @@ static BOOL DXFloatConfigureBackdropHitTesting(id layer) {
     [self.view setNeedsLayout]; [self.view layoutIfNeeded];
     if (phase == DXFloatPinchEnded || phase == DXFloatPinchCancelled) {
         self.requestedZoom = self.displayedZoom;
-        NSLog(@"[TypeX][FloatingApp] resize zoom=%.3f", (double)self.displayedZoom);
+        NSLog(@"[MUBX][FloatingApp] resize zoom=%.3f", (double)self.displayedZoom);
     }
 }
 - (void)placeCard:(CGSize)size available:(CGRect)available {
@@ -520,7 +520,7 @@ static BOOL DXFloatRegisterSwitcherCard(NSString *identifier, id scene, id windo
             return YES;
         }
     } @catch (NSException *exception) {
-        NSLog(@"[TypeX][FloatingApp] switcher registration exception=%@", exception.name);
+        NSLog(@"[MUBX][FloatingApp] switcher registration exception=%@", exception.name);
     }
     return NO;
 }
@@ -568,7 +568,7 @@ static BOOL DXFloatRegisterSwitcherCard(NSString *identifier, id scene, id windo
         [self stopInputRelay]; return;
     }
     notify_post(DXFloatInputSessionName.UTF8String);
-    NSLog(@"[TypeX][FloatingApp] input relay ready pid=%d generation=%lu", pid, (unsigned long)generation);
+    NSLog(@"[MUBX][FloatingApp] input relay ready pid=%d generation=%lu", pid, (unsigned long)generation);
 }
 - (void)receivePinchWord:(uint64_t)word nonce:(uint32_t)nonce {
     uint8_t serial = 0; DXFloatPinchPhase phase; double scale = 0;
@@ -621,7 +621,7 @@ static BOOL DXFloatRegisterSwitcherCard(NSString *identifier, id scene, id windo
     // before SpringBoard has launched; @try cannot make that initialization safe.
     snapshot[@"unlocked"] = self.shelfStartupReady ? @([DXGlobalPanel deviceUnlocked]) : @NO;
     snapshot[@"foreground"] = self.shelfStartupReady ? (DXFloatFrontmostIdentifier() ?: @"") : @"";
-    if (!DXPublishFloatingShelf(snapshot)) NSLog(@"[TypeX][FloatingShelf] snapshot publish failed");
+    if (!DXPublishFloatingShelf(snapshot)) NSLog(@"[MUBX][FloatingShelf] snapshot publish failed");
 }
 - (void)finishShelfStartup {
     if (!NSThread.isMainThread) { dispatch_async(dispatch_get_main_queue(), ^{ [self finishShelfStartup]; }); return; }
@@ -632,7 +632,7 @@ static BOOL DXFloatRegisterSwitcherCard(NSString *identifier, id scene, id windo
         self.shelfLaunchObserver = nil;
     }
     [self publishShelf];
-    NSLog(@"[TypeX][FloatingShelf] startup ready");
+    NSLog(@"[MUBX][FloatingShelf] startup ready");
 }
 - (void)close {
     if (!NSThread.isMainThread) { dispatch_async(dispatch_get_main_queue(), ^{ [self close]; }); return; }
@@ -643,16 +643,16 @@ static BOOL DXFloatRegisterSwitcherCard(NSString *identifier, id scene, id windo
     // the underlying foreground app, SpringBoard, or a newly reopened session.
     if (!DXIsValidBundleIdentifier(identifier) || [identifier isEqual:@"com.apple.springboard"]) return;
     if (pid <= 1 || DXFloatPID(identifier) != pid) {
-        NSLog(@"[TypeX][FloatingApp] close process absent or changed bundleID=%@", identifier);
+        NSLog(@"[MUBX][FloatingApp] close process absent or changed bundleID=%@", identifier);
         return;
     }
     if ([DXFloatFrontmostIdentifier() isEqual:identifier] || [self.session.bundleIdentifier isEqual:identifier]) {
-        NSLog(@"[TypeX][FloatingApp] close skipped takeover/reopen bundleID=%@", identifier);
+        NSLog(@"[MUBX][FloatingApp] close skipped takeover/reopen bundleID=%@", identifier);
         return;
     }
     int result = kill(pid, SIGKILL);
     int error = result == 0 ? 0 : errno;
-    NSLog(@"[TypeX][FloatingApp] close terminate bundleID=%@ pid=%d result=%d errno=%d", identifier, pid, result, error);
+    NSLog(@"[MUBX][FloatingApp] close terminate bundleID=%@ pid=%d result=%d errno=%d", identifier, pid, result, error);
 }
 - (void)minimize {
     if (!NSThread.isMainThread) { dispatch_async(dispatch_get_main_queue(), ^{ [self minimize]; }); return; }
@@ -660,14 +660,14 @@ static BOOL DXFloatRegisterSwitcherCard(NSString *identifier, id scene, id windo
     // Keep the canonical scene available while constructing its display item.
     BOOL switcherRequested = DXFloatRegisterSwitcherCard(identifier, self.scene, self.window.windowScene);
     if (self.session.state == DXFloatingAppLive && [self.shelf park:identifier]) {
-        NSLog(@"[TypeX][FloatingShelf] park first bundleID=%@ count=%lu", identifier, (unsigned long)self.shelf.items.count);
+        NSLog(@"[MUBX][FloatingShelf] park first bundleID=%@ count=%lu", identifier, (unsigned long)self.shelf.items.count);
     }
     [self cleanup:DXSystemOpenFailed reason:@"minimize-button"];
     // 收起小窗后把目标以挂起方式重新停靠：进程仍在则原地保活，进程被系统
     // 回收则挂起重建，保证应用驻留后台而不是随托管解除一并退出。
     if (identifier.length) {
         BOOL parked = [self prewarm:identifier];
-        NSLog(@"[TypeX][FloatingApp] minimize bundleID=%@ parked=%d switcherRequested=%d", identifier, parked, switcherRequested);
+        NSLog(@"[MUBX][FloatingApp] minimize bundleID=%@ parked=%d switcherRequested=%d", identifier, parked, switcherRequested);
     }
 }
 - (void)applyPreferencesChanged {
@@ -733,7 +733,7 @@ static BOOL DXFloatRegisterSwitcherCard(NSString *identifier, id scene, id windo
     self.hasContent = NO; self.processPID = 0; self.sceneCreationAttempted = NO;
     self.loggedProcessWait = NO; self.loggedContentWait = NO;
     self.windowPresented = NO; self.prepareStartedAt = 0;
-    if (identifier.length) NSLog(@"[TypeX][FloatingApp] release bundleID=%@ reason=%@", identifier, reason);
+    if (identifier.length) NSLog(@"[MUBX][FloatingApp] release bundleID=%@ reason=%@", identifier, reason);
 }
 - (BOOL)prewarm:(NSString *)identifier {
     UIApplication *application = UIApplication.sharedApplication;
@@ -772,7 +772,7 @@ static BOOL DXFloatRegisterSwitcherCard(NSString *identifier, id scene, id windo
     if (strcmp(portType, "I") && strcmp(portType, "i")) return NO;
     if (!suspendedKey.length) return NO;
     NSMutableDictionary *options = [@{suspendedKey: @YES,
-        @"__TypeXFloatingGeneration": @(generation)} mutableCopy];
+        @"__MUBXFloatingGeneration": @(generation)} mutableCopy];
     __weak typeof(self) weakSelf = self;
     @try {
         // FBSSystemServiceResultCallback carries an NSError per the vendored
@@ -785,13 +785,13 @@ static BOOL DXFloatRegisterSwitcherCard(NSString *identifier, id scene, id windo
                 DXFloatingAppCoordinator *host = weakSelf;
                 if (![host.session isCurrent:generation]) return;
                 if (error) {
-                    NSLog(@"[TypeX][FloatingApp] URL rejected bundleID=%@ error=%@",
+                    NSLog(@"[MUBX][FloatingApp] URL rejected bundleID=%@ error=%@",
                         host.session.bundleIdentifier, error.localizedDescription ?: error.domain);
                     [host cleanup:DXSystemOpenFailed reason:@"url-delivery-failed"];
                     return;
                 }
                 host.urlAccepted = YES;
-                NSLog(@"[TypeX][FloatingApp] URL accepted bundleID=%@ generation=%lu", host.session.bundleIdentifier, (unsigned long)generation);
+                NSLog(@"[MUBX][FloatingApp] URL accepted bundleID=%@ generation=%lu", host.session.bundleIdentifier, (unsigned long)generation);
             });
         });
         return YES;
@@ -810,7 +810,7 @@ static BOOL DXFloatRegisterSwitcherCard(NSString *identifier, id scene, id windo
         id attribute = ((id (*)(id, SEL, NSUInteger, NSUInteger))objc_msgSend)(attributeClass, attributeSelector, 7, (1U << 0) | (1U << 1) | (1U << 3) | (1U << 5));
         if (!target || !attribute) return NO;
         id assertion = ((id (*)(id, SEL, id, id, id))objc_msgSend)([assertionClass alloc], initializer,
-            @"TypeX live floating application", target, @[attribute]);
+            @"MUBX live floating application", target, @[attribute]);
         NSError *error;
         if (!((BOOL (*)(id, SEL, NSError **))objc_msgSend)(assertion, acquire, &error)) return NO;
         self.assertion = assertion;
@@ -853,7 +853,7 @@ static BOOL DXFloatRegisterSwitcherCard(NSString *identifier, id scene, id windo
     // 指示；失败路径保持隐藏拆窗，不再闪现空转卡片。
     self.window.hidden = YES;
     self.prepareStartedAt = CFAbsoluteTimeGetCurrent();
-    NSLog(@"[TypeX][FloatingApp] prepare bundleID=%@ generation=%lu scheme=%@", identifier, (unsigned long)generation, url.scheme ?: @"none");
+    NSLog(@"[MUBX][FloatingApp] prepare bundleID=%@ generation=%lu scheme=%@", identifier, (unsigned long)generation, url.scheme ?: @"none");
     __weak typeof(self) weakSelf = self;
     dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(DXFloatCardPresentDelay * NSEC_PER_SEC)), dispatch_get_main_queue(),
         ^{ [weakSelf presentCardIfPending:generation]; });
@@ -866,7 +866,7 @@ static BOOL DXFloatRegisterSwitcherCard(NSString *identifier, id scene, id windo
         id scene = DXFloatFindScene(identifier);
         if (scene && DXFloatInteger(scene, @"isValid", YES)) {
             if (![self adoptScene:scene pid:pid generation:generation]) return;
-            NSLog(@"[TypeX][FloatingApp] hot resume bundleID=%@ pid=%d generation=%lu", identifier, pid, (unsigned long)generation);
+            NSLog(@"[MUBX][FloatingApp] hot resume bundleID=%@ pid=%d generation=%lu", identifier, pid, (unsigned long)generation);
         }
     }
     if (url ? ![self deliverURL:url generation:generation] : ![self prewarm:identifier]) {
@@ -894,7 +894,7 @@ static BOOL DXFloatRegisterSwitcherCard(NSString *identifier, id scene, id windo
         // target that never launched (waiting process) in device syslog.
         if (!self.loggedContentWait) {
             self.loggedContentWait = YES;
-            NSLog(@"[TypeX][FloatingApp] waiting content bundleID=%@ contentState=%ld",
+            NSLog(@"[MUBX][FloatingApp] waiting content bundleID=%@ contentState=%ld",
                 self.session.bundleIdentifier, (long)contentState);
         }
         return;
@@ -942,7 +942,7 @@ static BOOL DXFloatRegisterSwitcherCard(NSString *identifier, id scene, id windo
             [self presentCardIfPending:self.session.generation];
         }
     } @catch (NSException *exception) {
-        NSLog(@"[TypeX][FloatingApp] layer publication exception=%@", exception.name);
+        NSLog(@"[MUBX][FloatingApp] layer publication exception=%@", exception.name);
     }
 }
 - (id)createDefaultSceneIfNeeded:(NSString *)identifier {
@@ -987,7 +987,7 @@ static BOOL DXFloatRegisterSwitcherCard(NSString *identifier, id scene, id windo
             ((void (*)(id, SEL, NSInteger))objc_msgSend)(clientSettings, NSSelectorFromString(@"setInterfaceOrientation:"), orientation);
             ((void (*)(id, SEL, id))objc_msgSend)(parameters, NSSelectorFromString(@"setClientSettings:"), clientSettings);
         }
-        NSLog(@"[TypeX][FloatingApp] prepare missing default scene bundleID=%@", identifier);
+        NSLog(@"[MUBX][FloatingApp] prepare missing default scene bundleID=%@", identifier);
         return ((id (*)(id, SEL, id, id))objc_msgSend)(manager, create, definition, parameters);
     } @catch (__unused NSException *exception) { return nil; }
 }
@@ -996,7 +996,7 @@ static BOOL DXFloatRegisterSwitcherCard(NSString *identifier, id scene, id windo
     if (![self.session isCurrent:generation] || self.windowPresented || !self.window) return;
     self.windowPresented = YES;
     self.window.hidden = NO;
-    NSLog(@"[TypeX][FloatingApp] card presented bundleID=%@ generation=%lu content=%d elapsed=%dms",
+    NSLog(@"[MUBX][FloatingApp] card presented bundleID=%@ generation=%lu content=%d elapsed=%dms",
         self.session.bundleIdentifier, (unsigned long)generation, self.hasContent,
         (int)((CFAbsoluteTimeGetCurrent() - self.prepareStartedAt) * 1000));
 }
@@ -1041,7 +1041,7 @@ static BOOL DXFloatRegisterSwitcherCard(NSString *identifier, id scene, id windo
         [scene addObserver:self forKeyPath:@"contentState" options:NSKeyValueObservingOptionNew context:DXFloatContentObservation];
         self.observingContent = YES;
     } @catch (__unused NSException *exception) {}
-    NSLog(@"[TypeX][FloatingApp] scene acquired bundleID=%@ pid=%d generation=%lu", self.session.bundleIdentifier, pid, (unsigned long)generation);
+    NSLog(@"[MUBX][FloatingApp] scene acquired bundleID=%@ pid=%d generation=%lu", self.session.bundleIdentifier, pid, (unsigned long)generation);
     return YES;
 }
 // 一次就绪评估：采纳/校验场景、接力输入、发布图层并尽快完成恢复。
@@ -1063,7 +1063,7 @@ static BOOL DXFloatRegisterSwitcherCard(NSString *identifier, id scene, id windo
     if (self.scene) [self startInputRelay];
     [self publishLayers];
     if (self.hasContent && self.urlAccepted && self.session.state == DXFloatingAppPreparing) {
-        NSLog(@"[TypeX][FloatingApp] live bundleID=%@ generation=%lu elapsed=%dms", identifier,
+        NSLog(@"[MUBX][FloatingApp] live bundleID=%@ generation=%lu elapsed=%dms", identifier,
             (unsigned long)generation, (int)((CFAbsoluteTimeGetCurrent() - self.prepareStartedAt) * 1000));
         // Register only ready content; failed/expired preparations never consume a slot.
         if ([self shelfEnabled] || [self.shelf contains:identifier]) {
@@ -1086,7 +1086,7 @@ static BOOL DXFloatRegisterSwitcherCard(NSString *identifier, id scene, id windo
     pid_t pid = DXFloatPID(identifier);
     if (pid <= 0 && !self.loggedProcessWait && self.session.deadline.timeIntervalSinceNow < DXSystemOpenRequestTTL - 2.0) {
         self.loggedProcessWait = YES;
-        NSLog(@"[TypeX][FloatingApp] waiting process bundleID=%@", identifier);
+        NSLog(@"[MUBX][FloatingApp] waiting process bundleID=%@", identifier);
     }
     if ([self evaluate:generation]) {
         __weak typeof(self) weakSelf = self;
@@ -1108,14 +1108,14 @@ static void DXFloatSceneUpdate2(id scene, SEL selector, id settings, id context)
 
 // FrontBoard can enter the trusted workspace path after the FBS request. Limit
 // this correction to our marked URL request; ordinary app and URL launches are
-// never captured or redirected by TypeX's floating host.
+// never captured or redirected by MUBX's floating host.
 static void (*DXFloatOriginalTrustedOpen)(id, SEL, id, id, id, id, id);
 static void DXFloatTrustedOpen(id workspace, SEL selector, id application, id options, id activation, id origin, id result) {
     DXFloatingAppCoordinator *host = DXFloatingAppCoordinator.shared;
     NSDictionary *dictionary = [options isKindOfClass:NSDictionary.class] ? options : DXFloatObject(options, @"dictionary");
     if (NSThread.isMainThread && host.session.state == DXFloatingAppPreparing && host.requestedURL &&
         [DXFloatIdentifier(application) isEqual:host.session.bundleIdentifier] &&
-        [dictionary[@"__TypeXFloatingGeneration"] unsignedIntegerValue] == host.session.generation) {
+        [dictionary[@"__MUBXFloatingGeneration"] unsignedIntegerValue] == host.session.generation) {
         @try {
             SEL description = NSSelectorFromString(@"keyDescriptionForSetting:");
             NSUInteger suspended = NSNotFound;
@@ -1138,7 +1138,7 @@ void DXStartFloatingAppHost(void) {
     static dispatch_once_t once;
     dispatch_once(&once, ^{
         // Load only in SpringBoard; don't add a private runtime dependency to
-        // every keyboard host or extension which receives TypeX.dylib.
+        // every keyboard host or extension which receives MUBX.dylib.
         dlopen("/System/Library/PrivateFrameworks/RunningBoardServices.framework/RunningBoardServices", RTLD_LAZY);
         typedef void (*DXHookMessage)(Class, SEL, IMP, IMP *);
         DXHookMessage hook = (DXHookMessage)dlsym(RTLD_DEFAULT, "MSHookMessageEx");
@@ -1180,7 +1180,7 @@ void DXStartFloatingAppHost(void) {
             }) == NOTIFY_STATUS_OK) [tokens addObject:@(token)];
         }
         host.notifyTokens = tokens;
-        NSLog(@"[TypeX][FloatingApp] host initialized sceneHooks=%d/%d", DXFloatOriginalSceneUpdate3 != NULL, DXFloatOriginalSceneUpdate2 != NULL);
+        NSLog(@"[MUBX][FloatingApp] host initialized sceneHooks=%d/%d", DXFloatOriginalSceneUpdate3 != NULL, DXFloatOriginalSceneUpdate2 != NULL);
     });
 }
 
@@ -1205,6 +1205,6 @@ void DXRestoreFloatingAppFromShelf(NSString *identifier, uint64_t revision, NSDa
         [host.shelf remove:identifier]; [host publishShelf];
         if (reply) reply(DXSystemOpenUnavailable); return;
     }
-    NSLog(@"[TypeX][FloatingShelf] restore bundleID=%@", identifier);
+    NSLog(@"[MUBX][FloatingShelf] restore bundleID=%@", identifier);
     [host open:identifier url:nil deadline:deadline reply:reply];
 }

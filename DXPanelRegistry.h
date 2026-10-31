@@ -3,8 +3,8 @@
 
 #define kDXPanels @"panels"
 #define kDXToolbarBindings @"toolbarpanelbindings"
-#define DXPanelLinkSelectorPrefix @"__typex_link_action_"
-#define DXPanelSelectorPrefix @"__typex_panel_"
+#define DXPanelLinkSelectorPrefix @"__mubx_link_action_"
+#define DXPanelSelectorPrefix @"__mubx_panel_"
 #define DXPanelKeyboardKind @"keyboard"
 #define DXPanelGestureKind @"gesture"
 
@@ -147,8 +147,8 @@ static inline NSDictionary *DXPanelMigratePreferences(NSDictionary *preferences)
         ![key isEqual:kDXPanelBottomEnabled] && ![key isEqual:kDXPanelDockSwipeEnabled] && ![key isEqual:kDXPanelGlobalEnabled]) hasLegacy = YES;
     NSDictionary *dock = [preferences[@"dockgesturebindings"] isKindOfClass:NSDictionary.class] ? preferences[@"dockgesturebindings"] : @{};
     NSDictionary *status = [preferences[@"statusbargesturebindings"] isKindOfClass:NSDictionary.class] ? preferences[@"statusbargesturebindings"] : @{};
-    for (id selector in dock.allValues) if ([DXPanelString(selector) hasPrefix:@"__typex_dock_panel_"]) hasLegacy = YES;
-    for (id binding in status.allValues) if ([binding isKindOfClass:NSDictionary.class] && [DXPanelString(binding[@"selector"]) hasPrefix:@"__typex_statusbar_panel_"]) hasLegacy = YES;
+    for (id selector in dock.allValues) if ([DXPanelString(selector) hasPrefix:@"__mubx_dock_panel_"]) hasLegacy = YES;
+    for (id binding in status.allValues) if ([binding isKindOfClass:NSDictionary.class] && [DXPanelString(binding[@"selector"]) hasPrefix:@"__mubx_statusbar_panel_"]) hasLegacy = YES;
     if (hasLegacy) {
         NSUInteger number = 0;
         for (NSString *side in @[@"left", @"right", @"common"]) {
@@ -167,9 +167,9 @@ static inline NSDictionary *DXPanelMigratePreferences(NSDictionary *preferences)
         NSMutableDictionary *bindings = [dock mutableCopy];
         for (NSString *direction in @[@"up", @"left", @"right"]) {
             NSString *old = DXPanelString(bindings[direction]);
-            if (!bindings[direction] && [direction isEqual:@"up"]) old = @"__typex_dock_panel_common";
+            if (!bindings[direction] && [direction isEqual:@"up"]) old = @"__mubx_dock_panel_common";
             for (NSString *side in @[@"left", @"right", @"common"])
-                if ([old isEqual:[@"__typex_dock_panel_" stringByAppendingString:side]]) bindings[direction] = DXPanelSelector([@"legacy-gesture-" stringByAppendingString:side]);
+                if ([old isEqual:[@"__mubx_dock_panel_" stringByAppendingString:side]]) bindings[direction] = DXPanelSelector([@"legacy-gesture-" stringByAppendingString:side]);
         }
         result[@"dockgesturebindings"] = bindings;
         bindings = [status mutableCopy];
@@ -177,7 +177,7 @@ static inline NSDictionary *DXPanelMigratePreferences(NSDictionary *preferences)
             if (![bindings[slot] isKindOfClass:NSDictionary.class]) continue;
             NSMutableDictionary *binding = [bindings[slot] mutableCopy];
             for (NSString *side in @[@"left", @"right", @"common"])
-                if ([binding[@"selector"] isEqual:[@"__typex_statusbar_panel_" stringByAppendingString:side]]) binding[@"selector"] = DXPanelSelector([@"legacy-gesture-" stringByAppendingString:side]);
+                if ([binding[@"selector"] isEqual:[@"__mubx_statusbar_panel_" stringByAppendingString:side]]) binding[@"selector"] = DXPanelSelector([@"legacy-gesture-" stringByAppendingString:side]);
             bindings[slot] = binding;
         }
         result[@"statusbargesturebindings"] = bindings;

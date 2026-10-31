@@ -19,7 +19,7 @@ static inline BOOL DXPanelControlRequestValid(id request) {
     return !request[@"value"] && ([action isEqual:@"state"] || [DXPanelToggleIdentifiers() containsObject:action]);
 }
 static inline NSString *DXPanelControlStateSlot(NSString *token) {
-    return [@"com.lindo.typex.panel-control.state." stringByAppendingString:token];
+    return [@"com.lindo.mubx.panel-control.state." stringByAppendingString:token];
 }
 static const uint64_t DXPanelControlPendingWord = 0x5459000000000000ULL;
 

@@ -47,13 +47,13 @@ if (( NEXT_MINOR > 10 )); then
 fi
 NEXT_VERSION="${NEXT_MAJOR}.${NEXT_MINOR}.${NEXT_PATCH}"
 
-# Bark 推送：每次构建结束后推送"typex-版本-状态"；token 只存本地
+# Bark 推送：每次构建结束后推送"mubx-版本-状态"；token 只存本地
 # build-notify.local.conf（已被 .gitignore 排除）。
 # 配置缺失、无 token 或推送失败都只告警，不影响构建结果与退出码。
 notify_bark() {
     local message="$1"
     # Local validation can opt out without touching the user's notification config.
-    if [[ "${TYPEX_SKIP_BUILD_NOTIFICATION:-0}" == "1" ]]; then return 0; fi
+    if [[ "${MUBX_SKIP_BUILD_NOTIFICATION:-0}" == "1" ]]; then return 0; fi
     local conf_file="$ROOT_DIR/build-notify.local.conf"
 
     if [[ ! -f "$conf_file" ]]; then
@@ -83,9 +83,9 @@ finalize() {
     rm -f "${CONTROL_TMP:-}"
     if [[ "$BUILD_STARTED" == true ]]; then
         if [[ "$rc" -eq 0 ]]; then
-            notify_bark "typex-${NEXT_VERSION}-构建完成"
+            notify_bark "mubx-${NEXT_VERSION}-构建完成"
         else
-            notify_bark "typex-${NEXT_VERSION}-构建失败"
+            notify_bark "mubx-${NEXT_VERSION}-构建失败"
         fi
     fi
 }

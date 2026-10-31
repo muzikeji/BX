@@ -1,12 +1,12 @@
-Package: com.lindo.typex
+Package: com.lindo.mubx
 Name: MUBX
 Depends: mobilesubstrate, preferenceloader, firmware(>=15.0)
-Version: 4.7.6
+Version: 1.0.0
 Architecture: iphoneos-arm64
-Description: MUBX 是一款可自定义键盘快捷操作栏的ios插件.
+Description: 参考 TypeX 和 Kayoko 实现两个插件的功能，超级键盘增强
 Maintainer: lindo
 Author: lindo
 Section: Tweaks
 Conflicts: com.restiveconch.actionbar,com.udevs.dockx,com.lindo.dockx
-Icon: https://udevsharold.github.io/repo/depictions/com.lindo.typex/icon/icon.png
-Depiction: https://udevsharold.github.io/repo/depictions/?p=com.lindo.typex
+Icon: https://udevsharold.github.io/repo/depictions/com.lindo.mubx/icon/icon.png
+Depiction: https://udevsharold.github.io/repo/depictions/?p=com.lindo.mubx

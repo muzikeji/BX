@@ -8,7 +8,7 @@
 // and reply slot, so concurrent publishers cannot combine each other's bytes.
 // The doorbell is newest-wins (Darwin delivery can coalesce); a displaced sender
 // times out without resending. Registrations pin the words until reply/timeout.
-static const char *DXOpenDoorbell = "com.lindo.typex.open.v2";
+static const char *DXOpenDoorbell = "com.lindo.mubx.open.v2";
 static const NSUInteger DXOpenMaxPacketBytes = 8192;
 NSTimeInterval const DXSystemOpenRequestTTL = 8.0;
 static const NSTimeInterval DXOpenReplyTimeout = 10.0;
@@ -25,7 +25,7 @@ static const uint64_t DXOpenWireMagic = 0x5458020000000000ULL;
 static dispatch_queue_t DXOpenQueue(void) {
     static dispatch_queue_t queue;
     static dispatch_once_t once;
-    dispatch_once(&once, ^{ queue = dispatch_queue_create("com.lindo.typex.open.transport", DISPATCH_QUEUE_SERIAL); });
+    dispatch_once(&once, ^{ queue = dispatch_queue_create("com.lindo.mubx.open.transport", DISPATCH_QUEUE_SERIAL); });
     return queue;
 }
 
@@ -46,7 +46,7 @@ static void DXOpenComplete(uint64_t requestID, DXSystemOpenResult result) {
     if (!pending) return; // Reply and timeout may both be queued.
     [DXOpenPendingRequests() removeObjectForKey:@(requestID)];
     for (NSNumber *token in pending.tokens) notify_cancel(token.intValue);
-    NSLog(@"[TypeXSB] reply id=%016llx result=%llu", (unsigned long long)requestID,
+    NSLog(@"[MUBXSB] reply id=%016llx result=%llu", (unsigned long long)requestID,
           (unsigned long long)result);
     if (pending.reply) dispatch_async(dispatch_get_main_queue(), ^{ pending.reply(result); });
 }
@@ -76,7 +76,7 @@ static void DXOpenSendReply(uint64_t requestID, DXSystemOpenResult result) {
         if (status == NOTIFY_STATUS_OK) status = notify_post(name.UTF8String);
         notify_cancel(token);
     }
-    NSLog(@"[TypeXSB] outcome id=%016llx result=%llu notify=%u",
+    NSLog(@"[MUBXSB] outcome id=%016llx result=%llu notify=%u",
           (unsigned long long)requestID, (unsigned long long)result, status);
 }
 
@@ -135,7 +135,7 @@ void DXSendDarwinOpenRequest(NSString *kind, NSString *payload, DXSystemOpenRepl
         written = written && DXOpenWriteWord(DXOpenSlot(requestID, @"size"), DXOpenWireMagic | packet.length, pending);
         written = written && DXOpenWriteWord(@(DXOpenDoorbell), requestID, pending);
         status = written ? notify_post(DXOpenDoorbell) : NOTIFY_STATUS_FAILED;
-        NSLog(@"[TypeXSB] publish id=%016llx kind=%@ bytes=%lu status=%u",
+        NSLog(@"[MUBXSB] publish id=%016llx kind=%@ bytes=%lu status=%u",
               (unsigned long long)requestID, kind, (unsigned long)packet.length, status);
         if (status != NOTIFY_STATUS_OK) {
             DXOpenComplete(requestID, DXSystemOpenUnavailable);
@@ -201,7 +201,7 @@ BOOL DXStartDarwinOpenServer(DXSystemOpenHandler handler) {
         NSTimeInterval created = [request[@"created"] doubleValue];
         NSTimeInterval age = now - created;
         if (!(age >= 0 && age <= DXSystemOpenRequestTTL)) { DXOpenSendReply(requestID, DXSystemOpenExpired); return; }
-        NSLog(@"[TypeXSB] consumed id=%016llx kind=%@", (unsigned long long)requestID, request[@"kind"]);
+        NSLog(@"[MUBXSB] consumed id=%016llx kind=%@", (unsigned long long)requestID, request[@"kind"]);
         dispatch_async(dispatch_get_main_queue(), ^{
             // Main-queue congestion must not turn a timed-out action into a
             // surprise launch later. Validate freshness at the execution point.
@@ -220,12 +220,12 @@ BOOL DXStartDarwinOpenServer(DXSystemOpenHandler handler) {
             };
             @try { handler(request, finish); }
             @catch (NSException *exception) {
-                NSLog(@"[TypeXSB] executor exception=%@", exception.name);
+                NSLog(@"[MUBXSB] executor exception=%@", exception.name);
                 finish(DXSystemOpenFailed);
             }
         });
     });
     if (status != NOTIFY_STATUS_OK) serverToken = NOTIFY_TOKEN_INVALID;
-    NSLog(@"[TypeXSB] notify-state server ready=%d status=%u", status == NOTIFY_STATUS_OK, status);
+    NSLog(@"[MUBXSB] notify-state server ready=%d status=%u", status == NOTIFY_STATUS_OK, status);
     return status == NOTIFY_STATUS_OK;
 }

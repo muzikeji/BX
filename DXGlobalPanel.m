@@ -114,7 +114,7 @@ static BOOL DXGlobalPanelHasForegroundApplication(BOOL *known) {
     if ((self = [super init])) {
         NSNotificationCenter *center = NSNotificationCenter.defaultCenter;
         for (NSString *name in @[UIApplicationWillResignActiveNotification, UISceneWillDeactivateNotification,
-            UIDeviceOrientationDidChangeNotification, @"typeXLayoutChanged"])
+            UIDeviceOrientationDidChangeNotification, @"mubXLayoutChanged"])
             [center addObserver:self selector:@selector(interrupted:) name:name object:nil];
     }
     return self;
@@ -143,14 +143,14 @@ static BOOL DXGlobalPanelHasForegroundApplication(BOOL *known) {
     // Physical orientation/tint updates do not mean the current scene has
     // gone away. Relayout in place; a changed preference snapshot still closes.
     if ([name isEqual:UIDeviceOrientationDidChangeNotification] ||
-        ([name isEqual:@"typeXLayoutChanged"] && [self.snapshot isEqual:DXPrefsManager.sharedInstance.prefs])) {
+        ([name isEqual:@"mubXLayoutChanged"] && [self.snapshot isEqual:DXPrefsManager.sharedInstance.prefs])) {
         [self layout];
         return;
     }
     if (self.dockPresentation &&
         ([name isEqual:UIApplicationWillResignActiveNotification] ||
          [name isEqual:UISceneWillDeactivateNotification] || [name isEqual:@"switcher-transition"])) {
-        NSLog(@"[TypeX][GlobalPanel] keep origin=dockgesture reason=%@", name);
+        NSLog(@"[MUBX][GlobalPanel] keep origin=dockgesture reason=%@", name);
         return;
     }
     [self dismissForReason:name ?: @"interruption"];
@@ -163,7 +163,7 @@ static BOOL DXGlobalPanelHasForegroundApplication(BOOL *known) {
         // delayed/ambiguous Home or app-transition signals. No private query
         // result (including unavailable/throwing APIs) may revoke this policy.
         if (self.dockPresentation) {
-            NSLog(@"[TypeX][GlobalPanel] keep origin=dockgesture reason=%@", name);
+            NSLog(@"[MUBX][GlobalPanel] keep origin=dockgesture reason=%@", name);
             return;
         }
         BOOL known = NO;
@@ -202,7 +202,7 @@ static BOOL DXGlobalPanelHasForegroundApplication(BOOL *known) {
     NSDictionary *panelDefinition = DXPanelDefinition(manager.prefs, selector);
     if (!manager.preferencesAvailable || !DXKeyboardPanelBool(manager.prefs, kEnabledkey, YES) ||
         !DXKeyboardPanelBool(manager.prefs, kDXPanelGlobalEnabled, YES) || ![DXGlobalPanel deviceUnlocked]) {
-        NSLog(@"[TypeX][GlobalPanel] open cancelled: preferences/lock gate"); return;
+        NSLog(@"[MUBX][GlobalPanel] open cancelled: preferences/lock gate"); return;
     }
     NSTimeInterval now = NSProcessInfo.processInfo.systemUptime;
     if (now - self.lastOpen < 0.35 && ![origin isEqual:@"panel-action"]) return;
@@ -350,7 +350,7 @@ static BOOL DXGlobalPanelHasForegroundApplication(BOOL *known) {
     [self.window layoutIfNeeded];
     [self layout];
     [self.controlSession enqueueAction:@"state" value:nil];
-    NSLog(@"[TypeX][GlobalPanel] open side=%@ origin=%@ items=%lu scene=%d level=%.0f",
+    NSLog(@"[MUBX][GlobalPanel] open side=%@ origin=%@ items=%lu scene=%d level=%.0f",
         profile, origin, (unsigned long)buttons.count, scene != nil, (double)self.window.windowLevel);
 }
 - (void)layout {
@@ -405,7 +405,7 @@ static BOOL DXGlobalPanelHasForegroundApplication(BOOL *known) {
         return;
     }
     if (DXGlobalPanelActionNeedsInput(entry)) {
-        NSLog(@"[TypeX][GesturePanel] action rejected: input-required");
+        NSLog(@"[MUBX][GesturePanel] action rejected: input-required");
         [self showMessage:DXGlobalLocalized(@"GLOBAL_PANEL_INPUT_REQUIRED")]; return;
     }
     if (!DXGlobalCustomActionSupported(entry)) {
@@ -415,7 +415,7 @@ static BOOL DXGlobalPanelHasForegroundApplication(BOOL *known) {
     // callback can insert text or reopen a dismissed/newer panel.
     [self dismiss];
     DXSystemOpenReply reply = ^(DXSystemOpenResult result) {
-        NSLog(@"[TypeX][GlobalPanel] action result=%llu", (unsigned long long)result);
+        NSLog(@"[MUBX][GlobalPanel] action result=%llu", (unsigned long long)result);
     };
     DXExecuteGlobalCustomAction(entry, reply);
 }
@@ -435,7 +435,7 @@ static BOOL DXGlobalPanelHasForegroundApplication(BOOL *known) {
         });
         return;
     }
-    if ([self isVisible]) NSLog(@"[TypeX][GlobalPanel] close reason=%@ age=%.3f", reason, NSProcessInfo.processInfo.systemUptime - self.lastOpen);
+    if ([self isVisible]) NSLog(@"[MUBX][GlobalPanel] close reason=%@ age=%.3f", reason, NSProcessInfo.processInfo.systemUptime - self.lastOpen);
     [self.controlSession invalidate]; self.controlSession = nil;
     self.controls.actionHandler = nil; self.controls = nil;
     self.window.hidden = YES;

@@ -12,14 +12,14 @@ INSTALL_TARGET_PROCESSES = SpringBoard
 
 include $(THEOS)/makefiles/common.mk
 
-TWEAK_NAME = TypeX
+TWEAK_NAME = MUBX
 
-TypeX_FILES = $(wildcard *.x) $(wildcard *.m) $(wildcard *.mm) $(wildcard *.xm)
-TypeX_CFLAGS = -fobjc-arc
-TypeX_LIBRARIES = sqlite3
-TypeX_FRAMEWORKS = UIKit CoreGraphics QuartzCore ImageIO SafariServices PhotosUI UniformTypeIdentifiers JavaScriptCore
-TypeX_PRIVATE_FRAMEWORKS = AppSupport Preferences FrontBoardServices SpringBoardServices
+MUBX_FILES = $(wildcard *.x) $(wildcard *.m) $(wildcard *.mm) $(wildcard *.xm)
+MUBX_CFLAGS = -fobjc-arc
+MUBX_LIBRARIES = sqlite3
+MUBX_FRAMEWORKS = UIKit CoreGraphics QuartzCore ImageIO SafariServices PhotosUI UniformTypeIdentifiers JavaScriptCore
+MUBX_PRIVATE_FRAMEWORKS = AppSupport Preferences FrontBoardServices SpringBoardServices
 
 include $(THEOS_MAKE_PATH)/tweak.mk
-SUBPROJECTS += typexprefs
+SUBPROJECTS += mubxprefs
 include $(THEOS_MAKE_PATH)/aggregate.mk

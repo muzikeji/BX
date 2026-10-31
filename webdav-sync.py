@@ -2,9 +2,9 @@
 """增量同步 iCloud 的 deb 归档到坚果云 WebDAV 镜像（多项目）。
 
 用法（构建归档 iCloud 后执行）:
-    python3 webdav-sync.py            # 默认 TypeX
+    python3 webdav-sync.py            # 默认 MUBX
     python3 webdav-sync.py PixPin     # 指定项目（Downloads 下的目录名）
-    python3 webdav-sync.py TypeX PixPin KayokoX PullOver-X
+    python3 webdav-sync.py MUBX PixPin KayokoX PullOver-X
 
 行为约定（2026-09-29 起，每次构建归档后都要跑一次对应项目）:
 - iCloud 源: ~/Library/Mobile Documents/com~apple~CloudDocs/Downloads/<项目>/<子目录>/
@@ -111,7 +111,7 @@ def sync_project(project):
 
 
 def main():
-    projects = sys.argv[1:] or ["TypeX"]
+    projects = sys.argv[1:] or ["MUBX"]
     ok = all(sync_project(project) for project in projects)
     sys.exit(0 if ok else 1)
 

@@ -59,7 +59,7 @@ typedef NS_ENUM(NSUInteger, DXClipboardCommandType) {
 
     _pasteboard = [UIPasteboard generalPasteboard];
     _lastChangeCount = _pasteboard.changeCount;
-    _pasteboardQueue = dispatch_queue_create("com.lindo.typex.pasteboard",
+    _pasteboardQueue = dispatch_queue_create("com.lindo.mubx.pasteboard",
                                              dispatch_queue_attr_make_with_qos_class(DISPATCH_QUEUE_SERIAL,
                                                                                     QOS_CLASS_UTILITY, 0));
 
@@ -81,7 +81,7 @@ typedef NS_ENUM(NSUInteger, DXClipboardCommandType) {
                                     NULL,
                                     CFNotificationSuspensionBehaviorDeliverImmediately);
 
-    NSLog(@"[TypeX][Clipboard] 剪贴板服务已启动");
+    NSLog(@"[MUBX][Clipboard] 剪贴板服务已启动");
 }
 
 static void DXClipboardPasteboardChangedCallback(CFNotificationCenterRef center, void *observer,
@@ -120,15 +120,14 @@ static void DXClipboardCommandCallback(CFNotificationCenterRef center, void *obs
                                        CFDictionaryRef userInfo) {
     (void)center; (void)name; (void)object; (void)userInfo;
     DXClipboardService *service = (__bridge DXClipboardService *)observer;
-    // 命令通道：共享命令文件（沙盒 App 面板写入）优先，cfprefsd 域兜底
-    // （未沙盒进程，如设置页，直接写域）。
-    NSDictionary *command = DXReadSharedPlistFile(TypeXClipboardCommandPath);
-    if (![command isKindOfClass:[NSDictionary class]]) {
-        command = DXQuickActionSharedValue(kClipboardCommandKey);
-    }
+    // 命令通道：面板（沙盒 App 进程）写入 cfprefsd 隔离域，此处读域消费。
+    // 恢复纯域通道（04f215b 实测可用）：不做共享命令文件优先读取——RootHide
+    // iOS 16 下 SB 沙盒拒绝对 /Library/MUBX 目录的写操作，文件残留后命令会
+    // 被旧文件反复消费或找不到，导致收藏/删除/清空全部失效；域是唯一
+    // 未沙盒进程与设置页都能读写的通道。
+    NSDictionary *command = DXQuickActionSharedValue(kClipboardCommandKey);
     if (![command isKindOfClass:[NSDictionary class]]) return;
-    // 命令是一次性的：取走即删（文件与域同时清），避免迟到通知被重复消费。
-    [[NSFileManager defaultManager] removeItemAtPath:TypeXClipboardCommandPath error:nil];
+    // 命令是一次性的：取走后即清除，避免迟到通知被重复消费。
     DXSetQuickActionSharedValue(nil, kClipboardCommandKey);
     dispatch_async(dispatch_get_main_queue(), ^{
         [service handleCommand:command];
@@ -337,7 +336,7 @@ static void DXClipboardCommandCallback(CFNotificationCenterRef center, void *obs
     DXSetQuickActionSharedValue(snapshot, kClipboardSnapshotKey);
     // 共享快照文件：位于 jbroot 下 app 沙盒可读目录，普通 App 面板经此读取
     // （沙盒进程读不到 cfprefsd 隔离域，只能经文件交换，机制同 shared.plist）。
-    DXWriteSharedPlistFile(snapshot, TypeXClipboardSnapshotPath);
+    DXWriteSharedPlistFile(snapshot, MUBXClipboardSnapshotPath);
 }
 
 #pragma mark - Preferences helpers

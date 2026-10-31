@@ -53,15 +53,15 @@ static void DXSMSCaptureBulletin(id bulletin, NSString *explicitSection) {
             [[UIPasteboard generalPasteboard] setItems:@[@{@"public.utf8-plain-text": code}]
                 options:@{UIPasteboardOptionLocalOnly: @YES,
                           UIPasteboardOptionExpirationDate: [NSDate dateWithTimeIntervalSinceNow:180]}];
-            NSLog(@"[TypeX][SMSCode] receive copied length=%lu", (unsigned long)code.length);
+            NSLog(@"[MUBX][SMSCode] receive copied length=%lu", (unsigned long)code.length);
         } @catch (NSException *exception) {
-            NSLog(@"[TypeX][SMSCode] receive copy failed");
+            NSLog(@"[MUBX][SMSCode] receive copy failed");
         }
     });
 }
 static void DXSMSReceiveBulletin(id bulletin, NSString *explicitSection) {
     @try { DXSMSCaptureBulletin(bulletin, explicitSection); }
-    @catch (NSException *exception) { NSLog(@"[TypeX][SMSCode] receive unsupported payload"); }
+    @catch (NSException *exception) { NSLog(@"[MUBX][SMSCode] receive unsupported payload"); }
 }
 
 %group DXSMSPublish
@@ -141,7 +141,7 @@ static void DXSMSTryInstallHooks(void) {
     static BOOL reported;
     if (!reported) {
         reported = YES;
-        NSLog(@"[TypeX][SMSCode] hooks publish=%d lock=%d request=%d private=%d privateLock=%d",
+        NSLog(@"[MUBX][SMSCode] hooks publish=%d lock=%d request=%d private=%d privateLock=%d",
               publish, publishLock, request, privateRequest, privateRequestLock);
     }
 }

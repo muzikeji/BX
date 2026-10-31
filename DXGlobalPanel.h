@@ -10,5 +10,5 @@
 - (void)dismiss;
 @end
 
-// Call once from TypeX's existing SpringBoard initialization path.
+// Call once from MUBX's existing SpringBoard initialization path.
 FOUNDATION_EXPORT void DXStartGlobalPanel(void);

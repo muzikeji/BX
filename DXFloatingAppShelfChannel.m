@@ -1,7 +1,7 @@
 #import "DXFloatingAppShelfChannel.h"
 #import <notify.h>
 
-const char *DXFloatingShelfChangedName = "com.lindo.typex.floating-shelf.v1";
+const char *DXFloatingShelfChangedName = "com.lindo.mubx.floating-shelf.v1";
 static const NSUInteger DXFloatingShelfMaxBytes = 8192;
 static NSMutableDictionary<NSString *, NSNumber *> *DXShelfPinned;
 static uint64_t DXShelfRevision;
@@ -41,7 +41,7 @@ BOOL DXPublishFloatingShelf(NSDictionary *snapshot) {
     @try {
         data = [NSPropertyListSerialization dataWithPropertyList:snapshot format:NSPropertyListBinaryFormat_v1_0 options:0 error:nil];
     } @catch (NSException *exception) {
-        NSLog(@"[TypeX][FloatingShelf] snapshot serialization exception=%@", exception.name);
+        NSLog(@"[MUBX][FloatingShelf] snapshot serialization exception=%@", exception.name);
         return NO;
     }
     if (!data.length || data.length > DXFloatingShelfMaxBytes) return NO;

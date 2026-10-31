@@ -94,7 +94,7 @@ static const NSBundle *tweakBundle;
 -(instancetype)init{
     self = [super init];
     if (self) {
-        // TypeX only exposes its built-in keyboard actions.
+        // MUBX only exposes its built-in keyboard actions.
     }
     return self;
 }
