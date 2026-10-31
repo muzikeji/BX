@@ -12,6 +12,10 @@
 // 声明置于文件前部，供 DXClipboardPanelController 的 pasteItem: 与
 // DXClipboardPanel 的 captureAndDismissHostKeyboard 共享。
 static __weak UIResponder *g_clipboardRestoreResponder;
+// 打开面板前的宿主 keyWindow（输入框所属窗口）。面板常驻且 windowLevel 最高，
+// 显示后自己就成了 key window；恢复宿主输入前必须把 key 归还给它，否则
+// becomeFirstResponder 因宿主窗口非 key 直接失败（点击条目不填入的根因）。
+static __weak UIWindow *g_clipboardHostKeyWindow;
 
 // ---------------------------------------------------------------------------
 // 剪贴板面板（TypeX 内置，取代 Kayoko 剪贴板 UI）
@@ -536,15 +540,23 @@ static __weak UIResponder *g_clipboardRestoreResponder;
     });
 }
 
-// 恢复宿主输入会话并粘贴。与 DXAIPanel deliverReplyToHostInput 同款链路：
-// 先把打开的宿主 key 窗口复位，再让 UIKeyboardImpl 复活旧输入会话，等
-// 0.1s 会话重建后经 input delegate 直插文本（避免 iOS 17 直接 keyboard
-// 插入导致宿主崩溃）；图片项走 UIPasteboard + paste: 兜底。
+// 恢复宿主输入会话并粘贴。与 DXAIPanel deliverReplyToHostInput 同款链路，
+// 步骤顺序是关键：
+//  1) 先把 key 归还给宿主窗口（面板常驻后自己成了 key window，不还 key 则
+//     宿主输入框 becomeFirstResponder 失败——点击条目不填入的根因），
+//  2) 再让保存的宿主输入 responder 重新成为第一响应者（键盘随之弹回），
+//  3) 等会话重建后经 input delegate 直插文本；图片/失败走 paste: 兜底。
 - (void)pasteItem:(NSDictionary *)item {
-    UIWindow *hostKeyWindow = DXKeyWindow();
+    UIWindow *hostKeyWindow = g_clipboardHostKeyWindow;
     if (hostKeyWindow && hostKeyWindow != self.view.window) {
         if (self.searchBar.isFirstResponder) [self.searchBar resignFirstResponder];
         [hostKeyWindow makeKeyWindow];
+    } else {
+        // 宿主窗口不可用（极端场景）：面板让出 key，等系统回落到宿主窗口。
+        if (self.searchBar.isFirstResponder) [self.searchBar resignFirstResponder];
+        if (DXKeyWindow() && DXKeyWindow() != self.view.window) {
+            [DXKeyWindow() makeKeyWindow];
+        }
     }
 
     UIResponder *restorable = g_clipboardRestoreResponder;
@@ -556,6 +568,8 @@ static __weak UIResponder *g_clipboardRestoreResponder;
         } else {
             [keyboard becomeFirstResponder];
         }
+    } else if (restorable && [restorable respondsToSelector:@selector(becomeFirstResponder)]) {
+        [restorable becomeFirstResponder];
     }
 
     NSString *text = item[@"content"] ?: @"";
@@ -583,6 +597,20 @@ static __weak UIResponder *g_clipboardRestoreResponder;
                 // 落到键盘兜底
             }
         }
+
+        // Kayoko 同款兜底：经 key window 的第一响应者 responder chain 发
+        // paste:（钥匙已归还宿主窗口，第一响应者就是宿主输入框）。内容在
+        // 剪贴板里（copyItem: 已写入），不依赖 inputDelegate 解析，文本/
+        // 图片都适用。
+        if (!delivered) {
+            @try {
+                delivered = [[UIApplication sharedApplication]
+                             sendAction:@selector(paste:) to:nil from:nil forEvent:nil];
+            } @catch (__unused NSException *exception) {
+                delivered = NO;
+            }
+        }
+
         if (!delivered) {
             @try {
                 [liveKeyboard clearTransientState];
@@ -682,10 +710,15 @@ static const CGFloat kClipboardPanelWindowLevel = 1000000.0;
     [controller viewWillLayoutSubviews];
 }
 
-// 记录宿主当前输入 responder（弱引用供粘贴前恢复），并收起宿主键盘让面板
-// 贴底弹出时无遮挡。键盘对象在 iOS 17 上是全屏容器、远程托管，这里只对
-// input delegate（真正的输入框）做 resignFirstResponder，不动键盘窗口本身。
+// 记录宿主当前输入 responder（弱引用供粘贴前恢复）与宿主 keyWindow（供
+// 粘贴时还 key），并收起宿主键盘让面板贴底弹出时无遮挡。键盘对象在 iOS 17
+// 上是全屏容器、远程托管，这里只对 input delegate（真正的输入框）做
+// resignFirstResponder，不动键盘窗口本身。
 + (void)captureAndDismissHostKeyboard {
+    // 面板此时尚未置为可见，DXKeyWindow 一定是宿主窗口——记住它，粘贴时
+    // 恢复宿主输入会话前先把 key 还给它（面板常驻后自己接管了 key）。
+    g_clipboardHostKeyWindow = DXKeyWindow();
+
     UIResponder *input = nil;
     UIKeyboardImpl *keyboard = [objc_getClass("UIKeyboardImpl") activeInstance];
     if (keyboard) {
