@@ -10,7 +10,8 @@
 
 // ---------------------------------------------------------------------------
 // 剪贴板面板（TypeX 内置，取代 Kayoko 剪贴板 UI）
-// 承载：独立 UIWindow（level 1e6，锚定键盘上方，只显示不抢焦点）
+// 承载：独立 UIWindow（level 2e6，高于键盘窗口；从屏幕底部弹出，盖住键盘
+//  但不抢焦点、不收宿主键盘，输入光标保留；搜索框聚焦时上移露出键盘）
 // 数据：SpringBoard 发布的 cfprefsd 快照 kClipboardSnapshotKey
 // 命令：写 kClipboardCommandKey + 广播 kClipboardCommandIdentifier（SB 执行）
 // ---------------------------------------------------------------------------
@@ -18,9 +19,20 @@
 @interface DXClipboardHostWindow : UIWindow
 @end
 @implementation DXClipboardHostWindow
-- (BOOL)pointInside:(CGPoint)point withEvent:(UIEvent *)event {
-    // 面板区域之外的事件穿透到宿主（与 DXAIHostWindow 同策略）。
-    return [super pointInside:point withEvent:event];
+// 只响应卡片区域（tag=100），卡片以外的触摸穿透回下层窗口（键盘/宿主）。
+// 面板覆盖键盘但接收每个 cell 点击用于粘贴；搜索框聚焦升起的键盘在卡片
+// 下方露出，仍可正常点击。
+- (UIView *)hitTest:(CGPoint)point withEvent:(UIEvent *)event {
+    UIViewController *root = self.rootViewController;
+    if (!root || self.hidden) return nil;
+    if (root.presentedViewController != nil) {
+        // 模态弹窗（清空/长按菜单/图片预览）挂在窗口层，走默认命中。
+        return [super hitTest:point withEvent:event];
+    }
+    CGPoint local = [root.view convertPoint:point fromView:self];
+    UIView *card = [root.view viewWithTag:100];
+    if (card && !CGRectContainsPoint(card.frame, local)) return nil;
+    return [root.view hitTest:local withEvent:event];
 }
 @end
 
@@ -218,14 +230,26 @@
 - (void)layoutPanel {
     CGRect screen = [UIScreen mainScreen].bounds;
     CGFloat width = MIN(CGRectGetWidth(screen) - 24, 420);
-    CGFloat maxHeight = CGRectGetHeight(screen) * 0.62;
-    CGFloat keyboardTop = CGRectGetHeight(screen);
-    if (!CGRectIsEmpty(self.keyboardFrame) && CGRectGetMinY(self.keyboardFrame) > 0) {
-        keyboardTop = CGRectGetMinY(self.keyboardFrame);
-    }
-    CGFloat height = MIN(maxHeight, MAX(240, keyboardTop - 80));
     CGFloat x = (CGRectGetWidth(screen) - width) / 2;
-    CGFloat y = keyboardTop - height - 8;
+    CGFloat screenHeight = CGRectGetHeight(screen);
+    CGFloat bottomInset = self.view.safeAreaInsets.bottom;
+    CGFloat maxHeight = screenHeight * 0.62;
+    CGFloat minHeight = 240;
+
+    // 默认从屏幕底部往上弹出（windowLevel 高于键盘，弹出时自然盖住键盘，
+    // 宿主输入会话保留、光标不消失）。仅搜索框聚焦时上移让出键盘区域，
+    // 键盘露出供输入搜索词。
+    CGFloat height = MIN(maxHeight, MAX(minHeight, screenHeight - bottomInset - 96));
+    CGFloat y = screenHeight - bottomInset - height;
+    if (self.searchBar.isFirstResponder) {
+        CGRect keyFrame = self.keyboardFrame;
+        if (!CGRectIsEmpty(keyFrame) && CGRectGetMinY(keyFrame) > 0) {
+            CGFloat keyboardTop = CGRectGetMinY(keyFrame);
+            height = MIN(height, MAX(minHeight, keyboardTop - bottomInset - 64));
+            y = keyboardTop - height - 8;
+            if (y < 0) y = 0;
+        }
+    }
 
     UIView *card = [self.view viewWithTag:100];
     card.frame = CGRectMake(x, y, width, height);
@@ -479,9 +503,6 @@
 
 static DXClipboardHostWindow *g_clipboardPanelWindow;
 static DXClipboardPanelController *g_clipboardPanelController;
-// 面板弹出时主动收起键盘，会触发一次 UIKeyboardWillHideNotification；置位使
-// keyboardHidden: 跳过这次 dismiss，避免面板弹起即关闭。
-static BOOL s_suppressDismissOnKeyboardHide;
 
 @implementation DXClipboardPanel
 
@@ -500,6 +521,18 @@ static BOOL DXClipboardProbeKeyboardFrame(CGRect *outFrame) {
         }
     }
     return NO;
+}
+
++ (CGFloat)aboveKeyboardWindowLevel {
+    // 面板从屏幕底部贴底弹出，需盖住宿主键盘窗口。
+    // 键盘窗口层级因 iOS 版本而异，取活跃键盘窗口层级 + 余量，兜底固定高位。
+    CGFloat level = 2000000.0;
+    UIKeyboardImpl *keyboard = [objc_getClass("UIKeyboardImpl") activeInstance];
+    UIWindow *keyboardWindow = keyboard ? keyboard.window : nil;
+    if (keyboardWindow) {
+        level = MAX(level, keyboardWindow.windowLevel + 200.0);
+    }
+    return level;
 }
 
 + (void)present {
@@ -533,7 +566,7 @@ static BOOL DXClipboardProbeKeyboardFrame(CGRect *outFrame) {
     } else {
         window = [[DXClipboardHostWindow alloc] initWithFrame:[UIScreen mainScreen].bounds];
     }
-    window.windowLevel = 1000000.0;
+    window.windowLevel = [self aboveKeyboardWindowLevel];
     window.backgroundColor = UIColor.clearColor;
     window.hidden = YES;
     window.rootViewController = controller;
@@ -550,24 +583,15 @@ static BOOL DXClipboardProbeKeyboardFrame(CGRect *outFrame) {
 
     window.hidden = NO;
 
-    // 自动收起键盘：面板弹出后键盘不再有编辑意图（点击面板项才会回写并粘贴），
-    // 收起键盘避免遮挡列表并让面板锚定在键盘原位。keyboardHidden: 会跟随触发
-    // dismiss，先打标让面板保持显示。
-    UIKeyboardImpl *activeKeyboard = [objc_getClass("UIKeyboardImpl") activeInstance];
-    if (activeKeyboard && [activeKeyboard respondsToSelector:@selector(dismissKeyboard)]) {
-        s_suppressDismissOnKeyboardHide = YES;
-        [activeKeyboard dismissKeyboard];
-        dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(1.5 * NSEC_PER_SEC)),
-                       dispatch_get_main_queue(), ^{
-            s_suppressDismissOnKeyboardHide = NO;
-        });
-    }
-
-    // 键盘位置跟踪：面板随键盘移动/隐藏。
+    // 键盘会话保留：面板不抢焦点、不收宿主键盘（输入光标不消失），
+    // windowLevel 高于键盘窗口所以面板从底部弹出时自然盖住键盘；
+    // 用户点进搜索框时键盘按其自身行为在面板下方露出。
+    // 键盘位置跟踪：仅搜索聚焦时让面板让出键盘区域。
     [NSNotificationCenter.defaultCenter addObserver:self
                                            selector:@selector(keyboardFrameChanged:)
                                                name:UIKeyboardWillChangeFrameNotification
                                              object:nil];
+    // 宿主/搜索键盘被收起（用户主动）时联动关面板。
     [NSNotificationCenter.defaultCenter addObserver:self
                                            selector:@selector(keyboardHidden:)
                                                name:UIKeyboardWillHideNotification
@@ -595,11 +619,6 @@ static BOOL DXClipboardProbeKeyboardFrame(CGRect *outFrame) {
 
 + (void)keyboardHidden:(NSNotification *)note {
     (void)note;
-    // 面板弹出时主动收起键盘引发的 hide 通知不关闭面板；超时或下次交互后恢复。
-    if (s_suppressDismissOnKeyboardHide) {
-        s_suppressDismissOnKeyboardHide = NO;
-        return;
-    }
     [self dismiss];
 }
 
@@ -620,7 +639,6 @@ static void DXClipboardSnapshotCallback(CFNotificationCenterRef center, void *ob
         return;
     }
     if (!g_clipboardPanelWindow) return;
-    s_suppressDismissOnKeyboardHide = NO;
 
     [NSNotificationCenter.defaultCenter removeObserver:self
                                                   name:UIKeyboardWillChangeFrameNotification
