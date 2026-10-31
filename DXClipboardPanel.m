@@ -325,6 +325,15 @@
     (void)searchBar; (void)searchText;
     [self refreshDisplayedItems];
 }
+- (BOOL)searchBarShouldBeginEditing:(UISearchBar *)searchBar {
+    // 搜索聚焦：恢复键盘窗口、面板层级降到键盘之下，让键盘浮出供输入搜索词。
+    [DXClipboardPanel searchBegan];
+    return YES;
+}
+- (void)searchBarTextDidEndEditing:(UISearchBar *)searchBar {
+    // 搜索结束：键盘收起，面板恢复覆盖态并再次隐藏键盘窗口。
+    [DXClipboardPanel searchEnded];
+}
 - (void)searchBarSearchButtonClicked:(UISearchBar *)searchBar {
     [searchBar resignFirstResponder];
 }
@@ -503,6 +512,12 @@
 
 static DXClipboardHostWindow *g_clipboardPanelWindow;
 static DXClipboardPanelController *g_clipboardPanelController;
+// 打开面板时被视觉收起的键盘窗口（weak，系统保留）。收起键盘只隐藏键盘
+// 窗口并保留输入会话，不 resign first responder —— 光标停留在输入框。
+static __weak UIWindow *g_hiddenKeyboardWindow;
+// 面板当前是否处于"覆盖键盘"态（CGFLOAT_MAX）。搜索聚焦时会临时降级让键盘
+// 浮出用于输入搜索词，此标志用于区分是否应恢复被隐藏的键盘窗口。
+static BOOL g_panelOverKeyboard;
 
 @implementation DXClipboardPanel
 
@@ -576,7 +591,16 @@ static BOOL DXClipboardProbeKeyboardFrame(CGRect *outFrame) {
     controller.keyboardFrame = keyboardFrame;
     [controller reloadSnapshot];
 
+    // 视觉收起键盘：隐藏键盘所在窗口，保留输入框 first responder 和光标。
+    // （不调用 dismissKeyboard —— 那会结束输入会话导致光标消失、粘贴失去目标。）
+    UIKeyboardImpl *activeKeyboard = [objc_getClass("UIKeyboardImpl") activeInstance];
+    if (activeKeyboard && activeKeyboard.window && !activeKeyboard.window.hidden) {
+        g_hiddenKeyboardWindow = activeKeyboard.window;
+        g_hiddenKeyboardWindow.hidden = YES;
+    }
+
     window.hidden = NO;
+    g_panelOverKeyboard = YES;
 
     // 键盘会话保留：面板不抢焦点、不收宿主键盘（输入光标不消失），
     // windowLevel 高于键盘窗口所以面板从底部弹出时自然盖住键盘；
@@ -603,6 +627,36 @@ static BOOL DXClipboardProbeKeyboardFrame(CGRect *outFrame) {
 + (void)refresh {
     [g_clipboardPanelController reloadSnapshot];
     [g_clipboardPanelController viewWillLayoutSubviews];
+}
+
++ (void)searchBegan {
+    if (!g_clipboardPanelWindow) return;
+    // 搜索聚焦：恢复键盘窗口显示，供输入搜索词。
+    if (g_hiddenKeyboardWindow && g_hiddenKeyboardWindow.hidden) {
+        g_hiddenKeyboardWindow.hidden = NO;
+        g_hiddenKeyboardWindow = nil;
+    }
+    // 面板层级降到键盘之下，让键盘浮出（layoutPanel 已让面板上移露出键盘）。
+    UIKeyboardImpl *kb = [objc_getClass("UIKeyboardImpl") activeInstance];
+    CGFloat level = 100.0;
+    if (kb && kb.window) {
+        level = kb.window.windowLevel - 1.0;
+        if (level <= 0) level = 100.0;
+    }
+    g_clipboardPanelWindow.windowLevel = level;
+    g_panelOverKeyboard = NO;
+}
+
++ (void)searchEnded {
+    if (!g_clipboardPanelWindow) return;
+    // 搜索结束：键盘收起，面板恢复覆盖态，再次视觉隐藏键盘窗口。
+    g_clipboardPanelWindow.windowLevel = [self aboveKeyboardWindowLevel];
+    g_panelOverKeyboard = YES;
+    UIKeyboardImpl *kb = [objc_getClass("UIKeyboardImpl") activeInstance];
+    if (kb && kb.window && !kb.window.hidden) {
+        g_hiddenKeyboardWindow = kb.window;
+        g_hiddenKeyboardWindow.hidden = YES;
+    }
 }
 
 + (void)keyboardFrameChanged:(NSNotification *)note {
@@ -634,6 +688,13 @@ static void DXClipboardSnapshotCallback(CFNotificationCenterRef center, void *ob
         return;
     }
     if (!g_clipboardPanelWindow) return;
+
+    // 面板关闭：恢复输入会话的键盘窗口（光标一直停留在输入框，键盘随之回来）。
+    if (g_panelOverKeyboard && g_hiddenKeyboardWindow) {
+        g_hiddenKeyboardWindow.hidden = NO;
+    }
+    g_hiddenKeyboardWindow = nil;
+    g_panelOverKeyboard = NO;
 
     [NSNotificationCenter.defaultCenter removeObserver:self
                                                   name:UIKeyboardWillChangeFrameNotification
