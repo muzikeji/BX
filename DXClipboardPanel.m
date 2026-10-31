@@ -18,6 +18,13 @@
 
 @interface DXClipboardHostWindow : UIWindow
 @end
+
+// 搜索聚焦/结束由 Controller 在实现之前调用，提前声明类方法。
+@interface DXClipboardPanel ()
++ (void)searchBegan;
++ (void)searchEnded;
+@end
+
 @implementation DXClipboardHostWindow
 // 只响应卡片区域（tag=100），卡片以外的触摸穿透回下层窗口（键盘/宿主）。
 // 面板覆盖键盘但接收每个 cell 点击用于粘贴；搜索框聚焦升起的键盘在卡片
