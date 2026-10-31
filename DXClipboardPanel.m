@@ -8,6 +8,11 @@
 #import <objc/message.h>
 #import <QuartzCore/QuartzCore.h>
 
+// 打开面板时被收起的宿主输入 responder（弱引用），点击条目粘贴前恢复焦点。
+// 声明置于文件前部，供 DXClipboardPanelController 的 pasteItem: 与
+// DXClipboardPanel 的 captureAndDismissHostKeyboard 共享。
+static __weak UIResponder *g_clipboardRestoreResponder;
+
 // ---------------------------------------------------------------------------
 // 剪贴板面板（TypeX 内置，取代 Kayoko 剪贴板 UI）
 // 呈现模型（参考 Kayoko）：打开时先主动收起宿主键盘（记录输入 responder，
@@ -599,8 +604,6 @@
 // 保证反复呼出始终有效。
 static DXClipboardHostWindow *g_clipboardPanelWindow;
 static DXClipboardPanelController *g_clipboardPanelController;
-// 打开面板时被收起的宿主输入 responder（弱引用），点击条目粘贴前恢复焦点。
-static __weak UIResponder *g_clipboardRestoreResponder;
 
 @implementation DXClipboardPanel
 
