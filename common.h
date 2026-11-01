@@ -145,13 +145,19 @@
 #define kClipboardImagesMirrorPath DX_ROOT_PATH_NS(@"/Library/MUBX/clipboard-images")
 // 剪贴板跨进程共享：快照由 SpringBoard 写（域 + jbroot 共享文件双写）、
 // 面板（任意进程）读，位于 jbroot 下 App 沙盒可读的目录（与
-// MUBXSharedPrefsPath 同策略）；命令由面板写 cfprefsd 域 + 广播 Darwin 通知、
-// SpringBoard 读后即清（纯域通道，04f215b 实测可用）。共享命令文件
-// （MUBXClipboardCommandPath）曾做文件优先、取走即删：RootHide iOS 16 下
-// SpringBoard 沙盒拒绝对 /Library/MUBX 的写操作，文件残留后命令被旧文件
-// 反复消费或读不到，导致收藏/删除/清空全部失效，已弃用。
+// MUBXSharedPrefsPath 同策略）。
 #define MUBXClipboardSnapshotPath DX_ROOT_PATH_NS(@"/Library/MUBX/clipboard-snapshot.plist")
-#define MUBXClipboardCommandPath DX_ROOT_PATH_NS(@"/Library/MUBX/clipboard-command.plist")
+
+// 命令通道（面板沙盒进程 -> SpringBoard）：命名 UIPasteboard 为主 + cfprefsd
+// 域兜底。cfprefsd 隔离域只有未沙盒进程（Preferences、SpringBoard 自身）
+// 写入才能被 SB 读到；面板运行在键盘宿主 App（沙盒进程）内，写域会被隔离/
+// 重定向导致 SB 读不到（实测：Preferences 内可用、普通 App 内不可用）。
+// 命名 UIPasteboard 由粘贴板守护进程托管、系统级跨进程共享，任意沙盒 App
+// 可写、SpringBoard 可读；它不改变 generalPasteboard 的 changeCount，不会
+// 触发 SB 的粘贴采集（capture 以 general pasteboard 的 changeCount 判重）。
+// 每次发送先清空再写入，SB 读后即清，避免旧命令被迟到通知重复消费。
+#define MUBXClipboardCommandPasteboardName @"com.lindo.mubx.clipboardcmd"
+#define MUBXClipboardCommandPasteboardUTI @"com.lindo.mubx.clipboardcmd.data"
 
 static inline void DXWriteSharedPlistFile(NSDictionary *dictionary, NSString *path) {
     if (![dictionary isKindOfClass:[NSDictionary class]]) return;

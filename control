@@ -7,6 +7,6 @@ Description: 参考 TypeX 和 Kayoko 实现两个插件的功能，超级键盘�
 Maintainer: lindo
 Author: lindo
 Section: Tweaks
-Conflicts: com.restiveconch.actionbar,com.udevs.dockx,com.lindo.dockx
+Conflicts: com.restiveconch.actionbar,com.udevs.dockx,com.lindo.dockx,com.muzi.kayoko,com.lindo.typex
 Icon: https://udevsharold.github.io/repo/depictions/com.lindo.mubx/icon/icon.png
 Depiction: https://udevsharold.github.io/repo/depictions/?p=com.lindo.mubx

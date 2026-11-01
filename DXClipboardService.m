@@ -120,15 +120,39 @@ static void DXClipboardCommandCallback(CFNotificationCenterRef center, void *obs
                                        CFDictionaryRef userInfo) {
     (void)center; (void)name; (void)object; (void)userInfo;
     DXClipboardService *service = (__bridge DXClipboardService *)observer;
-    // 命令通道：面板（沙盒 App 进程）写入 cfprefsd 隔离域，此处读域消费。
-    // 恢复纯域通道（04f215b 实测可用）：不做共享命令文件优先读取——RootHide
-    // iOS 16 下 SB 沙盒拒绝对 /Library/MUBX 目录的写操作，文件残留后命令会
-    // 被旧文件反复消费或找不到，导致收藏/删除/清空全部失效；域是唯一
-    // 未沙盒进程与设置页都能读写的通道。
-    NSDictionary *command = DXQuickActionSharedValue(kClipboardCommandKey);
+    // 命令通道：面板（沙盒 App 进程）经命名 UIPasteboard 传递，SB 读后即清；
+    // 未沙盒进程（Preferences 宿主）仍写 cfprefsd 域，域作为兜底通道。
+    // 纯域通道（04f215b）实测只有 Preferences 内可用：普通沙盒 App 写
+    // cfprefsd 域会被隔离/重定向，SB 读不到（DXPrefsManager 沙盒判定注释）。
+    // 共享命令文件（822b923）在 RootHide iOS 16 下 SB 沙盒拒写 /Library/MUBX，
+    // 文件残留后命令被旧文件反复消费或找不到，已弃用。命名 pasteboard 由
+    // 粘贴板守护进程托管、系统级共享，不触发 general pasteboard changeCount，
+    // 不会误入粘贴采集。
+    NSDictionary *command = nil;
+    UIPasteboard *commandPasteboard = [UIPasteboard pasteboardWithName:MUBXClipboardCommandPasteboardName create:NO];
+    if (commandPasteboard) {
+        NSData *data = [commandPasteboard dataForPasteboardType:MUBXClipboardCommandPasteboardUTI];
+        if (data.length) {
+            id parsed = [NSPropertyListSerialization propertyListWithData:data
+                                                                  options:0
+                                                                   format:NULL
+                                                                    error:nil];
+            if ([parsed isKindOfClass:[NSDictionary class]]) {
+                command = parsed;
+            }
+        }
+        // 命令是一次性的：取走后即清除，避免迟到通知被重复消费。
+        [commandPasteboard setItems:@[]];
+    }
+    if (!command) {
+        id domainCommand = DXQuickActionSharedValue(kClipboardCommandKey);
+        if ([domainCommand isKindOfClass:[NSDictionary class]]) {
+            command = domainCommand;
+            // 域同样取走即清。
+            DXSetQuickActionSharedValue(nil, kClipboardCommandKey);
+        }
+    }
     if (![command isKindOfClass:[NSDictionary class]]) return;
-    // 命令是一次性的：取走后即清除，避免迟到通知被重复消费。
-    DXSetQuickActionSharedValue(nil, kClipboardCommandKey);
     dispatch_async(dispatch_get_main_queue(), ^{
         [service handleCommand:command];
     });

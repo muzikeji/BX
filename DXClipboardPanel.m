@@ -236,6 +236,41 @@ static __weak UIWindow *g_clipboardHostKeyWindow;
     return bundle ? [bundle localizedStringForKey:key value:nil table:nil] : nil;
 }
 
+// 复制来源显示名：Kayoko 同款语义 —— Continuity/Spotlight/SpringBoard 三个
+// 系统进程特殊名，其余经 LSApplicationProxy.localizedName 转 App 名，取不到
+// 则回落 bundle identifier（面板运行在宿主 App 进程，无 SBApplication 可用，
+// 动态加载 CoreServices 类，避免引入链接依赖）。
+static NSString *DXSourceDisplayNameForBundleIdentifier(NSString *bundleIdentifier) {
+    NSString *bundleID = [bundleIdentifier stringByTrimmingCharactersInSet:[NSCharacterSet whitespaceAndNewlineCharacterSet]];
+    if (!bundleID.length) return @"";
+    NSString *normalized = [bundleID lowercaseString];
+    if ([normalized isEqualToString:@"com.apple.pasteboard"] ||
+        [normalized isEqualToString:@"continuity"] ||
+        [normalized isEqualToString:@"handoff"]) {
+        return @"Continuity";
+    }
+    if ([normalized isEqualToString:@"com.apple.spotlight"] ||
+        [normalized isEqualToString:@"spotlight"]) {
+        return @"Spotlight";
+    }
+    if ([normalized isEqualToString:@"com.apple.springboard"] ||
+        [normalized isEqualToString:@"springboard"]) {
+        return @"SpringBoard";
+    }
+    Class proxyClass = NSClassFromString(@"LSApplicationProxy");
+    if (proxyClass) {
+        id proxy = [proxyClass applicationProxyForIdentifier:bundleID];
+        if ([proxy respondsToSelector:@selector(localizedName)]) {
+            NSString *name = [proxy localizedName];
+            if (name.length) return name;
+        } else if ([proxy respondsToSelector:@selector(displayName)]) {
+            NSString *name = [proxy displayName];
+            if (name.length) return name;
+        }
+    }
+    return bundleID;
+}
+
 - (void)viewWillLayoutSubviews {
     [super viewWillLayoutSubviews];
     [self layoutPanel];
@@ -455,13 +490,26 @@ static __weak UIWindow *g_clipboardHostKeyWindow;
     }];
 }
 
-// 命令通道：面板（键盘宿主 App 沙盒进程）与 SpringBoard 之间经 cfprefsd
-// 隔离域传递（与 Kayoko 的 Darwin 通知触发一致，04f215b 实测可用）。
-// 做过共享文件双写（822b923），在 RootHide iOS 16 下 SB 沙盒拒绝对
-// /Library/MUBX 目录的写操作，命令文件残留后优先级异常导致命令整体失效；
-// 恢复纯域通道：写域 + 广播 Darwin 通知唤醒 SpringBoard 消费。
+// 命令通道：面板（键盘宿主 App 沙盒进程）与 SpringBoard 之间经
+// 命名 UIPasteboard（主通道）+ cfprefsd 隔离域（兜底）传递。
+// 纯域通道（04f215b）实测只有 Preferences（未沙盒进程）写域 SB 才能读到，
+// 普通沙盒 App 写 cfprefsd 域被隔离/重定向。命名 pasteboard 由粘贴板守护
+// 进程托管、系统级共享，沙盒 App 可写、SB 可读；不改变 general pasteboard
+// 的 changeCount，不会触发 SB 粘贴采集。每次先清空再写入 + SB 读后即清，
+// 避免旧命令被迟到通知重复消费。
 - (void)sendCommand:(NSDictionary *)command {
     if (![command isKindOfClass:[NSDictionary class]]) return;
+
+    UIPasteboard *commandPasteboard = [UIPasteboard pasteboardWithName:MUBXClipboardCommandPasteboardName create:YES];
+    [commandPasteboard setItems:@[]];
+    NSData *data = [NSPropertyListSerialization dataWithPropertyList:command
+                                                              format:NSPropertyListBinaryFormat_v1_0
+                                                             options:0
+                                                               error:nil];
+    if (data) {
+        [commandPasteboard setData:data forPasteboardType:MUBXClipboardCommandPasteboardUTI];
+    }
+    // 兜底：未沙盒进程（Preferences 宿主）写域 SB 可读到，双通道任一成功即可。
     DXSetQuickActionSharedValue(command, kClipboardCommandKey);
     notify_post([kClipboardCommandIdentifier UTF8String]);
 }
@@ -520,7 +568,8 @@ static __weak UIWindow *g_clipboardHostKeyWindow;
         formatter.dateFormat = @"MM-dd HH:mm";
         time = [formatter stringFromDate:[NSDate dateWithTimeIntervalSince1970:capturedAt]];
     }
-    cell.metaLabel.text = [NSString stringWithFormat:@"%@  %@", bundle, time];
+    NSString *sourceName = DXSourceDisplayNameForBundleIdentifier(bundle);
+    cell.metaLabel.text = [NSString stringWithFormat:@"%@  %@", sourceName, time];
     cell.starView.hidden = !self.isFavoritesTab;
     return cell;
 }

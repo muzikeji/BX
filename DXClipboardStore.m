@@ -303,15 +303,16 @@ static NSString *const kDXClipboardFavoritesKey = @"favorites";
     [self prepareDatabase];
 
     if (favorite) {
-        // 查找原记录（可能来自 history 或 favorites），整体搬移。
+        // 复制语义：收藏 = 在 favorites 下新增一份副本，历史记录保留。
+        // 源可能来自 history 或 favorites（收藏页再次收藏）。
         NSArray *items = [self itemsForHistoryKey:historyKey searchText:nil limit:200];
         NSDictionary *found = nil;
         for (NSDictionary *item in items) {
             if ([item[@"content"] isEqual:content]) { found = item; break; }
         }
         if (!found) return;
-        [self executeStatement:"DELETE FROM history_items WHERE history_key = ? AND content = ?"
-                     withBindings:@[ historyKey, content ]];
+        // addItemWithHistoryKey 内部按 (key, content) 去重后插入，重复收藏
+        // 只会更新序列号，不会产生重复行；history 侧不受影响。
         [self addItemWithHistoryKey:kDXClipboardFavoritesKey
                   bundleIdentifier:found[@"bundle_identifier"]
                            content:content
@@ -321,22 +322,9 @@ static NSString *const kDXClipboardFavoritesKey = @"favorites";
                           hasLink:[found[@"has_link"] boolValue]
                         capturedAt:[found[@"created_at"] doubleValue]];
     } else {
-        NSArray *items = [self itemsForHistoryKey:kDXClipboardFavoritesKey searchText:nil limit:200];
-        NSDictionary *found = nil;
-        for (NSDictionary *item in items) {
-            if ([item[@"content"] isEqual:content]) { found = item; break; }
-        }
-        if (!found) return;
+        // 取消收藏 = 仅从 favorites 删除，历史记录保留（复制语义下历史本就在）。
         [self executeStatement:"DELETE FROM history_items WHERE history_key = ? AND content = ?"
                      withBindings:@[ kDXClipboardFavoritesKey, content ]];
-        [self addItemWithHistoryKey:kDXClipboardHistoryKey
-                  bundleIdentifier:found[@"bundle_identifier"]
-                           content:content
-                         imageName:found[@"image_name"]
-                        imageWidth:[found[@"image_width"] unsignedIntegerValue]
-                       imageHeight:[found[@"image_height"] unsignedIntegerValue]
-                          hasLink:[found[@"has_link"] boolValue]
-                        capturedAt:[found[@"created_at"] doubleValue]];
     }
 }
 
