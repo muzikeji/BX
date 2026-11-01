@@ -259,7 +259,10 @@ static NSString *DXSourceDisplayNameForBundleIdentifier(NSString *bundleIdentifi
     }
     Class proxyClass = NSClassFromString(@"LSApplicationProxy");
     if (proxyClass) {
-        id proxy = [proxyClass applicationProxyForIdentifier:bundleID];
+        // 动态派发类方法，避免静态链接 MobileCoreServices 与编译器对未知
+        // selector 的报错（no known class method）。
+        id (*lookup)(id, SEL, id) = (id (*)(id, SEL, id))objc_msgSend;
+        id proxy = lookup(proxyClass, NSSelectorFromString(@"applicationProxyForIdentifier:"), bundleID);
         if ([proxy respondsToSelector:@selector(localizedName)]) {
             NSString *name = [proxy localizedName];
             if (name.length) return name;
