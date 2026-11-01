@@ -698,6 +698,44 @@ static DXClipboardPanelController *g_clipboardPanelController;
 // 与 DXAIPanel 同值（1000000.0）。
 static const CGFloat kClipboardPanelWindowLevel = 1000000.0;
 
+// 解析面板窗口应挂载的前台 scene。iOS 17 的系统键盘窗口是远程托管容器，
+// keyboard.window.windowScene 未必属于当前前台 scene（键盘收起后随之失效，
+// 面板窗口挂上去不可见），只作最后兜底；优先宿主 keyWindow / 已连接场景中
+// 第一个 ForegroundActive 的 UIWindowScene。
+static UIWindowScene *DXClipboardForegroundScene(void) {
+    UIWindowScene *scene = DXKeyWindow().windowScene;
+    if (scene && scene.activationState == UISceneActivationStateForegroundActive) {
+        return scene;
+    }
+    for (UIScene *connected in [UIApplication sharedApplication].connectedScenes) {
+        if ([connected isKindOfClass:[UIWindowScene class]] &&
+            connected.activationState == UISceneActivationStateForegroundActive) {
+            return (UIWindowScene *)connected;
+        }
+    }
+    UIKeyboardImpl *keyboard = [objc_getClass("UIKeyboardImpl") activeInstance];
+    return keyboard.window.windowScene;
+}
+
+// 观察者只注册一次，dismiss 只切 hidden 不注销——重复呼出不会重复注册、
+// 面板也不会因键盘收起被误关（Kayoko 生命周期）。窗口因场景失效重建时
+// 不重复注册。
+static void DXClipboardRegisterObserversOnce(void) {
+    static dispatch_once_t onceToken;
+    dispatch_once(&onceToken, ^{
+        [NSNotificationCenter.defaultCenter addObserver:[DXClipboardPanel class]
+                                               selector:@selector(keyboardFrameChanged:)
+                                                   name:UIKeyboardWillChangeFrameNotification
+                                                 object:nil];
+        CFNotificationCenterAddObserver(CFNotificationCenterGetDarwinNotifyCenter(),
+                                        (__bridge const void *)[DXClipboardPanel class],
+                                        &DXClipboardSnapshotCallback,
+                                        (CFStringRef)kClipboardChangedIdentifier,
+                                        NULL,
+                                        CFNotificationSuspensionBehaviorDeliverImmediately);
+    });
+}
+
 + (void)present {
     if (![NSThread isMainThread]) {
         dispatch_async(dispatch_get_main_queue(), ^{ [self present]; });
@@ -709,23 +747,21 @@ static const CGFloat kClipboardPanelWindowLevel = 1000000.0;
     }
     DXClipboardPanelController *controller = g_clipboardPanelController;
 
-    // 常驻窗口：首次（或窗口场景已失效重建）之后只切 hidden。键盘工具栏
-    // 按钮总在宿主 app 进程触发，用当前前台 scene 建窗；iOS 17+ 无 scene 的
-    // initWithFrame: 建窗会产生"挂在黑场里的空白窗口"。
-    if (!g_clipboardPanelWindow || !g_clipboardPanelWindow.windowScene ||
-        g_clipboardPanelWindow.windowScene.activationState != UISceneActivationStateForegroundActive) {
-        UIWindowScene *scene = nil;
-        UIKeyboardImpl *keyboard = [objc_getClass("UIKeyboardImpl") activeInstance];
-        scene = keyboard.window.windowScene;
-        if (!scene) scene = DXKeyWindow().windowScene;
-        for (UIScene *connected in [UIApplication sharedApplication].connectedScenes) {
-            if (!scene && [connected isKindOfClass:[UIWindowScene class]] &&
-                connected.activationState == UISceneActivationStateForegroundActive) {
-                scene = (UIWindowScene *)connected;
-                break;
-            }
+    // 每次呼出重新解析当前前台 scene：常驻窗口若挂在已失效的键盘容器
+    // scene 上（iOS 17 键盘收起后），立即重建挂到前台 scene。
+    UIWindowScene *scene = DXClipboardForegroundScene();
+    if (!scene) {
+        NSLog(@"[MUBX] DXClipboardPanel present: 无前台 scene，放弃弹出");
+        return; // 无前台 scene：直接放弃弹出，避免空白窗口
+    }
+
+    if (!g_clipboardPanelWindow || g_clipboardPanelWindow.windowScene != scene) {
+        if (!g_clipboardPanelWindow) {
+            NSLog(@"[MUBX] DXClipboardPanel present: 首次创建窗口 scene=%@", scene);
+        } else {
+            NSLog(@"[MUBX] DXClipboardPanel present: 窗口场景失效重建 %@ -> %@",
+                  g_clipboardPanelWindow.windowScene, scene);
         }
-        if (!scene) return; // 无前台 scene：直接放弃弹出，避免空白窗口
 
         DXClipboardHostWindow *window = [[DXClipboardHostWindow alloc] initWithWindowScene:scene];
         window.frame = scene.coordinateSpace.bounds;
@@ -734,19 +770,7 @@ static const CGFloat kClipboardPanelWindowLevel = 1000000.0;
         window.hidden = YES;
         window.rootViewController = controller;
         g_clipboardPanelWindow = window;
-
-        // 观察者只随窗口首次注册一次，dismiss 只切 hidden 不注销——重复呼出
-        // 不会重复注册、面板也不会因键盘收起被误关（Kayoko 生命周期）。
-        [NSNotificationCenter.defaultCenter addObserver:self
-                                               selector:@selector(keyboardFrameChanged:)
-                                                   name:UIKeyboardWillChangeFrameNotification
-                                                 object:nil];
-        CFNotificationCenterAddObserver(CFNotificationCenterGetDarwinNotifyCenter(),
-                                        (__bridge const void *)self,
-                                        &DXClipboardSnapshotCallback,
-                                        (CFStringRef)kClipboardChangedIdentifier,
-                                        NULL,
-                                        CFNotificationSuspensionBehaviorDeliverImmediately);
+        DXClipboardRegisterObserversOnce();
     }
 
     // 若已可见：只刷新数据与位置，不重复收起键盘。
@@ -762,6 +786,8 @@ static const CGFloat kClipboardPanelWindowLevel = 1000000.0;
     [controller reloadSnapshot];
     [controller viewWillLayoutSubviews];
     g_clipboardPanelWindow.hidden = NO;
+    NSLog(@"[MUBX] DXClipboardPanel present: 面板已置为可见 frame=%@ level=%.1f",
+          NSStringFromCGRect(g_clipboardPanelWindow.frame), g_clipboardPanelWindow.windowLevel);
     [controller viewWillLayoutSubviews];
 }
 
