@@ -24,9 +24,11 @@ static __weak UIWindow *g_clipboardHostKeyWindow;
 // 依赖键盘 frame 探测；搜索聚焦时键盘重新弹出，面板自动上移避让。窗口与
 // 控制器进程内常驻（首次创建一次，之后 hidden 切换，绝不销毁重建），保证
 // 反复呼出始终有效（Kayoko installPanelInStatusBarWindow 同款生命周期）。
-// 数据：SpringBoard 发布的 cfprefsd 快照 kClipboardSnapshotKey
-// 命令：写 cfprefsd 域 kClipboardCommandKey + 广播 kClipboardCommandIdentifier
-// （纯域通道，SB 读后即清；04f215b 实测可用，弃用共享命令文件）
+// 数据：宿主 App 进程直接读写 jbroot 共享 SQLite（DXClipboardStore），
+// 删除/收藏/清空本地完成，不经 SpringBoard（Kayoko 同款架构）；快照
+// 文件保留为兜底。
+// 同步：每次本地改动广播 kClipboardChangedIdentifier，其他进程面板与
+// SpringBoard 收到后各自刷新/重发快照。
 // ---------------------------------------------------------------------------
 
 @interface DXClipboardHostWindow : UIWindow
@@ -136,7 +138,6 @@ static __weak UIWindow *g_clipboardHostKeyWindow;
 @end
 
 @interface DXClipboardPanelController ()
-- (void)sendCommand:(NSDictionary *)command;
 - (void)sendFavoriteCommand:(BOOL)favorite historyKey:(NSString *)historyKey content:(NSString *)content;
 @end
 
@@ -351,19 +352,27 @@ static NSString *DXSourceDisplayNameForBundleIdentifier(NSString *bundleIdentifi
 #pragma mark - Data
 
 - (void)reloadSnapshot {
-    // 沙盒 App 进程读不到 cfprefsd 隔离域（设置 App 等未沙盒进程可以），
-    // 普通 App 面板一律优先读 jbroot 共享快照文件（SpringBoard 双写）。
-    NSDictionary *snapshot = DXReadSharedPlistFile(MUBXClipboardSnapshotPath);
-    if (![snapshot isKindOfClass:[NSDictionary class]]) {
-        snapshot = DXQuickActionSharedValue(kClipboardSnapshotKey);
+    // Kayoko 同款：面板在宿主 App 进程内直接查询 jbroot 共享数据库，
+    // 因此删除/收藏/清空后无需等待 SpringBoard 命令回传。快照保留为
+    // 数据库暂时不可用时的兼容兜底。
+    DXClipboardStore *store = [DXClipboardStore sharedStore];
+    if ([store prepareDatabase]) {
+        self.historyItems = [store itemsForHistoryKey:@"history"
+                                            searchText:nil
+                                                 limit:kClipboardMaxCountDefault];
+        self.favoriteItems = [store itemsForHistoryKey:@"favorites"
+                                              searchText:nil
+                                                   limit:kClipboardMaxCountDefault];
+    } else {
+        NSDictionary *snapshot = DXReadSharedPlistFile(MUBXClipboardSnapshotPath);
+        if (![snapshot isKindOfClass:[NSDictionary class]]) {
+            snapshot = DXQuickActionSharedValue(kClipboardSnapshotKey);
+        }
+        NSArray *history = snapshot[@"history"];
+        NSArray *favorites = snapshot[@"favorites"];
+        self.historyItems = [history isKindOfClass:[NSArray class]] ? history : @[];
+        self.favoriteItems = [favorites isKindOfClass:[NSArray class]] ? favorites : @[];
     }
-    if (![snapshot isKindOfClass:[NSDictionary class]]) {
-        snapshot = @{};
-    }
-    NSArray *history = snapshot[@"history"];
-    NSArray *favorites = snapshot[@"favorites"];
-    self.historyItems = [history isKindOfClass:[NSArray class]] ? history : @[];
-    self.favoriteItems = [favorites isKindOfClass:[NSArray class]] ? favorites : @[];
     [self refreshDisplayedItems];
 }
 
@@ -429,10 +438,9 @@ static NSString *DXSourceDisplayNameForBundleIdentifier(NSString *bundleIdentifi
     [alert addAction:[UIAlertAction actionWithTitle:[self localized:@"清空"] ?: @"清空"
                                              style:UIAlertActionStyleDestructive handler:^(UIAlertAction *action) {
         (void)action;
-        [self sendCommand:@{
-            @"action": @"clear",
-            @"historyKey": self.isFavoritesTab ? @"favorites" : @"history",
-        }];
+        [[DXClipboardStore sharedStore] clearHistoryKey:self.isFavoritesTab ? @"favorites" : @"history"];
+        [self reloadSnapshot];
+        notify_post([kClipboardChangedIdentifier UTF8String]);
     }]];
     [self presentViewController:alert animated:YES completion:nil];
 }
@@ -476,7 +484,9 @@ static NSString *DXSourceDisplayNameForBundleIdentifier(NSString *bundleIdentifi
         (void)action;
         NSNumber *itemID = item[@"id"];
         if ([itemID isKindOfClass:[NSNumber class]]) {
-            [self sendCommand:@{ @"action": @"delete", @"id": itemID }];
+            [[DXClipboardStore sharedStore] deleteItemWithID:[itemID integerValue]];
+            [self reloadSnapshot];
+            notify_post([kClipboardChangedIdentifier UTF8String]);
         }
     }]];
     [menu addAction:[UIAlertAction actionWithTitle:[self localized:@"取消"] ?: @"取消"
@@ -485,55 +495,26 @@ static NSString *DXSourceDisplayNameForBundleIdentifier(NSString *bundleIdentifi
 }
 
 - (void)sendFavoriteCommand:(BOOL)favorite historyKey:(NSString *)historyKey content:(NSString *)content {
-    [self sendCommand:@{
-        @"action": @"favorite",
-        @"favorite": @(favorite),
-        @"historyKey": historyKey ?: @"history",
-        @"content": content ?: @"",
-    }];
+    // Kayoko 同款：面板在宿主 App 进程内直接改共享存储，无需跨进程命令。
+    [[DXClipboardStore sharedStore] setFavorite:favorite
+                                     historyKey:historyKey ?: @"history"
+                                        content:content ?: @""];
+    [self reloadSnapshot];
+    notify_post([kClipboardChangedIdentifier UTF8String]);
 }
 
-// 命令通道（面板沙盒进程 -> SpringBoard）：三通道并行 + 序号去重，任一
-// 通道成功即生效。命名 UIPasteboard 为主；jbroot 共享命令文件与 cfprefsd
-// 域为兜底（不同越狱/系统版本下单一通道可能失效，三写任一被 SB 读到即可）。
-// seq 单调递增，SB 消费时按最大 seq 去重——文件残留/迟到通知/多通道读到
-// 同一命令都只会消费一次，保证收藏/删除/清空幂等。
-- (void)sendCommand:(NSDictionary *)command {
-    if (![command isKindOfClass:[NSDictionary class]]) return;
-
-    static int64_t lastSentSeq = 0;
-    int64_t now = (int64_t)(CFAbsoluteTimeGetCurrent() * 1000000.0);
-    if (now <= lastSentSeq) now = lastSentSeq + 1;
-    lastSentSeq = now;
-
-    NSMutableDictionary *payload = [command mutableCopy];
-    payload[MUBXClipboardCommandSeqKey] = @(now);
-
-    // 通道1：命名 UIPasteboard（由粘贴板守护进程托管、系统级共享）。
-    UIPasteboard *commandPasteboard = [UIPasteboard pasteboardWithName:MUBXClipboardCommandPasteboardName create:YES];
-    [commandPasteboard setItems:@[]];
-    NSData *data = [NSPropertyListSerialization dataWithPropertyList:payload
-                                                              format:NSPropertyListBinaryFormat_v1_0
-                                                             options:0
-                                                               error:nil];
-    if (data) {
-        [commandPasteboard setData:data forPasteboardType:MUBXClipboardCommandPasteboardUTI];
-    }
-    // 通道2：jbroot 共享命令文件（与快照同目录，postinst 已 chmod 0777，
-    // 沙盒 App 原子写入、SB 读后删除；删除失败由 seq 去重兜底）。
-    DXWriteSharedPlistFile(payload, MUBXClipboardCommandPath);
-    // 通道3：cfprefsd 隔离域（未沙盒进程可用，最后路径）。
-    DXSetQuickActionSharedValue(payload, kClipboardCommandKey);
-    notify_post([kClipboardCommandIdentifier UTF8String]);
-}
+// 面板操作（Kayoko 同款架构）：面板在宿主 App 进程内直接读写 jbroot
+// 共享 SQLite（kClipboardDatabasePath 位于 /var/jb/Library/MUBX，App 沙盒
+// 可读写），删除/收藏/清空不走跨进程命令。操作完成后本地刷新并广播
+// kClipboardChangedIdentifier：SpringBoard 收到后重新发布快照信息，其他
+// App 面板收到后调用 reloadSnapshot 同步。
 
 - (void)copyItem:(NSDictionary *)item {
     NSString *content = item[@"content"] ?: @"";
     NSString *imageName = item[@"image_name"] ?: @"";
     UIPasteboard *pasteboard = [UIPasteboard generalPasteboard];
     if (imageName.length > 0) {
-        NSString *mirrorPath = DX_ROOT_PATH_NS(@"/Library/MUBX/clipboard-images");
-        NSString *imagePath = [mirrorPath stringByAppendingPathComponent:imageName];
+        NSString *imagePath = [kClipboardImagesPath stringByAppendingPathComponent:imageName];
         UIImage *image = [UIImage imageWithContentsOfFile:imagePath];
         if (image) {
             pasteboard.image = image;
@@ -566,8 +547,7 @@ static NSString *DXSourceDisplayNameForBundleIdentifier(NSString *bundleIdentifi
     cell.imageBadgeView.hidden = !cell.showsThumbnail;
 
     if (cell.showsThumbnail) {
-        NSString *mirrorPath = DX_ROOT_PATH_NS(@"/Library/MUBX/clipboard-images");
-        NSString *imagePath = [mirrorPath stringByAppendingPathComponent:imageName];
+        NSString *imagePath = [kClipboardImagesPath stringByAppendingPathComponent:imageName];
         cell.thumbView.image = [UIImage imageWithContentsOfFile:imagePath];
         cell.textLabel2.text = [self localized:@"（图片）"] ?: @"[图片]";
     } else {

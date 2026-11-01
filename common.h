@@ -130,43 +130,30 @@
 #define kClipboardSaveImagesKey @"clipboardsaveimageBOOL"
 // 忽略来源 App 黑名单（AltList 多选，存 bundleID 数组）。
 #define kClipboardBlacklistKey @"clipboardblacklist"
-// 剪贴板快照与命令通道（cfprefsd 隔离域 + jbroot 共享文件双写）。
+// 剪贴板快照（cfprefsd 隔离域 + jbroot 共享文件双写）。
 #define kClipboardSnapshotKey @"clipboard-v1"
-#define kClipboardCommandKey @"clipboard-cmd"
 #define kClipboardChangedIdentifier @"com.lindo.mubx/clipboardchanged"
-#define kClipboardCommandIdentifier @"com.lindo.mubx/clipboardcmd"
 // Kayoko 同款跨进程采集：粘贴板守护进程在任何 App 写入时都跨进程广播该 Darwin
 // 通知，SpringBoard 侧监听后读取内容落库，无需 hook 或轮询。
 #define kClipboardPasteboardChangedName @"com.apple.pasteboard.notify.changed"
-// 权威存储：SpringBoard 写，schema 与 Kayoko history-v4 一致。
-#define kClipboardDatabasePath @"/var/mobile/Library/com.lindo.mubx/clipboard.sqlite"
-#define kClipboardImagesPath @"/var/mobile/Library/com.lindo.mubx/images"
-// 图片镜像：jbroot 前缀下 app 沙盒可读，供面板显示缩略图（best-effort）。
-#define kClipboardImagesMirrorPath DX_ROOT_PATH_NS(@"/Library/MUBX/clipboard-images")
+// 权威存储：位于 jbroot 下 App 沙盒可读写的目录（Kayoko 同款：面板在宿主
+// App 进程内直接读写同一 SQLite，删除/收藏/清空不跨进程）。schema 与
+// Kayoko history-v4 一致。postinst 已把旧版真实路径
+// /var/mobile/Library/com.lindo.mubx/ 下的数据迁移到新位置。
+#define kClipboardDatabasePath DX_ROOT_PATH_NS(@"/Library/MUBX/clipboard.sqlite")
+#define kClipboardImagesPath DX_ROOT_PATH_NS(@"/Library/MUBX/images")
+// 兼容宏：权威图片目录即 jbroot 路径（App 可直接读），镜像概念退役，
+// 此处与 kClipboardImagesPath 同目录，store 双写逻辑保持零改动。
+#define kClipboardImagesMirrorPath DX_ROOT_PATH_NS(@"/Library/MUBX/images")
+// 旧版权威存储真实路径（iOS 真实文件系统，仅 SpringBoard 可读写；升级时
+// postinst / store 迁移到 kClipboardDatabasePath 后删除）。
+#define kClipboardDatabasePathLegacy @"/var/mobile/Library/com.lindo.mubx/clipboard.sqlite"
+#define kClipboardImagesPathLegacy @"/var/mobile/Library/com.lindo.mubx/images"
 // 剪贴板跨进程共享：快照由 SpringBoard 写（域 + jbroot 共享文件双写）、
 // 面板（任意进程）读，位于 jbroot 下 App 沙盒可读的目录（与
-// MUBXSharedPrefsPath 同策略）。
+// MUBXSharedPrefsPath 同策略）。面板优先直连 kClipboardDatabasePath，
+// 快照留作兜底/跨进程刷新信号载体。
 #define MUBXClipboardSnapshotPath DX_ROOT_PATH_NS(@"/Library/MUBX/clipboard-snapshot.plist")
-
-// 命令通道（面板沙盒进程 -> SpringBoard）：三通道并行 + 序号去重，任一
-// 通道成功即生效，避免单一通道在特定越狱/系统版本下失效导致收藏/删除/
-// 清空整体不可用：
-//   1. 命名 UIPasteboard（主通道）：粘贴板守护进程系统级共享，任意沙盒
-//      App 可写、SB 可读；不改变 generalPasteboard changeCount，不触发
-//      粘贴采集。
-//   2. jbroot 共享命令文件（兜底A）：与快照文件同目录同权限（postinst
-//      chmod 0777 /Library/MUBX），App 原子写、SB 读后删除。822b923 时代
-//      该目录无 0777 且 SB 沙盒拒写导致文件残留被反复消费；现在目录已
-//      world-writable、快照写入成功，通道前提已恢复。文件删除失败时由
-//      序号去重兜住，残留文件不再致命。
-//   3. cfprefsd 隔离域（兜底B）：仅未沙盒进程（Preferences、SB 自身）写
-//      域 SB 可读，普通沙盒 App 写域被隔离/重定向，作为最后路径保留。
-// 序号去重：每条命令携带单调递增 seq，SB 记录已消费的最大 seq，重复
-// （残留文件/迟到通知/三方通道读到同一命令）一律跳过，保证幂等。
-#define MUBXClipboardCommandPasteboardName @"com.lindo.mubx.clipboardcmd"
-#define MUBXClipboardCommandPasteboardUTI @"com.lindo.mubx.clipboardcmd.data"
-#define MUBXClipboardCommandPath DX_ROOT_PATH_NS(@"/Library/MUBX/clipboard-command.plist")
-#define MUBXClipboardCommandSeqKey @"command-seq"
 
 static inline void DXWriteSharedPlistFile(NSDictionary *dictionary, NSString *path) {
     if (![dictionary isKindOfClass:[NSDictionary class]]) return;

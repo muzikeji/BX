@@ -15,13 +15,6 @@
 static NSString *const kDXRemoteClipboardPasteboardType = @"com.apple.is-remote-clipboard";
 static NSString *const kDXContinuityBundleIdentifier = @"com.apple.Pasteboard";
 
-typedef NS_ENUM(NSUInteger, DXClipboardCommandType) {
-    DXClipboardCommandUnknown = 0,
-    DXClipboardCommandFavorite,
-    DXClipboardCommandDelete,
-    DXClipboardCommandClear,
-};
-
 @interface DXClipboardService () {
     UIPasteboard *_pasteboard;
     NSInteger _lastChangeCount;
@@ -73,11 +66,12 @@ typedef NS_ENUM(NSUInteger, DXClipboardCommandType) {
                                     NULL,
                                     CFNotificationSuspensionBehaviorDeliverImmediately);
 
-    // app 进程命令入口（copy/delete/favorite/clear）。
+    // 面板进程本地改动共享数据库后广播 kClipboardChangedIdentifier，
+    // SpringBoard 收到后重新发布快照（供仍依赖快照的进程/兜底路径刷新）。
     CFNotificationCenterAddObserver(CFNotificationCenterGetDarwinNotifyCenter(),
                                     (__bridge const void *)self,
-                                    &DXClipboardCommandCallback,
-                                    (CFStringRef)kClipboardCommandIdentifier,
+                                    &DXClipboardChangedCallback,
+                                    (CFStringRef)kClipboardChangedIdentifier,
                                     NULL,
                                     CFNotificationSuspensionBehaviorDeliverImmediately);
 
@@ -115,86 +109,14 @@ static void DXClipboardPasteboardChangedCallback(CFNotificationCenterRef center,
     [self captureCurrentPasteboardWithSourceBundleIdentifier:sourceBundleIdentifier];
 }
 
-static void DXClipboardCommandCallback(CFNotificationCenterRef center, void *observer,
+static void DXClipboardChangedCallback(CFNotificationCenterRef center, void *observer,
                                        CFStringRef name, const void *object,
                                        CFDictionaryRef userInfo) {
     (void)center; (void)name; (void)object; (void)userInfo;
     DXClipboardService *service = (__bridge DXClipboardService *)observer;
-    // 命令通道：面板（沙盒 App 进程）三通道并行（命名 UIPasteboard / jbroot
-    // 共享命令文件 / cfprefsd 域）发送，SB 任一通道读取 + seq 去重 + 取走即清。
-    // Darwin 通知会合并（同一 run loop tick 内多条命令只触发一次回调），
-    // 因此一次性消费全部未处理命令按 seq 升序逐个执行，低 seq 命令不丢失。
-    NSArray<NSDictionary *> *commands = [service consumePendingCommands];
-    for (NSDictionary *command in commands) {
-        NSLog(@"[MUBX][Clipboard] 收到面板命令: %@", command);
-        dispatch_async(dispatch_get_main_queue(), ^{
-            [service handleCommand:command];
-        });
-    }
-}
-
-// 从三通道消费全部未处理命令：读命名 pasteboard -> 共享命令文件 -> cfprefsd
-// 域，全部读取后统一清理三通道；按 seq 去重（多通道读到同一命令 seq 相同
-// 只保留一个）并升序返回，同时把已消费最大 seq 持久化。SB 进程内调用
-// （Darwin 通知回调线程）。
-- (NSArray<NSDictionary *> *)consumePendingCommands {
-    NSMutableArray<NSDictionary *> *candidates = [NSMutableArray array];
-
-    // 通道1：命名 UIPasteboard。
-    UIPasteboard *commandPasteboard = [UIPasteboard pasteboardWithName:MUBXClipboardCommandPasteboardName create:NO];
-    if (commandPasteboard) {
-        NSData *data = [commandPasteboard dataForPasteboardType:MUBXClipboardCommandPasteboardUTI];
-        if (data.length) {
-            id parsed = [NSPropertyListSerialization propertyListWithData:data
-                                                                  options:0
-                                                                   format:NULL
-                                                                    error:nil];
-            if ([parsed isKindOfClass:[NSDictionary class]]) {
-                [candidates addObject:parsed];
-            }
-        }
-    }
-
-    // 通道2：jbroot 共享命令文件。
-    NSDictionary *fileCommand = DXReadSharedPlistFile(MUBXClipboardCommandPath);
-    if ([fileCommand isKindOfClass:[NSDictionary class]]) {
-        [candidates addObject:fileCommand];
-    }
-
-    // 通道3：cfprefsd 隔离域。
-    id domainCommand = DXQuickActionSharedValue(kClipboardCommandKey);
-    if ([domainCommand isKindOfClass:[NSDictionary class]]) {
-        [candidates addObject:domainCommand];
-    }
-
-    // 取走即清：三通道全部清掉，避免迟到通知/残留文件重复消费。
-    if (commandPasteboard) {
-        [commandPasteboard setItems:@[]];
-    }
-    [_fileManager removeItemAtPath:MUBXClipboardCommandPath error:nil];
-    DXSetQuickActionSharedValue(nil, kClipboardCommandKey);
-
-    // seq 去重 + 升序：只消费 seq 大于已消费最大 seq 的命令；同一 seq 多通道
-    // 重复只保留一个（字典 key 天然去重）。
-    int64_t lastSeq = [DXQuickActionSharedValue(MUBXClipboardCommandSeqKey) longLongValue];
-    NSMutableDictionary<NSNumber *, NSDictionary *> *deduped = [NSMutableDictionary dictionary];
-    for (NSDictionary *candidate in candidates) {
-        id seqValue = candidate[MUBXClipboardCommandSeqKey];
-        if (![seqValue isKindOfClass:[NSNumber class]]) continue;
-        int64_t seq = [seqValue longLongValue];
-        if (seq <= lastSeq) continue;
-        deduped[@(seq)] = candidate;
-    }
-    NSArray<NSNumber *> *sortedSeqs = [deduped.allKeys sortedArrayUsingSelector:@selector(compare:)];
-    NSMutableArray<NSDictionary *> *commands = [NSMutableArray array];
-    for (NSNumber *seq in sortedSeqs) {
-        [commands addObject:deduped[seq]];
-    }
-    if (commands.count) {
-        int64_t maxSeq = [sortedSeqs.lastObject longLongValue];
-        DXSetQuickActionSharedValue(@(maxSeq), MUBXClipboardCommandSeqKey);
-    }
-    return commands;
+    dispatch_async(dispatch_get_main_queue(), ^{
+        [service publishSnapshot];
+    });
 }
 
 #pragma mark - Pasteboard observation
@@ -419,43 +341,6 @@ static void DXClipboardCommandCallback(CFNotificationCenterRef center, void *obs
 - (NSArray *)preferenceArrayForKey:(NSString *)key {
     id value = [DXPrefsManager.sharedInstance.prefs objectForKey:key];
     return [value isKindOfClass:[NSArray class]] ? value : @[];
-}
-
-#pragma mark - Commands from panels (app processes)
-
-- (void)handleCommand:(NSDictionary *)command {
-    NSString *action = command[@"action"];
-    DXClipboardCommandType type = DXClipboardCommandUnknown;
-    if ([action isEqualToString:@"favorite"]) type = DXClipboardCommandFavorite;
-    else if ([action isEqualToString:@"delete"]) type = DXClipboardCommandDelete;
-    else if ([action isEqualToString:@"clear"]) type = DXClipboardCommandClear;
-
-    switch (type) {
-        case DXClipboardCommandFavorite: {
-            BOOL favorite = [command[@"favorite"] boolValue];
-            NSString *historyKey = command[@"historyKey"];
-            NSString *content = command[@"content"];
-            [self.store setFavorite:favorite historyKey:historyKey ?: @"history" content:content ?: @""];
-            break;
-        }
-        case DXClipboardCommandDelete: {
-            NSNumber *itemID = command[@"id"];
-            if ([itemID isKindOfClass:[NSNumber class]]) {
-                [self.store deleteItemWithID:[itemID integerValue]];
-            }
-            break;
-        }
-        case DXClipboardCommandClear: {
-            NSString *historyKey = command[@"historyKey"];
-            [self.store clearHistoryKey:historyKey ?: @"history"];
-            break;
-        }
-        default:
-            return;
-    }
-
-    [self publishSnapshot];
-    notify_post([kClipboardChangedIdentifier UTF8String]);
 }
 
 @end

@@ -68,8 +68,54 @@ static NSString *const kDXClipboardFavoritesKey = @"favorites";
 
 #pragma mark - Database
 
+- (void)migrateLegacyStoreIfNeeded {
+    NSFileManager *fileManager = self.fileManager;
+    if ([fileManager fileExistsAtPath:self.databasePath] ||
+        ![fileManager fileExistsAtPath:kClipboardDatabasePathLegacy]) {
+        return;
+    }
+
+    NSString *directory = [self.databasePath stringByDeletingLastPathComponent];
+    if (![self ensureDirectory:directory]) return;
+
+    BOOL copiedDatabase = YES;
+    for (NSString *suffix in @[ @"", @"-wal", @"-shm" ]) {
+        NSString *legacyPath = [kClipboardDatabasePathLegacy stringByAppendingString:suffix];
+        if (![fileManager fileExistsAtPath:legacyPath]) continue;
+        NSString *newPath = [self.databasePath stringByAppendingString:suffix];
+        NSError *error = nil;
+        if (![fileManager copyItemAtPath:legacyPath toPath:newPath error:&error]) {
+            copiedDatabase = NO;
+            NSLog(@"[MUBX][Clipboard] legacy database migration failed for %@: %@", suffix, error);
+            break;
+        }
+        [fileManager setAttributes:@{ NSFilePosixPermissions: @0666 }
+                      ofItemAtPath:newPath error:nil];
+    }
+    if (!copiedDatabase) return;
+
+    NSString *legacyImages = kClipboardImagesPathLegacy;
+    if ([fileManager fileExistsAtPath:legacyImages]) {
+        [self ensureDirectory:self.imagesDirectoryPath];
+        NSArray *imageNames = [fileManager contentsOfDirectoryAtPath:legacyImages error:nil];
+        for (NSString *imageName in imageNames) {
+            NSString *source = [legacyImages stringByAppendingPathComponent:imageName];
+            NSString *destination = [self.imagesDirectoryPath stringByAppendingPathComponent:imageName];
+            if (![fileManager fileExistsAtPath:destination]) {
+                [fileManager copyItemAtPath:source toPath:destination error:nil];
+            }
+        }
+    }
+
+    NSLog(@"[MUBX][Clipboard] migrated legacy clipboard store to jbroot");
+}
+
 - (BOOL)prepareDatabase {
     if (_database) return YES;
+
+    // postinst normally performs this migration. Keep a runtime fallback for
+    // upgrades where the package script could not access the old location.
+    [self migrateLegacyStoreIfNeeded];
 
     NSString *dir = [self.databasePath stringByDeletingLastPathComponent];
     if (![self ensureDirectory:dir]) return NO;

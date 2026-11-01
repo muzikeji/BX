@@ -3,8 +3,13 @@
 NS_ASSUME_NONNULL_BEGIN
 
 // MUBX 内置剪贴板历史——权威存储层（Schema 与 Kayoko history-v4 完全一致，
-// 迁移 = 逐行复制，零格式转换）。仅在 SpringBoard 进程创建/写入；
-// app 进程通过 cfprefsd 快照（kClipboardSnapshotKey）读取。
+// 迁移 = 逐行复制，零格式转换）。
+//
+// 数据库与图片目录位于 jbroot 下（kClipboardDatabasePath =
+// /var/jb/Library/MUBX/clipboard.sqlite，postinst 已 chmod 0777 目录），
+// 沙盒 App 进程与 SpringBoard 均可读写（Kayoko 同款共享存储模型）。
+// SpringBoard 负责采集写入（粘贴板监听），宿主 App 面板直接读写，
+// 删除/收藏/清空无需跨进程命令。SQLite 采用 WAL 模式支持多进程并发。
 //
 // 表 history_items 字段（与 Kayoko 对齐）：
 //   id / history_key('history'|'favorites') / bundle_identifier / content

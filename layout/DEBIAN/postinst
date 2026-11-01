@@ -11,6 +11,28 @@ mkdir -p "$MUBX_SHARED_DIR" || true
 # directory itself (not only shared.plist) must remain writable.
 chmod 0777 "$MUBX_SHARED_DIR"
 
+# Move the clipboard database into jbroot so sandboxed app hosts can access it
+# directly, matching Kayoko's shared-storage model.
+LEGACY_DB="/var/mobile/Library/com.lindo.mubx/clipboard.sqlite"
+NEW_DB="$MUBX_SHARED_DIR/clipboard.sqlite"
+if [ ! -e "$NEW_DB" ] && [ -e "$LEGACY_DB" ]; then
+    cp "$LEGACY_DB" "$NEW_DB" || true
+    for suffix in -wal -shm; do
+        if [ -e "${LEGACY_DB}${suffix}" ]; then
+            cp "${LEGACY_DB}${suffix}" "${NEW_DB}${suffix}" || true
+        fi
+    done
+    chmod 0666 "$NEW_DB" "${NEW_DB}-wal" "${NEW_DB}-shm" 2>/dev/null || true
+fi
+
+LEGACY_IMAGES="/var/mobile/Library/com.lindo.mubx/images"
+NEW_IMAGES="$MUBX_SHARED_DIR/images"
+if [ -d "$LEGACY_IMAGES" ] && [ ! -d "$NEW_IMAGES" ]; then
+    mkdir -p "$NEW_IMAGES" || true
+    cp -R "$LEGACY_IMAGES"/. "$NEW_IMAGES"/ 2>/dev/null || true
+    chmod -R 0777 "$NEW_IMAGES" 2>/dev/null || true
+fi
+
 # Seed the shared snapshot from the cfprefsd domain's on-disk plist whenever it
 # is missing (fresh install, or shared state deleted before this version).
 # Sandboxed app hosts read ONLY this snapshot: without a seed their toolbars
