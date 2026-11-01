@@ -52,6 +52,7 @@ jobs:
         shell: bash
         env:
           THEOS_PACKAGE_SCHEME: roothide
+          MUBX_CI_BUILD: 1
         run: |
           set -euo pipefail
           ./build.sh

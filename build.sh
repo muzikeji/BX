@@ -34,18 +34,27 @@ if [[ ! "$PACKAGE_VERSION" =~ ^([0-9]+)\.([0-9]+)\.([0-9]+)$ ]]; then
 fi
 
 # PATCH counts 0-10; past 10 it carries into MINOR (3.0.10 -> 3.1.0), MINOR likewise into MAJOR.
-NEXT_MAJOR="${BASH_REMATCH[1]}"
-NEXT_MINOR="${BASH_REMATCH[2]}"
-NEXT_PATCH="$((10#${BASH_REMATCH[3]} + 1))"
-if (( NEXT_PATCH > 10 )); then
-    NEXT_PATCH=0
-    NEXT_MINOR="$((10#${BASH_REMATCH[2]} + 1))"
+# Local builds auto-increment the version (and write it back to control), so the
+# dev workflow always yields a fresh version. CI (MUBX_CI_BUILD=1) must NOT
+# increment: it checks out control from git each run, and incrementing would
+# produce the same version every time (1.0.0 -> always 1.0.1). Instead CI builds
+# exactly what is committed in control, and releasing a new version means bumping
+# control's Version on the main branch.
+NEXT_VERSION="$PACKAGE_VERSION"
+if [[ "${MUBX_CI_BUILD:-0}" != "1" ]]; then
+    NEXT_MAJOR="${BASH_REMATCH[1]}"
+    NEXT_MINOR="${BASH_REMATCH[2]}"
+    NEXT_PATCH="$((10#${BASH_REMATCH[3]} + 1))"
+    if (( NEXT_PATCH > 10 )); then
+        NEXT_PATCH=0
+        NEXT_MINOR="$((10#${BASH_REMATCH[2]} + 1))"
+    fi
+    if (( NEXT_MINOR > 10 )); then
+        NEXT_MINOR=0
+        NEXT_MAJOR="$((10#${BASH_REMATCH[1]} + 1))"
+    fi
+    NEXT_VERSION="${NEXT_MAJOR}.${NEXT_MINOR}.${NEXT_PATCH}"
 fi
-if (( NEXT_MINOR > 10 )); then
-    NEXT_MINOR=0
-    NEXT_MAJOR="$((10#${BASH_REMATCH[1]} + 1))"
-fi
-NEXT_VERSION="${NEXT_MAJOR}.${NEXT_MINOR}.${NEXT_PATCH}"
 
 # Bark 推送：每次构建结束后推送"mubx-版本-状态"；token 只存本地
 # build-notify.local.conf（已被 .gitignore 排除）。
