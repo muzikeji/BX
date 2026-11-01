@@ -363,6 +363,8 @@ static NSString *DXSourceDisplayNameForBundleIdentifier(NSString *bundleIdentifi
         self.favoriteItems = [store itemsForHistoryKey:@"favorites"
                                               searchText:nil
                                                    limit:kClipboardMaxCountDefault];
+        NSLog(@"[MUBX][Clipboard][diag] reloadSnapshot via SQLite (%lu history, %lu favorites)",
+              (unsigned long)self.historyItems.count, (unsigned long)self.favoriteItems.count);
     } else {
         NSDictionary *snapshot = DXReadSharedPlistFile(MUBXClipboardSnapshotPath);
         if (![snapshot isKindOfClass:[NSDictionary class]]) {
@@ -372,6 +374,8 @@ static NSString *DXSourceDisplayNameForBundleIdentifier(NSString *bundleIdentifi
         NSArray *favorites = snapshot[@"favorites"];
         self.historyItems = [history isKindOfClass:[NSArray class]] ? history : @[];
         self.favoriteItems = [favorites isKindOfClass:[NSArray class]] ? favorites : @[];
+        NSLog(@"[MUBX][Clipboard][diag] reloadSnapshot via snapshot FALLBACK (%lu history, %lu favorites)",
+              (unsigned long)self.historyItems.count, (unsigned long)self.favoriteItems.count);
     }
     [self refreshDisplayedItems];
 }
@@ -438,7 +442,8 @@ static NSString *DXSourceDisplayNameForBundleIdentifier(NSString *bundleIdentifi
     [alert addAction:[UIAlertAction actionWithTitle:[self localized:@"清空"] ?: @"清空"
                                              style:UIAlertActionStyleDestructive handler:^(UIAlertAction *action) {
         (void)action;
-        [[DXClipboardStore sharedStore] clearHistoryKey:self.isFavoritesTab ? @"favorites" : @"history"];
+        BOOL cleared = [[DXClipboardStore sharedStore] clearHistoryKey:self.isFavoritesTab ? @"favorites" : @"history"];
+        NSLog(@"[MUBX][Clipboard][diag] clear %@ -> %d", self.isFavoritesTab ? @"favorites" : @"history", cleared);
         [self reloadSnapshot];
         notify_post([kClipboardChangedIdentifier UTF8String]);
     }]];
@@ -484,7 +489,8 @@ static NSString *DXSourceDisplayNameForBundleIdentifier(NSString *bundleIdentifi
         (void)action;
         NSNumber *itemID = item[@"id"];
         if ([itemID isKindOfClass:[NSNumber class]]) {
-            [[DXClipboardStore sharedStore] deleteItemWithID:[itemID integerValue]];
+            BOOL deleted = [[DXClipboardStore sharedStore] deleteItemWithID:[itemID integerValue]];
+            NSLog(@"[MUBX][Clipboard][diag] delete itemID=%lld -> %d", (long long)[itemID longLongValue], deleted);
             [self reloadSnapshot];
             notify_post([kClipboardChangedIdentifier UTF8String]);
         }
@@ -496,18 +502,20 @@ static NSString *DXSourceDisplayNameForBundleIdentifier(NSString *bundleIdentifi
 
 - (void)sendFavoriteCommand:(BOOL)favorite historyKey:(NSString *)historyKey content:(NSString *)content {
     // Kayoko 同款：面板在宿主 App 进程内直接改共享存储，无需跨进程命令。
-    [[DXClipboardStore sharedStore] setFavorite:favorite
-                                     historyKey:historyKey ?: @"history"
-                                        content:content ?: @""];
+    BOOL set = [[DXClipboardStore sharedStore] setFavorite:favorite
+                                                historyKey:historyKey ?: @"history"
+                                                   content:content ?: @""];
+    NSLog(@"[MUBX][Clipboard][diag] setFavorite=%d historyKey=%@ contentLen=%lu -> %d",
+          favorite, historyKey ?: @"history", (unsigned long)(content ?: @"").length, set);
     [self reloadSnapshot];
     notify_post([kClipboardChangedIdentifier UTF8String]);
 }
 
 // 面板操作（Kayoko 同款架构）：面板在宿主 App 进程内直接读写 jbroot
-// 共享 SQLite（kClipboardDatabasePath 位于 /var/jb/Library/MUBX，App 沙盒
-// 可读写），删除/收藏/清空不走跨进程命令。操作完成后本地刷新并广播
-// kClipboardChangedIdentifier：SpringBoard 收到后重新发布快照信息，其他
-// App 面板收到后调用 reloadSnapshot 同步。
+// 共享 SQLite（kClipboardDatabasePath 位于 /var/jb/var/mobile/Library/...，
+// App 沙盒可读写区），删除/收藏/清空不走跨进程命令。操作完成后本地
+// 刷新并广播 kClipboardChangedIdentifier：SpringBoard 收到后重新发布
+// 快照信息，其他 App 面板收到后调用 reloadSnapshot 同步。
 
 - (void)copyItem:(NSDictionary *)item {
     NSString *content = item[@"content"] ?: @"";

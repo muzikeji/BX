@@ -11,26 +11,51 @@ mkdir -p "$MUBX_SHARED_DIR" || true
 # directory itself (not only shared.plist) must remain writable.
 chmod 0777 "$MUBX_SHARED_DIR"
 
-# Move the clipboard database into jbroot so sandboxed app hosts can access it
-# directly, matching Kayoko's shared-storage model.
-LEGACY_DB="/var/mobile/Library/com.lindo.mubx/clipboard.sqlite"
-NEW_DB="$MUBX_SHARED_DIR/clipboard.sqlite"
-if [ ! -e "$NEW_DB" ] && [ -e "$LEGACY_DB" ]; then
-    cp "$LEGACY_DB" "$NEW_DB" || true
-    for suffix in -wal -shm; do
-        if [ -e "${LEGACY_DB}${suffix}" ]; then
-            cp "${LEGACY_DB}${suffix}" "${NEW_DB}${suffix}" || true
+# Move the clipboard database into the sandbox-writable jbroot area so
+# sandboxed app hosts can access it directly (Kayoko's storage model). Two
+# legacy locations exist:
+#   - 1.0.4 and earlier: /var/jb/Library/MUBX/ (read-only for app sandboxes)
+#   - 1.0.3 and earlier: /var/mobile/Library/com.lindo.mubx/ (real fs path)
+CLIPBOARD_DIR="$JBROOT/var/mobile/Library/com.lindo.mubx"
+mkdir -p "$CLIPBOARD_DIR" || true
+chmod 0777 "$CLIPBOARD_DIR"
+
+NEW_DB="$CLIPBOARD_DIR/clipboard.sqlite"
+if [ ! -e "$NEW_DB" ]; then
+    for legacy in "$MUBX_SHARED_DIR/clipboard.sqlite" "/var/mobile/Library/com.lindo.mubx/clipboard.sqlite"; do
+        if [ -e "$legacy" ]; then
+            cp "$legacy" "$NEW_DB" || true
+            for suffix in -wal -shm; do
+                if [ -e "${legacy}${suffix}" ]; then
+                    cp "${legacy}${suffix}" "${NEW_DB}${suffix}" || true
+                fi
+            done
+            break
         fi
     done
     chmod 0666 "$NEW_DB" "${NEW_DB}-wal" "${NEW_DB}-shm" 2>/dev/null || true
 fi
 
-LEGACY_IMAGES="/var/mobile/Library/com.lindo.mubx/images"
-NEW_IMAGES="$MUBX_SHARED_DIR/images"
-if [ -d "$LEGACY_IMAGES" ] && [ ! -d "$NEW_IMAGES" ]; then
-    mkdir -p "$NEW_IMAGES" || true
-    cp -R "$LEGACY_IMAGES"/. "$NEW_IMAGES"/ 2>/dev/null || true
+NEW_IMAGES="$CLIPBOARD_DIR/images"
+if [ ! -d "$NEW_IMAGES" ]; then
+    for legacy in "$MUBX_SHARED_DIR/images" "/var/mobile/Library/com.lindo.mubx/images"; do
+        if [ -d "$legacy" ]; then
+            mkdir -p "$NEW_IMAGES" || true
+            cp -R "$legacy"/. "$NEW_IMAGES"/ 2>/dev/null || true
+            break
+        fi
+    done
     chmod -R 0777 "$NEW_IMAGES" 2>/dev/null || true
+fi
+
+# Migrate the shared snapshot file (panel fallback source) to the new
+# sandbox-writable location so app panels can render immediately after an
+# upgrade, before SpringBoard publishes a fresh snapshot.
+LEGACY_SNAPSHOT="$MUBX_SHARED_DIR/clipboard-snapshot.plist"
+NEW_SNAPSHOT="$CLIPBOARD_DIR/clipboard-snapshot.plist"
+if [ ! -e "$NEW_SNAPSHOT" ] && [ -e "$LEGACY_SNAPSHOT" ]; then
+    cp "$LEGACY_SNAPSHOT" "$NEW_SNAPSHOT" || true
+    chmod 0644 "$NEW_SNAPSHOT" || true
 fi
 
 # Seed the shared snapshot from the cfprefsd domain's on-disk plist whenever it

@@ -136,24 +136,33 @@
 // Kayoko 同款跨进程采集：粘贴板守护进程在任何 App 写入时都跨进程广播该 Darwin
 // 通知，SpringBoard 侧监听后读取内容落库，无需 hook 或轮询。
 #define kClipboardPasteboardChangedName @"com.apple.pasteboard.notify.changed"
-// 权威存储：位于 jbroot 下 App 沙盒可读写的目录（Kayoko 同款：面板在宿主
-// App 进程内直接读写同一 SQLite，删除/收藏/清空不跨进程）。schema 与
-// Kayoko history-v4 一致。postinst 已把旧版真实路径
-// /var/mobile/Library/com.lindo.mubx/ 下的数据迁移到新位置。
-#define kClipboardDatabasePath DX_ROOT_PATH_NS(@"/Library/MUBX/clipboard.sqlite")
-#define kClipboardImagesPath DX_ROOT_PATH_NS(@"/Library/MUBX/images")
-// 兼容宏：权威图片目录即 jbroot 路径（App 可直接读），镜像概念退役，
+// 权威存储：位于 /var/jb/var/mobile/Library/com.lindo.mubx/ 下（Kayoko 同款
+// 路径模型——ROOT_PATH_NS 前缀命中沙盒放行区，宿主席 App 进程可读写）。
+// 实测确认：/var/jb/Library/** 对普通 App 沙盒只读（RootHide 复用原生
+// sandbox profile，jbroot 顶层 Library 镜像系统库），而
+// /var/jb/var/mobile/Library/** 允许沙盒进程写入，所以存储必须放在
+// var/mobile/Library 下才能让面板在 App 内直接删除/收藏/清空。
+// schema 与 Kayoko history-v4 一致。postinst 已把旧版路径（真实
+// /var/mobile/Library/com.lindo.mubx/ 与 /var/jb/Library/MUBX/）迁移到
+// 新位置。
+#define kClipboardDatabasePath DX_ROOT_PATH_NS(@"/var/mobile/Library/com.lindo.mubx/clipboard.sqlite")
+#define kClipboardImagesPath DX_ROOT_PATH_NS(@"/var/mobile/Library/com.lindo.mubx/images")
+// 兼容宏：权威图片目录即可读路径（App 可直接读），镜像概念退役，
 // 此处与 kClipboardImagesPath 同目录，store 双写逻辑保持零改动。
-#define kClipboardImagesMirrorPath DX_ROOT_PATH_NS(@"/Library/MUBX/images")
-// 旧版权威存储真实路径（iOS 真实文件系统，仅 SpringBoard 可读写；升级时
-// postinst / store 迁移到 kClipboardDatabasePath 后删除）。
+#define kClipboardImagesMirrorPath DX_ROOT_PATH_NS(@"/var/mobile/Library/com.lindo.mubx/images")
+// 旧版权威存储路径（升级时 postinst / store 迁移到
+// kClipboardDatabasePath 后删除）：
+//   - 1.0.4 及之前的 jbroot 顶层 Library 路径（App 沙盒只读，写失败）
+//   - 1.0.3 及更早的真实文件系统路径（仅 SpringBoard 可读写）
+#define kClipboardDatabasePathLegacyJB DX_ROOT_PATH_NS(@"/Library/MUBX/clipboard.sqlite")
+#define kClipboardImagesPathLegacyJB DX_ROOT_PATH_NS(@"/Library/MUBX/images")
 #define kClipboardDatabasePathLegacy @"/var/mobile/Library/com.lindo.mubx/clipboard.sqlite"
 #define kClipboardImagesPathLegacy @"/var/mobile/Library/com.lindo.mubx/images"
 // 剪贴板跨进程共享：快照由 SpringBoard 写（域 + jbroot 共享文件双写）、
-// 面板（任意进程）读，位于 jbroot 下 App 沙盒可读的目录（与
-// MUBXSharedPrefsPath 同策略）。面板优先直连 kClipboardDatabasePath，
+// 面板（任意进程）读，位于 App 沙盒可读写的目录（与存储同区，机制同
+// MUBXSharedPrefsPath 的读写策略）。面板优先直连 kClipboardDatabasePath，
 // 快照留作兜底/跨进程刷新信号载体。
-#define MUBXClipboardSnapshotPath DX_ROOT_PATH_NS(@"/Library/MUBX/clipboard-snapshot.plist")
+#define MUBXClipboardSnapshotPath DX_ROOT_PATH_NS(@"/var/mobile/Library/com.lindo.mubx/clipboard-snapshot.plist")
 
 static inline void DXWriteSharedPlistFile(NSDictionary *dictionary, NSString *path) {
     if (![dictionary isKindOfClass:[NSDictionary class]]) return;

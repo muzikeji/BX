@@ -68,34 +68,59 @@ static NSString *const kDXClipboardFavoritesKey = @"favorites";
 
 #pragma mark - Database
 
+// 迁移两个 legacy 位置：
+//   1. kClipboardDatabasePathLegacyJB = /var/jb/Library/MUBX（1.0.4 及更早，
+//      App 沙盒只读，写失败的历史根因位置）
+//   2. kClipboardDatabasePathLegacy = /var/mobile/Library/...（1.0.3 及更早，
+//      真实文件系统路径，仅 SpringBoard 可读）
+// 首个存在的 source 迁移后即停止，目标已存在则跳过。仅 SpringBoard 进程
+// 能读取真实路径 legacy；App 进程读取该路径会失败（沙盒），但读取
+// legacyJB（jbroot 顶层 Library）可行，因此两个入口都保留。
 - (void)migrateLegacyStoreIfNeeded {
     NSFileManager *fileManager = self.fileManager;
-    if ([fileManager fileExistsAtPath:self.databasePath] ||
-        ![fileManager fileExistsAtPath:kClipboardDatabasePathLegacy]) {
-        return;
-    }
+    if ([fileManager fileExistsAtPath:self.databasePath]) return;
 
     NSString *directory = [self.databasePath stringByDeletingLastPathComponent];
     if (![self ensureDirectory:directory]) return;
 
-    BOOL copiedDatabase = YES;
-    for (NSString *suffix in @[ @"", @"-wal", @"-shm" ]) {
-        NSString *legacyPath = [kClipboardDatabasePathLegacy stringByAppendingString:suffix];
+    BOOL copiedAnything = NO;
+    NSArray<NSString *> *legacyDatabaseCandidates = @[
+        kClipboardDatabasePathLegacyJB,
+        kClipboardDatabasePathLegacy,
+    ];
+    for (NSString *legacyPath in legacyDatabaseCandidates) {
         if (![fileManager fileExistsAtPath:legacyPath]) continue;
-        NSString *newPath = [self.databasePath stringByAppendingString:suffix];
-        NSError *error = nil;
-        if (![fileManager copyItemAtPath:legacyPath toPath:newPath error:&error]) {
-            copiedDatabase = NO;
-            NSLog(@"[MUBX][Clipboard] legacy database migration failed for %@: %@", suffix, error);
-            break;
+        BOOL ok = YES;
+        for (NSString *suffix in @[ @"", @"-wal", @"-shm" ]) {
+            NSString *legacy = [legacyPath stringByAppendingString:suffix];
+            if (![fileManager fileExistsAtPath:legacy]) continue;
+            NSString *newPath = [self.databasePath stringByAppendingString:suffix];
+            NSError *error = nil;
+            if (![fileManager copyItemAtPath:legacy toPath:newPath error:&error]) {
+                ok = NO;
+                NSLog(@"[MUBX][Clipboard] legacy database migration failed for %@ (%@): %@",
+                      suffix, legacyPath, error);
+                break;
+            }
+            [fileManager setAttributes:@{ NSFilePosixPermissions: @0666 }
+                          ofItemAtPath:newPath error:nil];
         }
-        [fileManager setAttributes:@{ NSFilePosixPermissions: @0666 }
-                      ofItemAtPath:newPath error:nil];
+        if (ok) {
+            copiedAnything = YES;
+            NSLog(@"[MUBX][Clipboard] migrated legacy database from %@ to %@",
+                  legacyPath, self.databasePath);
+            break; // 成功迁移后停止，防止双份重复迁移
+        }
     }
-    if (!copiedDatabase) return;
 
-    NSString *legacyImages = kClipboardImagesPathLegacy;
-    if ([fileManager fileExistsAtPath:legacyImages]) {
+    NSArray<NSString *> *legacyImagesCandidates = @[
+        kClipboardImagesPathLegacyJB,
+        kClipboardImagesPathLegacy,
+    ];
+    // 图片合并复制：不因单个源失败而跳过其他源（目标已存在则跳过，
+    // 重复源之间不会互相覆盖）。
+    for (NSString *legacyImages in legacyImagesCandidates) {
+        if (![fileManager fileExistsAtPath:legacyImages]) continue;
         [self ensureDirectory:self.imagesDirectoryPath];
         NSArray *imageNames = [fileManager contentsOfDirectoryAtPath:legacyImages error:nil];
         for (NSString *imageName in imageNames) {
@@ -107,7 +132,29 @@ static NSString *const kDXClipboardFavoritesKey = @"favorites";
         }
     }
 
-    NSLog(@"[MUBX][Clipboard] migrated legacy clipboard store to jbroot");
+    if (copiedAnything) {
+        NSLog(@"[MUBX][Clipboard] migrated legacy clipboard store to %@", self.databasePath);
+    }
+}
+
+// 沙盒可写性探测（诊断用）：打印当前进程、沙盒状态与目标路径的
+// 存在/可写情况，用于定位"系统 App 可用、用户 App 不可用"的沙盒差异。
+- (void)probeWritability {
+    NSFileManager *fileManager = self.fileManager;
+    NSString *processName = [[[NSProcessInfo processInfo] arguments] firstObject].lastPathComponent ?: @"?";
+    BOOL sandboxed = [DXPrefsManager isRunningInSandbox];
+    NSString *directory = [self.databasePath stringByDeletingLastPathComponent];
+
+    BOOL directoryExists = [fileManager fileExistsAtPath:directory];
+    BOOL directoryWritable = [fileManager isWritableFileAtPath:directory];
+    BOOL dbExists = [fileManager fileExistsAtPath:self.databasePath];
+    BOOL dbWritable = dbExists && [fileManager isWritableFileAtPath:self.databasePath];
+    BOOL legacyJBWritable = [fileManager isWritableFileAtPath:kClipboardDatabasePathLegacyJB];
+
+    NSLog(@"[MUBX][Clipboard][diag] process=%@ sandboxed=%d dbPath=%@ dirExists=%d dirWritable=%d dbExists=%d dbWritable=%d legacyJB(ro?)=%@",
+          processName, sandboxed, self.databasePath,
+          directoryExists, directoryWritable, dbExists, dbWritable,
+          (legacyJBWritable ? @"writable" : @"READONLY"));
 }
 
 - (BOOL)prepareDatabase {
@@ -120,6 +167,9 @@ static NSString *const kDXClipboardFavoritesKey = @"favorites";
     NSString *dir = [self.databasePath stringByDeletingLastPathComponent];
     if (![self ensureDirectory:dir]) return NO;
 
+    // 诊断：进程身份 + 路径可写性（区分系统 App/用户 App 的沙盒差异）。
+    [self probeWritability];
+
     if (sqlite3_open(self.databasePath.UTF8String, &_database) != SQLITE_OK) {
         NSLog(@"[MUBX][Clipboard] sqlite3_open failed: %s", sqlite3_errmsg(_database));
         sqlite3_close(_database);
@@ -127,8 +177,13 @@ static NSString *const kDXClipboardFavoritesKey = @"favorites";
         return NO;
     }
 
-    // WAL 提升并发读（app 进程只读打开不必等待写锁）。
-    sqlite3_exec(_database, "PRAGMA journal_mode=WAL", NULL, NULL, NULL);
+    // WAL 提升并发读（app 进程与 SpringBoard 多进程共享同一 SQLite）。
+    char *walError = NULL;
+    int walResult = sqlite3_exec(_database, "PRAGMA journal_mode=WAL", NULL, NULL, &walError);
+    if (walResult != SQLITE_OK) {
+        NSLog(@"[MUBX][Clipboard][diag] journal_mode=WAL failed: %s", walError ? walError : "?");
+        if (walError) sqlite3_free(walError);
+    }
     sqlite3_busy_timeout(_database, 3000);
 
     static const char *schema =
@@ -209,7 +264,7 @@ static NSString *const kDXClipboardFavoritesKey = @"favorites";
 
 #pragma mark - Add / trim
 
-- (void)addItemWithHistoryKey:(NSString *)historyKey
+- (BOOL)addItemWithHistoryKey:(NSString *)historyKey
             bundleIdentifier:(NSString *)bundleIdentifier
                      content:(NSString *)content
                    imageName:(nullable NSString *)imageName
@@ -217,10 +272,10 @@ static NSString *const kDXClipboardFavoritesKey = @"favorites";
                  imageHeight:(NSUInteger)imageHeight
                     hasLink:(BOOL)hasLink
                   capturedAt:(NSTimeInterval)capturedAt {
-    if (![self prepareDatabase]) return;
+    if (![self prepareDatabase]) return NO;
     if (!historyKey.length) historyKey = kDXClipboardHistoryKey;
     content = content ?: @"";
-    if (content.length == 0 && imageName.length == 0) return;
+    if (content.length == 0 && imageName.length == 0) return NO;
 
     NSTimeInterval now = [[NSDate date] timeIntervalSince1970];
     sqlite3_int64 sequence = [self nextSequence];
@@ -229,7 +284,7 @@ static NSString *const kDXClipboardFavoritesKey = @"favorites";
     [self executeStatement:"DELETE FROM history_items WHERE history_key = ? AND content = ?"
                  withBindings:@[ historyKey, content ]];
 
-    [self executeStatement:
+    BOOL inserted = [self executeStatement:
         "INSERT INTO history_items "
         "(history_key, bundle_identifier, content, image_name, image_width, image_height, "
         " image_byte_count, rich_text_uti, rich_text_name, has_link, created_at, updated_at, "
@@ -249,6 +304,7 @@ static NSString *const kDXClipboardFavoritesKey = @"favorites";
                   ]];
 
     [self trimHistoryKey:historyKey];
+    return inserted;
 }
 
 - (void)trimHistoryKey:(NSString *)historyKey {
@@ -342,11 +398,11 @@ static NSString *const kDXClipboardFavoritesKey = @"favorites";
 
 #pragma mark - Favorite / delete / clear
 
-- (void)setFavorite:(BOOL)favorite
+- (BOOL)setFavorite:(BOOL)favorite
             historyKey:(NSString *)historyKey
                content:(NSString *)content {
-    if (!content.length) return;
-    [self prepareDatabase];
+    if (!content.length) return NO;
+    if (![self prepareDatabase]) return NO;
 
     if (favorite) {
         // 复制语义：收藏 = 在 favorites 下新增一份副本，历史记录保留。
@@ -356,28 +412,28 @@ static NSString *const kDXClipboardFavoritesKey = @"favorites";
         for (NSDictionary *item in items) {
             if ([item[@"content"] isEqual:content]) { found = item; break; }
         }
-        if (!found) return;
+        if (!found) return NO;
         // addItemWithHistoryKey 内部按 (key, content) 去重后插入，重复收藏
         // 只会更新序列号，不会产生重复行；history 侧不受影响。
-        [self addItemWithHistoryKey:kDXClipboardFavoritesKey
-                  bundleIdentifier:found[@"bundle_identifier"]
-                           content:content
-                         imageName:found[@"image_name"]
-                        imageWidth:[found[@"image_width"] unsignedIntegerValue]
-                       imageHeight:[found[@"image_height"] unsignedIntegerValue]
-                          hasLink:[found[@"has_link"] boolValue]
-                        capturedAt:[found[@"created_at"] doubleValue]];
+        return [self addItemWithHistoryKey:kDXClipboardFavoritesKey
+                          bundleIdentifier:found[@"bundle_identifier"]
+                                   content:content
+                                 imageName:found[@"image_name"]
+                                imageWidth:[found[@"image_width"] unsignedIntegerValue]
+                               imageHeight:[found[@"image_height"] unsignedIntegerValue]
+                                  hasLink:[found[@"has_link"] boolValue]
+                                capturedAt:[found[@"created_at"] doubleValue]];
     } else {
         // 取消收藏 = 仅从 favorites 删除，历史记录保留（复制语义下历史本就在）。
-        [self executeStatement:"DELETE FROM history_items WHERE history_key = ? AND content = ?"
+        return [self executeStatement:"DELETE FROM history_items WHERE history_key = ? AND content = ?"
                      withBindings:@[ kDXClipboardFavoritesKey, content ]];
     }
 }
 
-- (void)deleteItemWithID:(NSInteger)itemID {
-    [self prepareDatabase];
+- (BOOL)deleteItemWithID:(NSInteger)itemID {
+    if (![self prepareDatabase]) return NO;
     sqlite3_stmt *statement = NULL;
-    if (sqlite3_prepare_v2(_database, "SELECT image_name FROM history_items WHERE id = ?", -1, &statement, NULL) != SQLITE_OK) return;
+    if (sqlite3_prepare_v2(_database, "SELECT image_name FROM history_items WHERE id = ?", -1, &statement, NULL) != SQLITE_OK) return NO;
     sqlite3_bind_int64(statement, 1, (sqlite3_int64)itemID);
     NSString *imageName = nil;
     if (sqlite3_step(statement) == SQLITE_ROW) {
@@ -386,18 +442,19 @@ static NSString *const kDXClipboardFavoritesKey = @"favorites";
     }
     sqlite3_finalize(statement);
 
-    [self executeStatement:"DELETE FROM history_items WHERE id = ?" withBindings:@[ @(itemID) ]];
+    BOOL deleted = [self executeStatement:"DELETE FROM history_items WHERE id = ?" withBindings:@[ @(itemID) ]];
     if (imageName.length) [self removeImageNamed:imageName];
+    return deleted;
 }
 
-- (void)clearHistoryKey:(NSString *)historyKey {
+- (BOOL)clearHistoryKey:(NSString *)historyKey {
     if (!historyKey.length) historyKey = kDXClipboardHistoryKey;
-    [self prepareDatabase];
+    if (![self prepareDatabase]) return NO;
 
     sqlite3_stmt *statement = NULL;
     if (sqlite3_prepare_v2(_database,
         "SELECT image_name FROM history_items WHERE history_key = ? AND image_name <> ''",
-        -1, &statement, NULL) != SQLITE_OK) return;
+        -1, &statement, NULL) != SQLITE_OK) return NO;
     sqlite3_bind_text(statement, 1, historyKey.UTF8String, -1, SQLITE_TRANSIENT);
     NSMutableArray<NSString *> *images = [NSMutableArray array];
     while (sqlite3_step(statement) == SQLITE_ROW) {
@@ -406,10 +463,11 @@ static NSString *const kDXClipboardFavoritesKey = @"favorites";
     }
     sqlite3_finalize(statement);
 
-    [self executeStatement:"DELETE FROM history_items WHERE history_key = ?" withBindings:@[ historyKey ]];
+    BOOL cleared = [self executeStatement:"DELETE FROM history_items WHERE history_key = ?" withBindings:@[ historyKey ]];
     for (NSString *imageName in images) {
         if (imageName.length) [self removeImageNamed:imageName];
     }
+    return cleared;
 }
 
 - (NSUInteger)countForHistoryKey:(NSString *)historyKey {

@@ -303,7 +303,10 @@ static void DXClipboardChangedCallback(CFNotificationCenterRef center, void *obs
 #pragma mark - Snapshot (SpringBoard -> apps)
 
 - (void)publishSnapshot {
-    if (![self.store prepareDatabase]) return;
+    if (![self.store prepareDatabase]) {
+        NSLog(@"[MUBX][Clipboard][diag] publishSnapshot skipped: prepareDatabase failed");
+        return;
+    }
 
     NSUInteger limit = [self preferenceIntForKey:kClipboardMaxCountKey fallback:kClipboardMaxCountDefault];
     if (limit == 0) limit = kClipboardMaxCountDefault;
@@ -318,10 +321,15 @@ static void DXClipboardChangedCallback(CFNotificationCenterRef center, void *obs
         @"favorites": favorites,
         @"mirrorPath": kClipboardImagesMirrorPath,
     };
-    DXSetQuickActionSharedValue(snapshot, kClipboardSnapshotKey);
+    BOOL domainOK = DXSetQuickActionSharedValue(snapshot, kClipboardSnapshotKey);
     // 共享快照文件：位于 jbroot 下 app 沙盒可读目录，普通 App 面板经此读取
     // （沙盒进程读不到 cfprefsd 隔离域，只能经文件交换，机制同 shared.plist）。
     DXWriteSharedPlistFile(snapshot, MUBXClipboardSnapshotPath);
+    NSDictionary *written = DXReadSharedPlistFile(MUBXClipboardSnapshotPath);
+    BOOL fileOK = [written[@"updated"] isEqual:snapshot[@"updated"]];
+    NSLog(@"[MUBX][Clipboard][diag] publishSnapshot domain=%d file=%d (%lu history, %lu favorites) -> %@",
+          domainOK, fileOK, (unsigned long)history.count, (unsigned long)favorites.count,
+          MUBXClipboardSnapshotPath);
 }
 
 #pragma mark - Preferences helpers
