@@ -168,7 +168,34 @@
 #define MUBXClipboardSnapshotPath DX_ROOT_PATH_NS(@"/var/mobile/Library/com.lindo.mubx/clipboard-snapshot.plist")
 // 诊断日志文件：与剪贴板存储同区（App 沙盒可读写），Filza 可直接打开查看，
 // 用于收集用户设备上的 [MUBX][Clipboard] 诊断日志。
+// 注意：ROOTHIDE/Dopamine 下沙盒 App 对 jbroot 全域只读（MAC deny write），
+// 本文件只能由 SpringBoard（未沙盒）写入；App 侧诊断行随命令 dict 带给 SB，
+// 由 SB 统一落地（见 kClipboardCommandIdentifier）。
 #define kClipboardLogPath DX_ROOT_PATH_NS(@"/var/mobile/Library/com.lindo.mubx/clipboard.log")
+
+// App -> SpringBoard 剪贴板操作命令通道（1.0.6 架构）。
+// 背景：Dopamine/RootHide 沙盒 App（uid=501 但 MAC sandbox）对 jbroot 下任何
+// 路径只读，App 面板删除/收藏/清空不能直接写共享 SQLite/日志。1.0.3 曾用
+// 共享命令文件（也在 jbroot）失败；1.0.5 把存储迁入 jbroot 后 App 仍写不进。
+// 正确媒介：沙盒 App 能写自己容器内任意位置（容器属于 App 自己），未沙盒的
+// SpringBoard 能读任意 App 容器。链路：
+//   App 面板操作 -> 命令 dict 写入自己容器 Documents/命令文件 -> post Darwin
+//   SpringBoard 监听 -> LSApplicationProxy 取前台 App 容器路径 -> 读命令文件
+//   -> 执行 SQLite 删除/收藏/清空 -> 删除命令文件 -> publishSnapshot + 广播
+//   -> 面板 reloadSnapshot 同步。App 侧诊断行经命令 dict 的 log 字段带给 SB，
+//   由 SB 统一写入 clipboard.log（App 沙盒写不进 jbroot 日志文件）。
+#define kClipboardCommandIdentifier @"com.lindo.mubx/clipboard-command"
+// 命令文件名（App 容器 Documents 下，两侧按同一路径拼接）。
+#define kClipboardCommandFilename @"mubx-clipboard-command.plist"
+// 命令 dict 字段。
+#define kClipboardCommandActionKey @"action"          // @"delete"|@"setFavorite"|@"clear"
+#define kClipboardCommandItemIDKey @"itemID"          // delete: NSNumber
+#define kClipboardCommandFavoriteKey @"favorite"      // setFavorite: BOOL
+#define kClipboardCommandHistoryKeyKey @"historyKey"  // setFavorite/clear: @"history"|@"favorites"
+#define kClipboardCommandContentKey @"content"        // setFavorite: 定位内容
+#define kClipboardCommandSeqKey @"seq"                // App 侧递增序号，SB 去重
+#define kClipboardCommandSourceBundleKey @"sourceBundleID" // 命令发出 App，SB 定位容器
+#define kClipboardCommandLogKey @"log"                // App 侧诊断行（SB 统一写日志文件）
 
 // 把剪贴板诊断日志同时写入 kClipboardLogPath 文件（NSLog 照常输出）。
 // 多进程追加用 O_APPEND 原子写，单个 App 内并发安全。文件超 2MB 时

@@ -4,6 +4,7 @@
 #import <UIKit/UIKit.h>
 #import <notify.h>
 #import <ImageIO/ImageIO.h>
+#import <objc/message.h>
 
 // Kayoko 同款私有接口：_accessibilityFrontMostApplication 用于取当前前台 App
 // 的 SBApplication（仅 SpringBoard 进程有效，字符串消息发送避免硬依赖）。
@@ -23,6 +24,7 @@ static NSString *const kDXContinuityBundleIdentifier = @"com.apple.Pasteboard";
 @property(nonatomic, strong) NSFileManager *fileManager;
 @property(nonatomic, assign) BOOL started;
 @property(nonatomic, strong) dispatch_queue_t pasteboardQueue; // 粘贴板读取串行队列（Kayoko 同款，避免主线程 I/O）
+@property(nonatomic, strong) NSMutableDictionary<NSString *, NSNumber *> *lastConsumedSeqByBundle; // 命令 seq 去重（按来源 App）
 @end
 
 @implementation DXClipboardService
@@ -40,6 +42,7 @@ static NSString *const kDXContinuityBundleIdentifier = @"com.apple.Pasteboard";
     if ((self = [super init])) {
         _store = [DXClipboardStore sharedStore];
         _fileManager = [NSFileManager defaultManager];
+        _lastConsumedSeqByBundle = [NSMutableDictionary dictionary];
     }
     return self;
 }
@@ -72,6 +75,16 @@ static NSString *const kDXContinuityBundleIdentifier = @"com.apple.Pasteboard";
                                     (__bridge const void *)self,
                                     &DXClipboardChangedCallback,
                                     (CFStringRef)kClipboardChangedIdentifier,
+                                    NULL,
+                                    CFNotificationSuspensionBehaviorDeliverImmediately);
+
+    // 1.0.6 面板操作命令通道：App 面板（Dopamine/RootHide 沙盒对 jbroot 只读）
+    // 把删除/收藏/清空命令写入自己容器并广播，SB 收到后消费执行（见
+    // consumeClipboardCommands，延迟等待 App 容器文件落盘）。
+    CFNotificationCenterAddObserver(CFNotificationCenterGetDarwinNotifyCenter(),
+                                    (__bridge const void *)self,
+                                    &DXClipboardCommandCallback,
+                                    (CFStringRef)kClipboardCommandIdentifier,
                                     NULL,
                                     CFNotificationSuspensionBehaviorDeliverImmediately);
 
@@ -118,6 +131,136 @@ static void DXClipboardChangedCallback(CFNotificationCenterRef center, void *obs
     dispatch_async(dispatch_get_main_queue(), ^{
         [service publishSnapshot];
     });
+}
+
+// 面板命令通知：延迟等待 App 把命令文件原子写盘完成后消费。
+static void DXClipboardCommandCallback(CFNotificationCenterRef center, void *observer,
+                                       CFStringRef name, const void *object,
+                                       CFDictionaryRef userInfo) {
+    (void)center; (void)name; (void)object; (void)userInfo;
+    DXClipboardService *service = (__bridge DXClipboardService *)observer;
+    dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(0.15 * NSEC_PER_SEC)),
+                   dispatch_get_main_queue(), ^{
+        [service consumeClipboardCommands];
+    });
+}
+
+#pragma mark - App command channel (1.0.6)
+
+// 取 App 数据容器路径（/var/mobile/Containers/Data/Application/<UUID>），
+// 经 LSApplicationProxy 动态派发（文档中已有该类方法的动态调用先例），
+// 避免静态链接 MobileCoreServices。dataContainerURL 缺失时回落 containerURL。
+- (NSString *)dataContainerPathForBundleID:(NSString *)bundleID {
+    if (bundleID.length == 0) return nil;
+    Class proxyClass = NSClassFromString(@"LSApplicationProxy");
+    if (!proxyClass) return nil;
+    id (*lookup)(id, SEL, id) = (id (*)(id, SEL, id))objc_msgSend;
+    id proxy = lookup(proxyClass, NSSelectorFromString(@"applicationProxyForIdentifier:"), bundleID);
+    if (!proxy) return nil;
+    if ([proxy respondsToSelector:@selector(dataContainerURL)]) {
+        id url = ((id (*)(id, SEL))objc_msgSend)(proxy, @selector(dataContainerURL));
+        if ([url isKindOfClass:[NSURL class]] && [url path].length > 0) return [url path];
+    }
+    if ([proxy respondsToSelector:@selector(containerURL)]) {
+        id url = ((id (*)(id, SEL))objc_msgSend)(proxy, @selector(containerURL));
+        if ([url isKindOfClass:[NSURL class]] && [url path].length > 0) return [url path];
+    }
+    return nil;
+}
+
+- (void)consumeClipboardCommands {
+    NSString *bundleID = [self sourceApplicationBundleIdentifierForCurrentPasteboardChange];
+    if (bundleID.length == 0) bundleID = @"com.apple.springboard";
+    NSString *containerPath = [self dataContainerPathForBundleID:bundleID];
+    if (containerPath.length == 0) {
+        DXLogClipboard(@"[MUBX][Clipboard][cmd] consume: 容器路径获取失败 bundle=%@", bundleID);
+        return;
+    }
+
+    NSString *commandPath = [containerPath stringByAppendingPathComponent:
+                             [@"Documents" stringByAppendingPathComponent:kClipboardCommandFilename]];
+    // 先把命令文件改名（原子），再读改名后的文件：处理期间 App 的新命令
+    // 总是写到原路径，不会被下面的删除/清理误伤；rename 后 App 原子写
+    // （writeToFile:atomically: 是临时文件+rename）也不会与本次消费交错。
+    NSString *consumingPath = [commandPath stringByAppendingString:@".consuming"];
+    BOOL moved = NO;
+    for (int attempt = 0; attempt < 3; attempt++) {
+        if ([self.fileManager moveItemAtPath:commandPath toPath:consumingPath error:nil]) {
+            moved = YES;
+            break;
+        }
+        // App 原子写（临时文件+rename）瞬间原路径短暂缺失，稍候重试。
+        [NSThread sleepForTimeInterval:0.05];
+    }
+    if (!moved) {
+        DXLogClipboard(@"[MUBX][Clipboard][cmd] consume: 命令文件移动失败（可能无命令）");
+        return; // 无未处理命令
+    }
+    NSArray *queue = [NSArray arrayWithContentsOfFile:consumingPath];
+    if (![queue isKindOfClass:[NSArray class]] || queue.count == 0) {
+        [self.fileManager removeItemAtPath:consumingPath error:nil];
+        return;
+    }
+
+    NSUInteger lastSeq = [self.lastConsumedSeqByBundle[bundleID] unsignedIntegerValue];
+    DXLogClipboard(@"[MUBX][Clipboard][cmd] consume: bundle=%@ count=%lu lastSeq=%lu",
+                   bundleID, (unsigned long)queue.count, (unsigned long)lastSeq);
+    BOOL changed = NO;
+    for (NSDictionary *entry in queue) {
+        if (![entry isKindOfClass:[NSDictionary class]]) continue;
+        NSNumber *seq = entry[kClipboardCommandSeqKey];
+        if (![seq isKindOfClass:[NSNumber class]]) continue;
+        if ([seq unsignedIntegerValue] <= lastSeq) continue; // 已消费，防重放/重复广播
+        NSString *logLine = entry[kClipboardCommandLogKey];
+        if ([logLine isKindOfClass:[NSString class]] && logLine.length > 0) {
+            DXLogClipboard(@"[MUBX][Clipboard][cmd] app: %@", logLine); // App 侧诊断行由 SB 落盘
+        }
+        BOOL executed = [self executeClipboardCommand:entry];
+        if (executed) changed = YES;
+        lastSeq = [seq unsignedIntegerValue];
+        self.lastConsumedSeqByBundle[bundleID] = @(lastSeq);
+    }
+
+    // 清理已消费的命令文件（rename 后的 .consuming 副本）。
+    [self.fileManager removeItemAtPath:consumingPath error:nil];
+
+    if (changed) {
+        [self publishSnapshot];
+        notify_post([kClipboardChangedIdentifier UTF8String]);
+    }
+}
+
+- (BOOL)executeClipboardCommand:(NSDictionary *)entry {
+    NSString *action = entry[kClipboardCommandActionKey];
+    if ([action isEqualToString:@"delete"]) {
+        NSNumber *itemID = entry[kClipboardCommandItemIDKey];
+        if (![itemID isKindOfClass:[NSNumber class]]) return NO;
+        BOOL ok = [self.store deleteItemWithID:[itemID integerValue]];
+        DXLogClipboard(@"[MUBX][Clipboard][cmd] delete itemID=%lld -> %d",
+                       (long long)[itemID longLongValue], ok);
+        return ok;
+    }
+    if ([action isEqualToString:@"setFavorite"]) {
+        BOOL favorite = [entry[kClipboardCommandFavoriteKey] respondsToSelector:@selector(boolValue)]
+            && [entry[kClipboardCommandFavoriteKey] boolValue];
+        NSString *historyKey = entry[kClipboardCommandHistoryKeyKey];
+        NSString *content = entry[kClipboardCommandContentKey];
+        if (![historyKey isKindOfClass:[NSString class]]) historyKey = @"history";
+        if (![content isKindOfClass:[NSString class]]) content = @"";
+        BOOL ok = [self.store setFavorite:favorite historyKey:historyKey content:content];
+        DXLogClipboard(@"[MUBX][Clipboard][cmd] setFavorite=%d historyKey=%@ contentLen=%lu -> %d",
+                       favorite, historyKey, (unsigned long)content.length, ok);
+        return ok;
+    }
+    if ([action isEqualToString:@"clear"]) {
+        NSString *historyKey = entry[kClipboardCommandHistoryKeyKey];
+        if (![historyKey isKindOfClass:[NSString class]]) historyKey = @"history";
+        BOOL ok = [self.store clearHistoryKey:historyKey];
+        DXLogClipboard(@"[MUBX][Clipboard][cmd] clear %@ -> %d", historyKey, ok);
+        return ok;
+    }
+    DXLogClipboard(@"[MUBX][Clipboard][cmd] 未知命令 action=%@", action);
+    return NO;
 }
 
 #pragma mark - Pasteboard observation

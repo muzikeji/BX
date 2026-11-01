@@ -17,6 +17,57 @@ static __weak UIResponder *g_clipboardRestoreResponder;
 // becomeFirstResponder 因宿主窗口非 key 直接失败（点击条目不填入的根因）。
 static __weak UIWindow *g_clipboardHostKeyWindow;
 
+// 面板命令 seq：App 侧自有递增计数器（进程内递增即可，SB 按
+// (sourceBundleID, seq) 去重）。命令文件同时充当队列（array），
+// 连续快速操作不丢命令。
+static NSUInteger g_clipboardCommandSeq = 0;
+
+// 面板操作命令队列文件路径：宿主 App 自己容器的 Documents 下（沙盒放行
+// 写入，未沙盒 SpringBoard 可读），SB 经 LSApplicationProxy 定位后读取。
+static NSString *g_clipboardCommandFilePath(void) {
+    static NSString *path;
+    static dispatch_once_t onceToken;
+    dispatch_once(&onceToken, ^{
+        NSString *home = NSHomeDirectory();
+        path = [home stringByAppendingPathComponent:
+                [@"Documents" stringByAppendingPathComponent:kClipboardCommandFilename]];
+    });
+    return path;
+}
+
+// 入队一条面板操作命令：读现有队列 -> 追加 -> 原子写回 -> 广播通知。
+// 命令同时携带 App 侧诊断行（kClipboardCommandLogKey），SB 消费时统一
+// 写入 clipboard.log（沙盒 App 写不进 jbroot 日志文件）。
+static void DXClipboardEnqueueCommand(NSDictionary *command) {
+    if (![command isKindOfClass:[NSDictionary class]]) return;
+    NSMutableDictionary *entry = [command mutableCopy];
+    entry[kClipboardCommandSeqKey] = @(++g_clipboardCommandSeq);
+    NSString *bundleID = [NSBundle mainBundle].bundleIdentifier;
+    if (bundleID.length == 0) bundleID = @"com.apple.springboard";
+    entry[kClipboardCommandSourceBundleKey] = bundleID;
+
+    NSString *path = g_clipboardCommandFilePath();
+    NSArray *existing = [NSArray arrayWithContentsOfFile:path];
+    NSMutableArray *queue = [existing isKindOfClass:[NSArray class]] ? [existing mutableCopy]
+                                                                    : [NSMutableArray array];
+    [queue addObject:entry];
+    BOOL ok = [queue writeToFile:path atomically:YES];
+    NSLog(@"[MUBX][Clipboard][diag] enqueue %@ seq=%lu -> %d (%@)",
+          entry[kClipboardCommandActionKey], (unsigned long)[entry[kClipboardCommandSeqKey] unsignedIntegerValue],
+          ok, [bundleID isEqualToString:@"com.apple.springboard"] ? @"!!hostIsSB" : bundleID);
+    DXLogClipboard(@"[MUBX][Clipboard][diag] enqueue %@ seq=%lu -> %d",
+                   entry[kClipboardCommandActionKey], (unsigned long)[entry[kClipboardCommandSeqKey] unsignedIntegerValue], ok);
+    notify_post([kClipboardCommandIdentifier UTF8String]);
+}
+
+// 构造命令 dict 的公共字段（action 单独传）。
+static NSDictionary *DXClipboardCommandBase(NSString *action, NSString *logLine) {
+    return @{
+        kClipboardCommandActionKey: action ?: @"",
+        kClipboardCommandLogKey: logLine ?: @"",
+    };
+}
+
 // ---------------------------------------------------------------------------
 // 剪贴板面板（MUBX 内置，取代 Kayoko 剪贴板 UI）
 // 呈现模型（参考 Kayoko）：打开时先主动收起宿主键盘（记录输入 responder，
@@ -24,11 +75,14 @@ static __weak UIWindow *g_clipboardHostKeyWindow;
 // 依赖键盘 frame 探测；搜索聚焦时键盘重新弹出，面板自动上移避让。窗口与
 // 控制器进程内常驻（首次创建一次，之后 hidden 切换，绝不销毁重建），保证
 // 反复呼出始终有效（Kayoko installPanelInStatusBarWindow 同款生命周期）。
-// 数据：宿主 App 进程直接读写 jbroot 共享 SQLite（DXClipboardStore），
-// 删除/收藏/清空本地完成，不经 SpringBoard（Kayoko 同款架构）；快照
-// 文件保留为兜底。
-// 同步：每次本地改动广播 kClipboardChangedIdentifier，其他进程面板与
-// SpringBoard 收到后各自刷新/重发快照。
+// 数据（1.0.6 架构）：Dopamine/RootHide 沙盒 App 对 jbroot 全域只读
+// （MAC deny write，实测连日志文件都写不进），面板读数据走快照兜底
+// （DXReadSharedPlistFile，jbroot 只读放行）；删除/收藏/清空不能直写共享
+// SQLite，改为写入自己的容器 Documents/mubx-clipboard-command.plist 并广播
+// kClipboardCommandIdentifier，由 SpringBoard 消费执行（command 通道，
+// 面板操作在宿主 App 进程内、队列文件落在 App 自己容器，沙盒放行）。
+// 同步：面板发命令后本地乐观刷新，SB 执行完毕 publishSnapshot 并广播
+// kClipboardChangedIdentifier，本面板与其他进程面板 reloadSnapshot 收敛。
 // ---------------------------------------------------------------------------
 
 @interface DXClipboardHostWindow : UIWindow
@@ -446,11 +500,17 @@ static NSString *DXSourceDisplayNameForBundleIdentifier(NSString *bundleIdentifi
     [alert addAction:[UIAlertAction actionWithTitle:[self localized:@"清空"] ?: @"清空"
                                              style:UIAlertActionStyleDestructive handler:^(UIAlertAction *action) {
         (void)action;
-        BOOL cleared = [[DXClipboardStore sharedStore] clearHistoryKey:self.isFavoritesTab ? @"favorites" : @"history"];
-        NSLog(@"[MUBX][Clipboard][diag] clear %@ -> %d", self.isFavoritesTab ? @"favorites" : @"history", cleared);
-        DXLogClipboard(@"[MUBX][Clipboard][diag] clear %@ -> %d", self.isFavoritesTab ? @"favorites" : @"history", cleared);
-        [self reloadSnapshot];
-        notify_post([kClipboardChangedIdentifier UTF8String]);
+        // 1.0.6：沙盒 App 写不进 jbroot，清空改为命令通道（SB 消费执行）。
+        NSString *historyKey = self.isFavoritesTab ? @"favorites" : @"history";
+        NSString *logLine = [NSString stringWithFormat:@"panel clear %@ requested", historyKey];
+        NSDictionary *base = DXClipboardCommandBase(@"clear", logLine);
+        NSMutableDictionary *command = [base mutableCopy];
+        command[kClipboardCommandHistoryKeyKey] = historyKey;
+        DXClipboardEnqueueCommand(command);
+        // 本地乐观清空（SB 执行后广播收敛）。
+        if (self.isFavoritesTab) self.favoriteItems = @[];
+        else self.historyItems = @[];
+        [self refreshDisplayedItems];
     }]];
     [self presentViewController:alert animated:YES completion:nil];
 }
@@ -494,11 +554,22 @@ static NSString *DXSourceDisplayNameForBundleIdentifier(NSString *bundleIdentifi
         (void)action;
         NSNumber *itemID = item[@"id"];
         if ([itemID isKindOfClass:[NSNumber class]]) {
-            BOOL deleted = [[DXClipboardStore sharedStore] deleteItemWithID:[itemID integerValue]];
-            NSLog(@"[MUBX][Clipboard][diag] delete itemID=%lld -> %d", (long long)[itemID longLongValue], deleted);
-            DXLogClipboard(@"[MUBX][Clipboard][diag] delete itemID=%lld -> %d", (long long)[itemID longLongValue], deleted);
-            [self reloadSnapshot];
-            notify_post([kClipboardChangedIdentifier UTF8String]);
+            // 1.0.6：沙盒 App 写不进 jbroot，删除改为命令通道（SB 消费执行）。
+            NSString *logLine = [NSString stringWithFormat:@"panel delete itemID=%lld requested",
+                                  (long long)[itemID longLongValue]];
+            NSDictionary *base = DXClipboardCommandBase(@"delete", logLine);
+            NSMutableDictionary *command = [base mutableCopy];
+            command[kClipboardCommandItemIDKey] = itemID;
+            DXClipboardEnqueueCommand(command);
+            // 本地乐观移除（SB 执行后广播收敛）。
+            NSMutableArray *items = [self.displayedItems mutableCopy];
+            [items removeObject:item];
+            self.displayedItems = items;
+            NSMutableArray *source = [self.isFavoritesTab ? self.favoriteItems : self.historyItems mutableCopy];
+            [source removeObject:item];
+            if (self.isFavoritesTab) self.favoriteItems = source;
+            else self.historyItems = source;
+            [self refreshDisplayedItems];
         }
     }]];
     [menu addAction:[UIAlertAction actionWithTitle:[self localized:@"取消"] ?: @"取消"
@@ -507,23 +578,41 @@ static NSString *DXSourceDisplayNameForBundleIdentifier(NSString *bundleIdentifi
 }
 
 - (void)sendFavoriteCommand:(BOOL)favorite historyKey:(NSString *)historyKey content:(NSString *)content {
-    // Kayoko 同款：面板在宿主 App 进程内直接改共享存储，无需跨进程命令。
-    BOOL set = [[DXClipboardStore sharedStore] setFavorite:favorite
-                                                historyKey:historyKey ?: @"history"
-                                                   content:content ?: @""];
-    NSLog(@"[MUBX][Clipboard][diag] setFavorite=%d historyKey=%@ contentLen=%lu -> %d",
-          favorite, historyKey ?: @"history", (unsigned long)(content ?: @"").length, set);
-    DXLogClipboard(@"[MUBX][Clipboard][diag] setFavorite=%d historyKey=%@ contentLen=%lu -> %d",
-                   favorite, historyKey ?: @"history", (unsigned long)(content ?: @"").length, set);
-    [self reloadSnapshot];
-    notify_post([kClipboardChangedIdentifier UTF8String]);
+    // 1.0.6：沙盒 App 写不进 jbroot，收藏/取消收藏改为命令通道（SB 消费执行）。
+    NSString *logLine = [NSString stringWithFormat:@"panel setFavorite=%d historyKey=%@ contentLen=%lu requested",
+                          favorite, historyKey ?: @"history", (unsigned long)(content ?: @"").length];
+    NSMutableDictionary *command = [DXClipboardCommandBase(@"setFavorite", logLine) mutableCopy];
+    command[kClipboardCommandFavoriteKey] = @(favorite);
+    command[kClipboardCommandHistoryKeyKey] = historyKey ?: @"history";
+    command[kClipboardCommandContentKey] = content ?: @"";
+    DXClipboardEnqueueCommand(command);
+    // 本地乐观刷新（SB 执行后广播收敛）。store 语义：收藏 = 复制到
+    // favorites（历史保留），取消收藏 = 仅从 favorites 删除。
+    NSMutableArray *history = [self.historyItems mutableCopy];
+    NSMutableArray *favorites = [self.favoriteItems mutableCopy];
+    NSDictionary *match = nil;
+    for (NSDictionary *item in self.isFavoritesTab ? favorites : history) {
+        if ([item[@"content"] isKindOfClass:[NSString class]] &&
+            [item[@"content"] isEqualToString:content ?: @""]) {
+            match = item;
+            break;
+        }
+    }
+    if (favorite) {
+        // 只在收藏列表头部插入副本（favorites 已存在同内容则不重复插入）。
+        BOOL exists = NO;
+        for (NSDictionary *item in favorites) {
+            if ([item[@"content"] isKindOfClass:[NSString class]] &&
+                [item[@"content"] isEqualToString:content ?: @""]) { exists = YES; break; }
+        }
+        if (!exists && match) [favorites insertObject:match atIndex:0];
+    } else if (match) {
+        [favorites removeObject:match];
+    }
+    self.historyItems = history;
+    self.favoriteItems = favorites;
+    [self refreshDisplayedItems];
 }
-
-// 面板操作（Kayoko 同款架构）：面板在宿主 App 进程内直接读写 jbroot
-// 共享 SQLite（kClipboardDatabasePath 位于 /var/jb/var/mobile/Library/...，
-// App 沙盒可读写区），删除/收藏/清空不走跨进程命令。操作完成后本地
-// 刷新并广播 kClipboardChangedIdentifier：SpringBoard 收到后重新发布
-// 快照信息，其他 App 面板收到后调用 reloadSnapshot 同步。
 
 - (void)copyItem:(NSDictionary *)item {
     NSString *content = item[@"content"] ?: @"";

@@ -1,7 +1,7 @@
 Package: com.lindo.mubx
 Name: MUBX
 Depends: mobilesubstrate, preferenceloader, firmware(>=15.0)
-Version: 1.0.5
+Version: 1.0.6
 Architecture: iphoneos-arm64
 Description: 参考 TypeX 和 Kayoko 实现两个插件的功能，超级键盘增强
 Maintainer: lindo
