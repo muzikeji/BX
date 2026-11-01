@@ -100,6 +100,8 @@ static NSString *const kDXClipboardFavoritesKey = @"favorites";
                 ok = NO;
                 NSLog(@"[MUBX][Clipboard] legacy database migration failed for %@ (%@): %@",
                       suffix, legacyPath, error);
+                DXLogClipboard(@"[MUBX][Clipboard] legacy database migration failed for %@ (%@): %@",
+                               suffix, legacyPath, error);
                 break;
             }
             [fileManager setAttributes:@{ NSFilePosixPermissions: @0666 }
@@ -109,6 +111,8 @@ static NSString *const kDXClipboardFavoritesKey = @"favorites";
             copiedAnything = YES;
             NSLog(@"[MUBX][Clipboard] migrated legacy database from %@ to %@",
                   legacyPath, self.databasePath);
+            DXLogClipboard(@"[MUBX][Clipboard] migrated legacy database from %@ to %@",
+                           legacyPath, self.databasePath);
             break; // 成功迁移后停止，防止双份重复迁移
         }
     }
@@ -134,6 +138,7 @@ static NSString *const kDXClipboardFavoritesKey = @"favorites";
 
     if (copiedAnything) {
         NSLog(@"[MUBX][Clipboard] migrated legacy clipboard store to %@", self.databasePath);
+        DXLogClipboard(@"[MUBX][Clipboard] migrated legacy clipboard store to %@", self.databasePath);
     }
 }
 
@@ -155,6 +160,10 @@ static NSString *const kDXClipboardFavoritesKey = @"favorites";
           processName, sandboxed, self.databasePath,
           directoryExists, directoryWritable, dbExists, dbWritable,
           (legacyJBWritable ? @"writable" : @"READONLY"));
+    DXLogClipboard(@"[MUBX][Clipboard][diag] process=%@ sandboxed=%d dbPath=%@ dirExists=%d dirWritable=%d dbExists=%d dbWritable=%d legacyJB(ro?)=%@",
+                   processName, sandboxed, self.databasePath,
+                   directoryExists, directoryWritable, dbExists, dbWritable,
+                   (legacyJBWritable ? @"writable" : @"READONLY"));
 }
 
 - (BOOL)prepareDatabase {
@@ -172,6 +181,8 @@ static NSString *const kDXClipboardFavoritesKey = @"favorites";
 
     if (sqlite3_open(self.databasePath.UTF8String, &_database) != SQLITE_OK) {
         NSLog(@"[MUBX][Clipboard] sqlite3_open failed: %s", sqlite3_errmsg(_database));
+        DXLogClipboard(@"[MUBX][Clipboard] sqlite3_open failed: %@",
+                       @(sqlite3_errmsg(_database) ?: "?"));
         sqlite3_close(_database);
         _database = NULL;
         return NO;
@@ -182,6 +193,8 @@ static NSString *const kDXClipboardFavoritesKey = @"favorites";
     int walResult = sqlite3_exec(_database, "PRAGMA journal_mode=WAL", NULL, NULL, &walError);
     if (walResult != SQLITE_OK) {
         NSLog(@"[MUBX][Clipboard][diag] journal_mode=WAL failed: %s", walError ? walError : "?");
+        DXLogClipboard(@"[MUBX][Clipboard][diag] journal_mode=WAL failed: %@",
+                       @(walError ? walError : "?"));
         if (walError) sqlite3_free(walError);
     }
     sqlite3_busy_timeout(_database, 3000);
@@ -214,6 +227,7 @@ static NSString *const kDXClipboardFavoritesKey = @"favorites";
     char *error = NULL;
     if (sqlite3_exec(_database, schema, NULL, NULL, &error) != SQLITE_OK) {
         NSLog(@"[MUBX][Clipboard] schema prepare failed: %s", error ? error : "?");
+        DXLogClipboard(@"[MUBX][Clipboard] schema prepare failed: %@", @(error ? error : "?"));
         if (error) sqlite3_free(error);
         return NO;
     }

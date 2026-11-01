@@ -365,6 +365,8 @@ static NSString *DXSourceDisplayNameForBundleIdentifier(NSString *bundleIdentifi
                                                    limit:kClipboardMaxCountDefault];
         NSLog(@"[MUBX][Clipboard][diag] reloadSnapshot via SQLite (%lu history, %lu favorites)",
               (unsigned long)self.historyItems.count, (unsigned long)self.favoriteItems.count);
+        DXLogClipboard(@"[MUBX][Clipboard][diag] reloadSnapshot via SQLite (%lu history, %lu favorites)",
+                       (unsigned long)self.historyItems.count, (unsigned long)self.favoriteItems.count);
     } else {
         NSDictionary *snapshot = DXReadSharedPlistFile(MUBXClipboardSnapshotPath);
         if (![snapshot isKindOfClass:[NSDictionary class]]) {
@@ -376,6 +378,8 @@ static NSString *DXSourceDisplayNameForBundleIdentifier(NSString *bundleIdentifi
         self.favoriteItems = [favorites isKindOfClass:[NSArray class]] ? favorites : @[];
         NSLog(@"[MUBX][Clipboard][diag] reloadSnapshot via snapshot FALLBACK (%lu history, %lu favorites)",
               (unsigned long)self.historyItems.count, (unsigned long)self.favoriteItems.count);
+        DXLogClipboard(@"[MUBX][Clipboard][diag] reloadSnapshot via snapshot FALLBACK (%lu history, %lu favorites)",
+                       (unsigned long)self.historyItems.count, (unsigned long)self.favoriteItems.count);
     }
     [self refreshDisplayedItems];
 }
@@ -444,6 +448,7 @@ static NSString *DXSourceDisplayNameForBundleIdentifier(NSString *bundleIdentifi
         (void)action;
         BOOL cleared = [[DXClipboardStore sharedStore] clearHistoryKey:self.isFavoritesTab ? @"favorites" : @"history"];
         NSLog(@"[MUBX][Clipboard][diag] clear %@ -> %d", self.isFavoritesTab ? @"favorites" : @"history", cleared);
+        DXLogClipboard(@"[MUBX][Clipboard][diag] clear %@ -> %d", self.isFavoritesTab ? @"favorites" : @"history", cleared);
         [self reloadSnapshot];
         notify_post([kClipboardChangedIdentifier UTF8String]);
     }]];
@@ -491,6 +496,7 @@ static NSString *DXSourceDisplayNameForBundleIdentifier(NSString *bundleIdentifi
         if ([itemID isKindOfClass:[NSNumber class]]) {
             BOOL deleted = [[DXClipboardStore sharedStore] deleteItemWithID:[itemID integerValue]];
             NSLog(@"[MUBX][Clipboard][diag] delete itemID=%lld -> %d", (long long)[itemID longLongValue], deleted);
+            DXLogClipboard(@"[MUBX][Clipboard][diag] delete itemID=%lld -> %d", (long long)[itemID longLongValue], deleted);
             [self reloadSnapshot];
             notify_post([kClipboardChangedIdentifier UTF8String]);
         }
@@ -507,6 +513,8 @@ static NSString *DXSourceDisplayNameForBundleIdentifier(NSString *bundleIdentifi
                                                    content:content ?: @""];
     NSLog(@"[MUBX][Clipboard][diag] setFavorite=%d historyKey=%@ contentLen=%lu -> %d",
           favorite, historyKey ?: @"history", (unsigned long)(content ?: @"").length, set);
+    DXLogClipboard(@"[MUBX][Clipboard][diag] setFavorite=%d historyKey=%@ contentLen=%lu -> %d",
+                   favorite, historyKey ?: @"history", (unsigned long)(content ?: @"").length, set);
     [self reloadSnapshot];
     notify_post([kClipboardChangedIdentifier UTF8String]);
 }
@@ -750,15 +758,19 @@ static void DXClipboardRegisterObserversOnce(void) {
     UIWindowScene *scene = DXClipboardForegroundScene();
     if (!scene) {
         NSLog(@"[MUBX] DXClipboardPanel present: 无前台 scene，放弃弹出");
+        DXLogClipboard(@"[MUBX] DXClipboardPanel present: 无前台 scene，放弃弹出");
         return; // 无前台 scene：直接放弃弹出，避免空白窗口
     }
 
     if (!g_clipboardPanelWindow || g_clipboardPanelWindow.windowScene != scene) {
         if (!g_clipboardPanelWindow) {
             NSLog(@"[MUBX] DXClipboardPanel present: 首次创建窗口 scene=%@", scene);
+            DXLogClipboard(@"[MUBX] DXClipboardPanel present: 首次创建窗口 scene=%@", scene);
         } else {
             NSLog(@"[MUBX] DXClipboardPanel present: 窗口场景失效重建 %@ -> %@",
                   g_clipboardPanelWindow.windowScene, scene);
+            DXLogClipboard(@"[MUBX] DXClipboardPanel present: 窗口场景失效重建 %@ -> %@",
+                           g_clipboardPanelWindow.windowScene, scene);
         }
 
         DXClipboardHostWindow *window = [[DXClipboardHostWindow alloc] initWithWindowScene:scene];
@@ -786,6 +798,8 @@ static void DXClipboardRegisterObserversOnce(void) {
     g_clipboardPanelWindow.hidden = NO;
     NSLog(@"[MUBX] DXClipboardPanel present: 面板已置为可见 frame=%@ level=%.1f",
           NSStringFromCGRect(g_clipboardPanelWindow.frame), g_clipboardPanelWindow.windowLevel);
+    DXLogClipboard(@"[MUBX] DXClipboardPanel present: 面板已置为可见 frame=%@ level=%.1f",
+                   NSStringFromCGRect(g_clipboardPanelWindow.frame), g_clipboardPanelWindow.windowLevel);
     [controller viewWillLayoutSubviews];
 }
 

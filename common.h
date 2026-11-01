@@ -8,6 +8,9 @@
 #define DX_ROOT_PATH_NS(path) ROOT_PATH_NS(path)
 #endif
 #import <spawn.h>
+#import <fcntl.h>
+#import <unistd.h>
+#import <stdarg.h>
 
 @class CPDistributedMessagingCenter;
 
@@ -163,6 +166,43 @@
 // MUBXSharedPrefsPath 的读写策略）。面板优先直连 kClipboardDatabasePath，
 // 快照留作兜底/跨进程刷新信号载体。
 #define MUBXClipboardSnapshotPath DX_ROOT_PATH_NS(@"/var/mobile/Library/com.lindo.mubx/clipboard-snapshot.plist")
+// 诊断日志文件：与剪贴板存储同区（App 沙盒可读写），Filza 可直接打开查看，
+// 用于收集用户设备上的 [MUBX][Clipboard] 诊断日志。
+#define kClipboardLogPath DX_ROOT_PATH_NS(@"/var/mobile/Library/com.lindo.mubx/clipboard.log")
+
+// 把剪贴板诊断日志同时写入 kClipboardLogPath 文件（NSLog 照常输出）。
+// 多进程追加用 O_APPEND 原子写，单个 App 内并发安全。文件超 2MB 时
+// 截断重写，避免无限膨胀。
+static inline void DXLogClipboard(NSString *format, ...) {
+    va_list args;
+    va_start(args, format);
+    NSString *message = [[NSString alloc] initWithFormat:format arguments:args];
+    va_end(args);
+    NSLog(@"%@", message);
+
+    NSFileManager *fm = [NSFileManager defaultManager];
+    NSString *dir = [kClipboardLogPath stringByDeletingLastPathComponent];
+    if (![fm fileExistsAtPath:dir]) {
+        [fm createDirectoryAtPath:dir withIntermediateDirectories:YES
+                        attributes:@{NSFilePosixPermissions: @0777} error:nil];
+    }
+
+    NSDictionary *attrs = [fm attributesOfItemAtPath:kClipboardLogPath error:nil];
+    if ([attrs[NSFileSize] unsignedLongLongValue] > 2 * 1024 * 1024) {
+        unlink(kClipboardLogPath.UTF8String); // 超限截断
+    }
+
+    NSDateFormatter *formatter = [[NSDateFormatter alloc] init];
+    formatter.dateFormat = @"yyyy-MM-dd HH:mm:ss.SSS";
+    NSString *line = [NSString stringWithFormat:@"%@ %@\n",
+                      [formatter stringFromDate:[NSDate date]], message];
+
+    int fd = open(kClipboardLogPath.UTF8String, O_WRONLY | O_CREAT | O_APPEND, 0644);
+    if (fd == -1) return;
+    size_t len = [line lengthOfBytesUsingEncoding:NSUTF8StringEncoding];
+    (void)write(fd, line.UTF8String, len);
+    close(fd);
+}
 
 static inline void DXWriteSharedPlistFile(NSDictionary *dictionary, NSString *path) {
     if (![dictionary isKindOfClass:[NSDictionary class]]) return;

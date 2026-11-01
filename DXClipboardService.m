@@ -76,6 +76,7 @@ static NSString *const kDXContinuityBundleIdentifier = @"com.apple.Pasteboard";
                                     CFNotificationSuspensionBehaviorDeliverImmediately);
 
     NSLog(@"[MUBX][Clipboard] 剪贴板服务已启动");
+    DXLogClipboard(@"[MUBX][Clipboard] 剪贴板服务已启动");
 }
 
 static void DXClipboardPasteboardChangedCallback(CFNotificationCenterRef center, void *observer,
@@ -305,6 +306,7 @@ static void DXClipboardChangedCallback(CFNotificationCenterRef center, void *obs
 - (void)publishSnapshot {
     if (![self.store prepareDatabase]) {
         NSLog(@"[MUBX][Clipboard][diag] publishSnapshot skipped: prepareDatabase failed");
+        DXLogClipboard(@"[MUBX][Clipboard][diag] publishSnapshot skipped: prepareDatabase failed");
         return;
     }
 
@@ -330,6 +332,9 @@ static void DXClipboardChangedCallback(CFNotificationCenterRef center, void *obs
     NSLog(@"[MUBX][Clipboard][diag] publishSnapshot domain=%d file=%d (%lu history, %lu favorites) -> %@",
           domainOK, fileOK, (unsigned long)history.count, (unsigned long)favorites.count,
           MUBXClipboardSnapshotPath);
+    DXLogClipboard(@"[MUBX][Clipboard][diag] publishSnapshot domain=%d file=%d (%lu history, %lu favorites) -> %@",
+                   domainOK, fileOK, (unsigned long)history.count, (unsigned long)favorites.count,
+                   MUBXClipboardSnapshotPath);
 }
 
 #pragma mark - Preferences helpers
