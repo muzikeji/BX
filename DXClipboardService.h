@@ -9,8 +9,9 @@ NS_ASSUME_NONNULL_BEGIN
 //    读取 UIPasteboard，提取文本/图片写入 DXClipboardStore；
 // 2. 维护剪贴板快照（cfprefsd 域 kClipboardSnapshotKey + jbroot 共享文件
 //    MUBXClipboardSnapshotPath 双写）供 app 进程面板读取；
-// 3. 处理面板经 cfprefsd 域/Darwin 通知发来的命令（kClipboardCommandIdentifier）：
-//    收藏/取消收藏/删除/清空历史。
+// 3. 处理面板经三通道（命名 UIPasteboard / jbroot 共享命令文件 / cfprefsd 域）
+//    发来的命令（Darwin 通知 kClipboardCommandIdentifier 触发）：收藏/取消
+//    收藏/删除/清空历史。按 seq 去重保证幂等。
 @interface DXClipboardService : NSObject
 
 + (instancetype)sharedService;
@@ -20,6 +21,9 @@ NS_ASSUME_NONNULL_BEGIN
 - (void)publishSnapshot;
 /// 处理面板命令（在 SB 进程执行）。
 - (void)handleCommand:(NSDictionary *)command;
+/// 从三通道消费所有未处理面板命令（取走即清各通道，按 seq 去重升序），
+/// 无新命令返回空数组。
+- (NSArray<NSDictionary *> *)consumePendingCommands;
 
 @end
 

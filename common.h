@@ -148,16 +148,25 @@
 // MUBXSharedPrefsPath 同策略）。
 #define MUBXClipboardSnapshotPath DX_ROOT_PATH_NS(@"/Library/MUBX/clipboard-snapshot.plist")
 
-// 命令通道（面板沙盒进程 -> SpringBoard）：命名 UIPasteboard 为主 + cfprefsd
-// 域兜底。cfprefsd 隔离域只有未沙盒进程（Preferences、SpringBoard 自身）
-// 写入才能被 SB 读到；面板运行在键盘宿主 App（沙盒进程）内，写域会被隔离/
-// 重定向导致 SB 读不到（实测：Preferences 内可用、普通 App 内不可用）。
-// 命名 UIPasteboard 由粘贴板守护进程托管、系统级跨进程共享，任意沙盒 App
-// 可写、SpringBoard 可读；它不改变 generalPasteboard 的 changeCount，不会
-// 触发 SB 的粘贴采集（capture 以 general pasteboard 的 changeCount 判重）。
-// 每次发送先清空再写入，SB 读后即清，避免旧命令被迟到通知重复消费。
+// 命令通道（面板沙盒进程 -> SpringBoard）：三通道并行 + 序号去重，任一
+// 通道成功即生效，避免单一通道在特定越狱/系统版本下失效导致收藏/删除/
+// 清空整体不可用：
+//   1. 命名 UIPasteboard（主通道）：粘贴板守护进程系统级共享，任意沙盒
+//      App 可写、SB 可读；不改变 generalPasteboard changeCount，不触发
+//      粘贴采集。
+//   2. jbroot 共享命令文件（兜底A）：与快照文件同目录同权限（postinst
+//      chmod 0777 /Library/MUBX），App 原子写、SB 读后删除。822b923 时代
+//      该目录无 0777 且 SB 沙盒拒写导致文件残留被反复消费；现在目录已
+//      world-writable、快照写入成功，通道前提已恢复。文件删除失败时由
+//      序号去重兜住，残留文件不再致命。
+//   3. cfprefsd 隔离域（兜底B）：仅未沙盒进程（Preferences、SB 自身）写
+//      域 SB 可读，普通沙盒 App 写域被隔离/重定向，作为最后路径保留。
+// 序号去重：每条命令携带单调递增 seq，SB 记录已消费的最大 seq，重复
+// （残留文件/迟到通知/三方通道读到同一命令）一律跳过，保证幂等。
 #define MUBXClipboardCommandPasteboardName @"com.lindo.mubx.clipboardcmd"
 #define MUBXClipboardCommandPasteboardUTI @"com.lindo.mubx.clipboardcmd.data"
+#define MUBXClipboardCommandPath DX_ROOT_PATH_NS(@"/Library/MUBX/clipboard-command.plist")
+#define MUBXClipboardCommandSeqKey @"command-seq"
 
 static inline void DXWriteSharedPlistFile(NSDictionary *dictionary, NSString *path) {
     if (![dictionary isKindOfClass:[NSDictionary class]]) return;

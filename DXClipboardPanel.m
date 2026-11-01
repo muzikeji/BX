@@ -493,27 +493,37 @@ static NSString *DXSourceDisplayNameForBundleIdentifier(NSString *bundleIdentifi
     }];
 }
 
-// 命令通道：面板（键盘宿主 App 沙盒进程）与 SpringBoard 之间经
-// 命名 UIPasteboard（主通道）+ cfprefsd 隔离域（兜底）传递。
-// 纯域通道（04f215b）实测只有 Preferences（未沙盒进程）写域 SB 才能读到，
-// 普通沙盒 App 写 cfprefsd 域被隔离/重定向。命名 pasteboard 由粘贴板守护
-// 进程托管、系统级共享，沙盒 App 可写、SB 可读；不改变 general pasteboard
-// 的 changeCount，不会触发 SB 粘贴采集。每次先清空再写入 + SB 读后即清，
-// 避免旧命令被迟到通知重复消费。
+// 命令通道（面板沙盒进程 -> SpringBoard）：三通道并行 + 序号去重，任一
+// 通道成功即生效。命名 UIPasteboard 为主；jbroot 共享命令文件与 cfprefsd
+// 域为兜底（不同越狱/系统版本下单一通道可能失效，三写任一被 SB 读到即可）。
+// seq 单调递增，SB 消费时按最大 seq 去重——文件残留/迟到通知/多通道读到
+// 同一命令都只会消费一次，保证收藏/删除/清空幂等。
 - (void)sendCommand:(NSDictionary *)command {
     if (![command isKindOfClass:[NSDictionary class]]) return;
 
+    static int64_t lastSentSeq = 0;
+    int64_t now = (int64_t)(CFAbsoluteTimeGetCurrent() * 1000000.0);
+    if (now <= lastSentSeq) now = lastSentSeq + 1;
+    lastSentSeq = now;
+
+    NSMutableDictionary *payload = [command mutableCopy];
+    payload[MUBXClipboardCommandSeqKey] = @(now);
+
+    // 通道1：命名 UIPasteboard（由粘贴板守护进程托管、系统级共享）。
     UIPasteboard *commandPasteboard = [UIPasteboard pasteboardWithName:MUBXClipboardCommandPasteboardName create:YES];
     [commandPasteboard setItems:@[]];
-    NSData *data = [NSPropertyListSerialization dataWithPropertyList:command
+    NSData *data = [NSPropertyListSerialization dataWithPropertyList:payload
                                                               format:NSPropertyListBinaryFormat_v1_0
                                                              options:0
                                                                error:nil];
     if (data) {
         [commandPasteboard setData:data forPasteboardType:MUBXClipboardCommandPasteboardUTI];
     }
-    // 兜底：未沙盒进程（Preferences 宿主）写域 SB 可读到，双通道任一成功即可。
-    DXSetQuickActionSharedValue(command, kClipboardCommandKey);
+    // 通道2：jbroot 共享命令文件（与快照同目录，postinst 已 chmod 0777，
+    // 沙盒 App 原子写入、SB 读后删除；删除失败由 seq 去重兜底）。
+    DXWriteSharedPlistFile(payload, MUBXClipboardCommandPath);
+    // 通道3：cfprefsd 隔离域（未沙盒进程可用，最后路径）。
+    DXSetQuickActionSharedValue(payload, kClipboardCommandKey);
     notify_post([kClipboardCommandIdentifier UTF8String]);
 }
 
